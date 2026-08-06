@@ -2,7 +2,6 @@
 **/*.ts
 **/*.map
 .gitignore
-samples/**
 scripts/**
 client/testFixture/**
 **/tsconfig.json

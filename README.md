@@ -2,7 +2,9 @@
 
 RegelSpraak language support for Visual Studio Code.
 
-[RegelSpraak](https://regelspraak.belastingdienst.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. This extension provides editor support for `.rgs` files.
+[RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
+
+This extension provides editor support for `.rgs` files. The extension is `.rgs` rather than the more obvious `.rs`, because `.rs` is already established for Rust source files.
 
 ## Features
 
@@ -64,7 +66,7 @@ Note that the setting has to be readable by the window running the extension. Wh
 - Press `Ctrl+Shift+B` to start the TypeScript compiler in watch mode.
 - Switch to the Run and Debug view (`Ctrl+Shift+D`) and pick `Launch Client`.
 - Press F5 to open an [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension) window.
-- Open one of the files in [samples/](samples/), or any `.rgs` file, and check the "RegelSpraak Language Server" output channel to confirm the server started.
+- Open any `.rgs` file and check the "RegelSpraak Language Server" output channel to confirm the server started.
 
 ## Syntax highlighting
 
@@ -72,8 +74,7 @@ Note that the setting has to be readable by the window running the extension. Wh
 
 ## License and third-party notices
 
-This repository's own source is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for third-party attributions, in particular:
+This repository's own source is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for what that does **not** cover:
 
-- The TextMate grammar and the sample sources derive from [yhavinga/regelspraak-ts](https://github.com/yhavinga/regelspraak-ts) (Copyright 2026 Yeb Havinga), licensed under Apache-2.0.
-- The bundled language server in released extensions is proprietary and is **not** covered by this license.
+- The bundled language server in released extensions is proprietary and is licensed for use only as part of this extension.
 - The RegelSpraak specification is © 2025 Belastingdienst and is not redistributed here.
