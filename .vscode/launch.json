@@ -9,13 +9,27 @@
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
 			"outFiles": [
-				"${workspaceRoot}/client/out/**/*.js"
+				"${workspaceRoot}/client/out/**/*.js",
+				"${workspaceRoot}/server/out/**/*.js"
 			],
 			"autoAttachChildProcesses": true,
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "watch"
 			}
+		},
+		{
+			// "Launch Client" auto-attaches to the server it spawns. Use this
+			// only to attach manually, e.g. to debug server startup.
+			"type": "node",
+			"request": "attach",
+			"name": "Attach to Server",
+			"port": 6009,
+			"restart": true,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/server/out/**/*.js"
+			]
 		},
 		{
 			"name": "Language Server E2E Test",
