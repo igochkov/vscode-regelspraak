@@ -1,0 +1,181 @@
+// TOKA (Wet Treinen Op Korte Afstand) GegevensSpraak Definitions
+// This file contains all object types, domains, parameters, and fact types for the TOKA case study
+
+// ============================================================================
+// UNIT SYSTEMS (EENHEIDSYSTEMEN) - Per TOKA spec lines 133-157
+// ============================================================================
+
+Eenheidsysteem Valuta
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Tijd
+    de milliseconde ms = /1000 s
+    de seconde s = /60 minuut
+    de minuut minuut = /60 u
+    het uur u = /24 dg
+    de dag dg
+    de week wk = 7 dg
+    de maand mnd
+    het kwartaal kw = 3 mnd
+    het jaar jr = 12 mnd
+
+Eenheidsysteem afstand
+    de millimeter (mv: millimeters) mm = /1000 m
+    de centimeter (mv: centimeters) cm = /100 m
+    de meter (mv: meters) m
+    de kilometer (mv: kilometers) km = 1000 m
+
+// ============================================================================
+// DOMAINS
+// ============================================================================
+
+// Currency amounts in euros with 2 decimal places
+Domein Bedrag is van het type Numeriek (getal met 2 decimalen)
+
+// Enumeration of airports
+Domein Luchthavens is van het type Enumeratie
+    'Amsterdam Schiphol'
+    'Groningen Eelde'
+    'Parijs Charles de Gaulle'
+    'Londen Heathrow'
+
+// ============================================================================
+// OBJECT TYPES
+// ============================================================================
+
+// Natural person with all TOKA-related attributes and characteristics
+Objecttype de Natuurlijk persoon (mv: Natuurlijke personen) (bezield)
+    // Characteristics (kenmerken) for age categories - per TOKA spec lines 18-22
+    is minderjarig kenmerk (bijvoeglijk);
+    is passagier jonger dan 18 jaar kenmerk;
+    is passagier van 18 tot en met 24 jaar kenmerk;
+    is passagier van 25 tot en met 64 jaar kenmerk;
+    is passagier van 65 jaar of ouder kenmerk (bijvoeglijk);
+    het recht op duurzaamheidskorting kenmerk (bezittelijk);
+    
+    // Identity and demographic attributes
+    het identificatienummer Numeriek (positief geheel getal);
+    de geboortedatum Datum in dagen;
+    de leeftijd Numeriek (niet-negatief geheel getal) met eenheid jr;
+    het burgerservicenummer Tekst;
+    de woonprovincie Tekst;
+    de woonregio factor Numeriek (geheel getal);
+    
+    // Tax calculation attributes - per spec §5.1/§7.1, timeline "voor elke dag"
+    de belasting op basis van afstand	Bedrag voor elke dag;
+    de belasting op basis van reisduur	Bedrag voor elke dag;
+    de te betalen belasting	Bedrag voor elke dag;
+    
+    // Treinmiles attributes - per TOKA spec lines 30-31
+    de treinmiles op basis van evenredige verdeling Numeriek (geheel getal);
+    de maximaal te ontvangen treinmiles bij evenredige verdeling volgens rangorde Numeriek (geheel getal);
+    het maximaal aantal te ontvangen treinmiles Numeriek (geheel getal);
+
+// Flight object with all flight-related attributes and characteristics  
+Objecttype de Vlucht (mv: vluchten)
+    // Characteristics - per TOKA spec lines 36-45, 236
+    is bereikbaar per trein kenmerk (bijvoeglijk);
+    de gebruik fossiele brandstof minder dan 50 procent kenmerk (bezittelijk);
+    de reiziger kenmerk;
+    is duurzaam kenmerk (bijvoeglijk);
+    is belaste reis kenmerk;
+    is belast kenmerk (bijvoeglijk);
+    is rondvlucht kenmerk;
+    is bestemd voor minderjarigen kenmerk;
+    de reis met paaskorting kenmerk;
+    is in het hoogseizoen kenmerk;
+    
+    // Basic flight attributes
+    de luchthaven van vertrek	Luchthavens;
+    de luchthaven van bestemming	Luchthavens;
+    de vluchtdatum Datum in dagen;
+    de datum van vertrek van de vlucht Datum in dagen;  // Per spec line 66
+    de afstand tot bestemming Numeriek (geheel getal) met eenheid km;
+    de reisduur per trein Numeriek (geheel getal) met eenheid minuut;
+    bereikbaar per trein Boolean;
+    gebruik fossiele brandstof minder dan 50 procent Boolean;
+    
+    // Passenger information
+    de hoeveelheid passagiers Numeriek (geheel getal);
+    de hoeveelheid uitzonderingspassagiers Numeriek (geheel getal);
+    de leeftijd van de oudste passagier Numeriek (niet-negatief geheel getal) met eenheid jr;
+    
+    // Tax calculation attributes
+    de totale belasting op basis van afstand	Bedrag;
+    de totale belasting op basis van reisduur	Bedrag;
+    de totaal te betalen belasting	Bedrag;
+    
+    // Timing attributes
+    de verwachte datum-tijd van aankomst Datum en tijd in millisecondes;
+    de verwachte datum-tijd van vertrek Datum en tijd in millisecondes;
+    de daadwerkelijke datum-tijd van vertrek Datum en tijd in millisecondes;
+    de verwachte duur Numeriek (geheel getal) met eenheid minuut;
+    de datum-tijd voor het berekenen van de belasting op basis van afstand Datum en tijd in millisecondes;
+    het bevestigingstijdstip Datum en tijd in millisecondes;
+    het uiterste boekingstijdstip Datum en tijd in millisecondes;
+
+// Contingent of treinmiles for distribution
+Objecttype het Contingent treinmiles (mv: contingenten treinmiles)
+    het totaal aantal treinmiles Numeriek (positief geheel getal);
+    het aantal treinmiles op basis van aantal passagiers Numeriek (positief geheel getal);
+    het restant na verdeling Numeriek (positief geheel getal);
+
+// ============================================================================
+// PARAMETERS
+// ============================================================================
+
+// Age and demographic parameters
+Parameter de volwassenleeftijd: Numeriek (niet-negatief geheel getal) met eenheid jr
+Parameter de pensioenleeftijd: Numeriek (geheel getal) met eenheid jr
+
+// Tax calculation parameters - per spec line 82
+Parameter de korting bij gebruik niet-fossiele brandstof: Bedrag
+Parameter de initiele belasting: Bedrag
+Parameter de duurzaamheidskorting minimale afstand: Numeriek (geheel getal) met eenheid km
+Parameter de bovengrens afstand eerste schijf: Numeriek (geheel getal) met eenheid km
+Parameter het lage basistarief eerste schijf: Bedrag
+Parameter het lage tarief vermindering eerste schijf: Bedrag
+
+// Travel time calculation parameters  
+Parameter het percentage reisduur eerste schijf: Percentage (geheel getal)
+Parameter het percentage reisduur tweede schijf: Percentage (geheel getal)
+Parameter het percentage reisduur derde schijf: Percentage (geheel getal)
+Parameter de bovengrens reisduur eerste schijf: Numeriek (geheel getal) met eenheid minuut
+Parameter de bovengrens reisduur tweede schijf: Numeriek (geheel getal) met eenheid minuut
+
+// Treinmiles parameters - per spec line 86
+Parameter het aantal treinmiles per passagier voor contingent: Numeriek (positief geheel getal)
+
+// Date calculation parameters
+Parameter de bevestigingsinterval: Numeriek (geheel getal) met eenheid milliseconde
+Parameter de eerste boekingsdatum: Datum in dagen
+
+// ============================================================================
+// FACT TYPES (FEITTYPES)
+// ============================================================================
+
+// Core relationship between passengers and flights
+Feittype vlucht van natuurlijke personen
+    de reis	Vlucht
+    de passagier (mv: passagiers)	Natuurlijk persoon
+    één reis betreft de verplaatsing van meerdere passagiers
+
+// Relationship between flights and treinmiles contingents
+Feittype reis met contingent treinmiles  
+    de reis met treinmiles	Vlucht
+    het vastgestelde contingent treinmiles	Contingent treinmiles
+    één reis met treinmiles heeft één vastgestelde contingent treinmiles
+
+// Distribution relationship for treinmiles allocation
+Feittype verdeling contingent treinmiles over passagiers
+    het te verdelen contingent treinmiles	Contingent treinmiles
+    de passagier met recht op treinmiles (mv: passagiers met recht op treinmiles)	Natuurlijk persoon
+    één te verdelen contingent treinmiles wordt verdeeld over meerdere passagiers met recht op treinmiles
+
+// ============================================================================
+// DAY TYPES
+// ============================================================================
+
+Dagsoort de kerstdag (mv: kerstdagen)
+// Timeline (new in v2.3.0): named timeline with a variable start point
+Tijdlijn de variabele periode van 3 maanden heeft tijdvakken van een kwartaal met variabel startpunt;

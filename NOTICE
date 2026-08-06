@@ -1,0 +1,39 @@
+vscode-regelspraak
+Copyright 2026 Ivaylo Gochkov
+
+This product includes software and materials developed by third parties, as
+listed below. The Apache License, Version 2.0 that governs this project (see
+LICENSE) applies to this project's own original work; the third-party
+materials remain under their respective copyrights and licenses.
+
+--------------------------------------------------------------------------------
+1. RegelSpraak TextMate grammar and sample sources
+   Files:  syntaxes/regelspraak.tmLanguage.json,
+           samples/gegevens.rgs, samples/regels.rgs
+   Source: https://github.com/yhavinga/regelspraak-ts
+   Copyright 2026 Yeb Havinga (https://github.com/yhavinga)
+   Licensed under the Apache License, Version 2.0.
+
+   The file syntaxes/regelspraak.tmLanguage.json is generated from the
+   RegelSpraak ANTLR lexer, which is structurally derived from the upstream
+   grammar and was rewritten to target RegelSpraak v2.3.0. The sample sources
+   were adapted from the upstream TOKA examples and migrated to v2.3.0. Both
+   are therefore treated as derivative works of the Apache-2.0-licensed
+   upstream and retain this attribution.
+
+   (The upstream project did not ship a NOTICE file of its own, so there are
+    no further upstream attributions to carry forward.)
+
+--------------------------------------------------------------------------------
+2. RegelSpraak language server (bundled in released extensions)
+   The published extension bundles the RegelSpraak language server, which is
+   proprietary and is NOT covered by this repository's Apache-2.0 license. It
+   is licensed for use only as part of this extension. Its source is not
+   included in this repository.
+
+--------------------------------------------------------------------------------
+3. RegelSpraak language specification (reference material)
+   The RegelSpraak language specification documents are
+   Copyright 2025 Belastingdienst (Dutch Tax and Customs Administration).
+   They are not redistributed in this repository; see the Belastingdienst
+   publications for the authoritative specification.
