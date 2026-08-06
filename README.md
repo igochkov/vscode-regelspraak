@@ -31,7 +31,33 @@ npm run compile
 
 `npm run watch` recompiles on change. `npm run lint` runs ESLint.
 
-To run the extension you also need a build of the language server. The client currently resolves it at `server/out/server.js` relative to the extension root — the path `.gitignore` reserves for a server build dropped in at packaging time. A user-configurable server path is the next planned change, so that this repository can be built and debugged against any LSP-compatible server build.
+## Pointing the extension at a language server
+
+This repository contains no language server of its own, so running it requires a server build. The client resolves one in this order:
+
+1. The `regelspraak.server.path` setting, if set — absolute, or relative to the first workspace folder.
+2. `server/out/server.js` inside the extension folder, which is where released `.vsix` packages carry the bundled server.
+
+If neither exists the extension reports the path it tried and which of the two produced it, rather than failing silently. Changing the setting restarts the server; no window reload needed.
+
+For development, either set the path to your server build:
+
+```jsonc
+{
+	"regelspraak.server.path": "D:\\path\\to\\regelspraak-language-server\\server\\out\\server.js"
+}
+```
+
+...or place the build where the bundled server would go, which needs no configuration at all. `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
+
+```
+# Windows
+mklink /J server ..\regelspraak-language-server\server
+# macOS / Linux
+ln -s ../regelspraak-language-server/server server
+```
+
+Note that the setting has to be readable by the window running the extension. When debugging, that is the Extension Development Host — so set it in your User settings, or in the settings of whichever folder you open inside that window, not in the settings of the window you press F5 from.
 
 ## Debugging
 

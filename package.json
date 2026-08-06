@@ -50,6 +50,12 @@
 			"type": "object",
 			"title": "RegelSpraak configuration",
 			"properties": {
+				"regelspraak.server.path": {
+					"scope": "machine-overridable",
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Path to the RegelSpraak language server entry point (`server.js`). Absolute, or relative to the first workspace folder. Leave empty to use the language server bundled with the extension."
+				},
 				"regelspraakLanguageServer.trace.server": {
 					"scope": "window",
 					"type": "string",
