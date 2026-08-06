@@ -1,0 +1,134 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "RegelSpraak",
+	"scopeName": "source.regelspraak",
+	"patterns": [
+		{
+			"name": "comment.line.double-slash.regelspraak",
+			"match": "//.*$"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}_])(Wederkerig feittype|Objecttype|Feittype|Domein|Dimensie|Dagsoort|Eenheidsysteem)(?![\\p{L}\\p{N}_])\\s+(?:(?:de|het|een)\\s+)?([^\\n(:]+?)(?=\\s*(?:\\(|:|$)|\\s+is van het type\\b)",
+			"captures": {
+				"1": {
+					"name": "keyword.other.definition.regelspraak"
+				},
+				"2": {
+					"name": "entity.name.type.regelspraak"
+				}
+			}
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}_])(Parameter)(?![\\p{L}\\p{N}_])\\s+(?:(?:de|het|een)\\s+)?([^\\n:]+?)(?=\\s*:)",
+			"captures": {
+				"1": {
+					"name": "keyword.other.definition.regelspraak"
+				},
+				"2": {
+					"name": "entity.name.type.regelspraak"
+				}
+			}
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}_])(Consistentieregel|Regelgroep|Regel|Beslistabel|Lijst)(?![\\p{L}\\p{N}_])\\s+(.+?)\\s*$",
+			"captures": {
+				"1": {
+					"name": "keyword.other.definition.regelspraak"
+				},
+				"2": {
+					"name": "entity.name.function.regelspraak"
+				}
+			}
+		},
+		{
+			"name": "storage.modifier.plural.regelspraak",
+			"match": "\\(mv:[^)]*\\)"
+		},
+		{
+			"name": "string.quoted.double.regelspraak",
+			"begin": "\"",
+			"end": "\"|(?=$)",
+			"patterns": [
+				{
+					"name": "constant.character.escape.regelspraak",
+					"match": "\\\\."
+				}
+			]
+		},
+		{
+			"name": "string.quoted.single.regelspraak",
+			"begin": "(?<![\\p{L}\\p{N}_])(?='[^'\\n]*')'",
+			"end": "'|(?=$)",
+			"patterns": [
+				{
+					"name": "constant.character.escape.regelspraak",
+					"match": "\\\\."
+				}
+			]
+		},
+		{
+			"name": "constant.numeric.date.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:dd\\.\\s*)?(?:0?[1-9]|[12]\\d|3[01])-(?:0?[1-9]|1[0-2])-\\d{4}(?:\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3})?(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "constant.numeric.percentage.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])-?\\d+(?:,\\d+)?%"
+		},
+		{
+			"name": "constant.numeric.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_.])-?\\d+(?:_\\d+/\\d+|/\\d+|,\\d+)?(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "punctuation.separator.table.regelspraak",
+			"match": "\\|"
+		},
+		{
+			"name": "punctuation.definition.list.regelspraak",
+			"match": "^\\s*(?:\\.\\.|-|•)\\s"
+		},
+		{
+			"name": "keyword.other.definition.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:Wederkerig\\s+feittype|Consistentieregel|Eenheidsysteem|Beslistabel|Objecttype|Regelgroep|Parameter|Dagsoort|Dimensie|Feittype|Domein|Lijst|Regel)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "storage.type.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:Datum\\s+en\\s+tijd\\s+in\\s+millisecondes|Datum\\s+in\\s+dagen|geheel\\s+getal|Enumeratie|Percentage|Rekendatum|Rekenjaar|Numeriek|Boolean|getal|Tekst)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "storage.modifier.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:gedimensioneerd\\s+met|moeten\\s+uniek\\s+zijn|is\\s+van\\s+het\\s+type|\\(bezittelijk\\)|\\(bijvoeglijk\\)|niet-negatief|is\\s+recursief|met\\s+eenheid|\\(bezield\\)|decimalen|kenmerken|negatief|positief|cijfers|kenmerk|rollen|uniek|rol)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "keyword.control.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:moet\\s+geïnitialiseerd\\s+worden\\s+op|bij\\s+een\\s+even\\s+groot\\s+criterium|Als\\s+onverdeelde\\s+rest\\s+blijft|moet\\s+berekend\\s+worden\\s+als|het\\s+volgende\\s+criterium:|waarbij\\s+wordt\\s+verdeeld|moet\\s+gesteld\\s+worden\\s+op|volgende\\s+voorwaarden|volgende\\s+voorwaarde|wordt\\s+verdeeld\\s+over|volgende\\s+criteria:|in\\s+gelijke\\s+delen|op\\s+volgorde\\s+van|voor\\s+elke\\s+maand|Daarbij\\s+geldt:|naar\\s+rato\\s+van|voor\\s+elk\\s+jaar|voor\\s+elke\\s+dag|wordt\\s+voldaan|geen\\s+van\\s+de|ten\\s+hoogste|voorwaarden|ten\\s+minste|toenemende|voorwaarde|afnemende|tenminste|meerdere|precies|altijd|geldig|hebben|indien|moeten|heeft|over\\.|alle|geen|moet|één)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "keyword.operator.comparison.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:niet\\s+aan\\s+de\\s+elfproef\\s+voldoen|niet\\s+aan\\s+de\\s+elfproef\\s+voldoet|voldoen\\s+niet\\s+aan\\s+de\\s+elfproef|voldoet\\s+niet\\s+aan\\s+de\\s+elfproef|zijn\\s+niet\\s+numeriek\\s+met\\s+exact|is\\s+niet\\s+numeriek\\s+met\\s+exact|kleiner\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+kleiner\\s+of\\s+gelijk\\s+aan|eerder\\s+of\\s+gelijk\\s+zijn\\s+aan|groter\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+eerder\\s+of\\s+gelijk\\s+aan|zijn\\s+groter\\s+of\\s+gelijk\\s+aan|is\\s+kleiner\\s+of\\s+gelijk\\s+aan|kleiner\\s+of\\s+gelijk\\s+is\\s+aan|later\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+later\\s+of\\s+gelijk\\s+aan|aan\\s+de\\s+elfproef\\s+voldoen|aan\\s+de\\s+elfproef\\s+voldoet|eerder\\s+of\\s+gelijk\\s+is\\s+aan|groter\\s+of\\s+gelijk\\s+is\\s+aan|is\\s+eerder\\s+of\\s+gelijk\\s+aan|is\\s+groter\\s+of\\s+gelijk\\s+aan|niet\\s+numeriek\\s+met\\s+exact|numeriek\\s+zijn\\s+met\\s+exact|voldoen\\s+aan\\s+de\\s+elfproef|voldoet\\s+aan\\s+de\\s+elfproef|zijn\\s+numeriek\\s+met\\s+exact|is\\s+later\\s+of\\s+gelijk\\s+aan|later\\s+of\\s+gelijk\\s+is\\s+aan|is\\s+numeriek\\s+met\\s+exact|kleiner\\s+of\\s+gelijk\\s+aan|numeriek\\s+is\\s+met\\s+exact|eerder\\s+of\\s+gelijk\\s+aan|groter\\s+of\\s+gelijk\\s+aan|later\\s+of\\s+gelijk\\s+aan|numeriek\\s+met\\s+exact|ongelijk\\s+zijn\\s+aan|zijn\\s+niet\\s+kenmerk|zijn\\s+ongelijk\\s+aan|kleiner\\s+zijn\\s+dan|zijn\\s+kleiner\\s+dan|aan\\s+de\\s+elfproef|eerder\\s+zijn\\s+dan|gelijk\\s+zijn\\s+aan|groter\\s+zijn\\s+dan|inconsistent\\s+is|is\\s+inconsistent|is\\s+niet\\s+kenmerk|is\\s+ongelijk\\s+aan|ongelijk\\s+is\\s+aan|zijn\\s+eerder\\s+dan|zijn\\s+gelijk\\s+aan|zijn\\s+groter\\s+dan|is\\s+kleiner\\s+dan|kleiner\\s+is\\s+dan|later\\s+zijn\\s+dan|zijn\\s+later\\s+dan|eerder\\s+is\\s+dan|gelijk\\s+is\\s+aan|groter\\s+is\\s+dan|is\\s+eerder\\s+dan|is\\s+gelijk\\s+aan|is\\s+groter\\s+dan|zijn\\s+niet\\s+rol|is\\s+later\\s+dan|later\\s+is\\s+dan|ongelijk\\s+aan|zijn\\s+kenmerk|is\\s+niet\\s+rol|kleiner\\s+dan|zijn\\s+gevuld|eerder\\s+dan|gelijk\\s+aan|gevuurd\\s+is|groter\\s+dan|is\\s+gevuurd|is\\s+kenmerk|is\\s+gevuld|later\\s+dan|zijn\\s+leeg|zijn\\s+rol|is\\s+leeg|voldoen|voldoet|is\\s+rol)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "keyword.operator.arithmetic.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:met\\s+een\\s+maximum\\s+van|met\\s+een\\s+minimum\\s+van|gedeeld\\s+door\\s+\\(ABS\\)|verminderd\\s+met|de\\s+wortel\\s+van|gedeeld\\s+door|naar\\s+beneden|richting\\s+nul|tot\\s+de\\s+macht|verenigd\\s+met|afgerond\\s+op|rekenkundig|weg\\s+van\\s+nul|naar\\s+boven|tot\\s+en\\s+met|vanaf|maal|plus|min)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "keyword.operator.logical.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:niet)(?![\\p{L}\\p{N}_-])"
+		},
+		{
+			"name": "support.function.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:reeks\\s+van\\s+teksten\\s+en\\s+waarden|het\\s+tijdsevenredig\\s+deel\\s+per|de\\s+absolute\\s+tijdsduur\\s+van|de\\s+absolute\\s+waarde\\s+van|de\\s+maximale\\s+waarde\\s+van|de\\s+minimale\\s+waarde\\s+van|de\\s+eerste\\s+paasdag\\s+van|gedurende\\s+de\\s+tijd\\s+dat|gedurende\\s+het\\s+gehele|de\\s+concatenatie\\s+van|gedurende\\s+de\\s+gehele|[Hh]et\\s+is\\s+de\\s+periode|[Dd]e\\s+datumtijd\\s+met|de\\s+tijdsduur\\s+van|het\\s+totaal\\s+van|de\\s+laatste\\s+van|de\\s+eerste\\s+van|[Dd]e\\s+datum\\s+met|de\\s+som\\s+van|in\\s+hele)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "constant.language.regelspraak",
+			"match": "(?<![\\p{L}\\p{N}_])(?:n\\.v\\.t\\.|onwaar|waar)(?![\\p{L}\\p{N}_])"
+		},
+		{
+			"name": "keyword.other.unit.regelspraak",
+			"match": "(?:°|\\$|€)"
+		},
+		{
+			"name": "keyword.operator.assignment.regelspraak",
+			"match": "(?:=)"
+		}
+	]
+}

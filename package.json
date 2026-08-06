@@ -1,0 +1,83 @@
+{
+	"name": "vscode-regelspraak",
+	"displayName": "RegelSpraak",
+	"description": "Language support for RegelSpraak",
+	"author": "Ivaylo Gochkov",
+	"license": "Apache-2.0",
+	"version": "0.0.1",
+	"publisher": "regelspraak",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/igochkov/vscode-regelspraak.git"
+	},
+	"bugs": {
+		"url": "https://github.com/igochkov/vscode-regelspraak/issues"
+	},
+	"homepage": "https://github.com/igochkov/vscode-regelspraak#readme",
+	"categories": [
+		"Programming Languages"
+	],
+	"keywords": [
+		"regelspraak",
+		"rules as code"
+	],
+	"engines": {
+		"vscode": "^1.100.0"
+	},
+	"main": "./client/out/extension",
+	"contributes": {
+		"languages": [
+			{
+				"id": "regelspraak",
+				"aliases": [
+					"RegelSpraak",
+					"regelspraak"
+				],
+				"extensions": [
+					".rgs"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "regelspraak",
+				"scopeName": "source.regelspraak",
+				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "RegelSpraak configuration",
+			"properties": {
+				"regelspraakLanguageServer.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"lint": "eslint",
+		"postinstall": "cd client && npm install",
+		"test": "sh ./scripts/e2e.sh"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.13.0",
+		"@stylistic/eslint-plugin": "^2.9.0",
+		"@types/node": "^22",
+		"eslint": "^9.13.0",
+		"typescript": "^5.9.2",
+		"typescript-eslint": "^8.39.0"
+	}
+}

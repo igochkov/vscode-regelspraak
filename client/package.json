@@ -1,0 +1,24 @@
+{
+	"name": "vscode-regelspraak-client",
+	"description": "VS Code language client for RegelSpraak",
+	"license": "Apache-2.0",
+	"version": "0.0.1",
+	"publisher": "regelspraak",
+	"engines": {
+		"vscode": "^1.100.0"
+	},
+	"dependencies": {
+		"glob": "^11.0.0",
+		"vscode-languageclient": "^9.0.1"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.6",
+		"@types/vscode": "^1.100.0",
+		"@vscode/test-electron": "^2.3.9",
+		"mocha": "^11.8.0"
+	},
+	"overrides": {
+		"diff": "^8.0.4",
+		"serialize-javascript": "^7.0.5"
+	}
+}

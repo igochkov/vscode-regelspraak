@@ -1,0 +1,10 @@
+out
+node_modules
+.vscode-test
+*.tsbuildinfo
+*.vsix
+
+# The language server is built from a separate, private repository and is only
+# dropped in here at packaging time. It must never be committed to this repo.
+server/
+client/server
