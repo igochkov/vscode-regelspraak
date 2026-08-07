@@ -48,7 +48,7 @@
 		],
 		"configuration": {
 			"type": "object",
-			"title": "RegelSpraak configuration",
+			"title": "RegelSpraak",
 			"properties": {
 				"regelspraak.server.path": {
 					"scope": "machine-overridable",
