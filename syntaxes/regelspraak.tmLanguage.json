@@ -4,36 +4,49 @@
 	"scopeName": "source.regelspraak",
 	"patterns": [
 		{
-			"name": "comment.line.double-slash.regelspraak",
-			"match": "//.*$"
+			"match": "//.*$",
+			"name": "comment.line.double-slash.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}_])(Wederkerig feittype|Objecttype|Feittype|Domein|Dimensie|Dagsoort|Eenheidsysteem)(?![\\p{L}\\p{N}_])\\s+(?:(?:de|het|een)\\s+)?([^\\n(:]+?)(?=\\s*(?:\\(|:|$)|\\s+is van het type\\b)",
-			"captures": {
-				"1": {
-					"name": "keyword.other.definition.regelspraak"
-				},
-				"2": {
-					"name": "entity.name.type.regelspraak"
+			"match": "^\\s*---.*$",
+			"name": "entity.name.section.koptekst.regelspraak"
+		},
+		{
+			"begin": "\"",
+			"end": "\"",
+			"name": "string.quoted.double.regelspraak",
+			"patterns": [
+				{
+					"begin": "«",
+					"end": "»",
+					"name": "meta.interpolation.regelspraak",
+					"patterns": [
+						{
+							"include": "$self"
+						}
+					]
 				}
-			}
+			]
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}_])(Parameter)(?![\\p{L}\\p{N}_])\\s+(?:(?:de|het|een)\\s+)?([^\\n:]+?)(?=\\s*:)",
-			"captures": {
-				"1": {
-					"name": "keyword.other.definition.regelspraak"
-				},
-				"2": {
-					"name": "entity.name.type.regelspraak"
+			"begin": "«",
+			"end": "»",
+			"name": "meta.interpolation.regelspraak",
+			"patterns": [
+				{
+					"include": "$self"
 				}
-			}
+			]
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}_])(Consistentieregel|Regelgroep|Regel|Beslistabel|Lijst)(?![\\p{L}\\p{N}_])\\s+(.+?)\\s*$",
+			"match": "'[^'\\r\\n]*'",
+			"name": "string.quoted.single.enumeratiewaarde.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(Regel|Beslistabel)(?![\\p{L}\\p{N}-])[ \\t]+([^\\r\\n]+)",
 			"captures": {
 				"1": {
-					"name": "keyword.other.definition.regelspraak"
+					"name": "keyword.control.regelspraak"
 				},
 				"2": {
 					"name": "entity.name.function.regelspraak"
@@ -41,94 +54,535 @@
 			}
 		},
 		{
-			"name": "storage.modifier.plural.regelspraak",
-			"match": "\\(mv:[^)]*\\)"
-		},
-		{
-			"name": "string.quoted.double.regelspraak",
-			"begin": "\"",
-			"end": "\"|(?=$)",
-			"patterns": [
-				{
-					"name": "constant.character.escape.regelspraak",
-					"match": "\\\\."
+			"match": "(?<![\\p{L}\\p{N}-])(Objecttype|Extensie van objecttype|Wederkerig feittype|Feittype|Domein|Eenheidsysteem|Dimensie|Tijdlijn|Parameter|Dagsoort)(?![\\p{L}\\p{N}-])[ \\t]+((?:de |het |een )?)(.*?)(?=\\s*(?:[(;:,]|heeft tijdvakken van|is van het type|bestaande uit de|$))",
+			"captures": {
+				"1": {
+					"name": "keyword.declaration.regelspraak"
+				},
+				"3": {
+					"name": "entity.name.type.regelspraak"
 				}
-			]
+			}
 		},
 		{
-			"name": "string.quoted.single.regelspraak",
-			"begin": "(?<![\\p{L}\\p{N}_])(?='[^'\\n]*')'",
-			"end": "'|(?=$)",
-			"patterns": [
-				{
-					"name": "constant.character.escape.regelspraak",
-					"match": "\\\\."
-				}
-			]
+			"match": "(?:dd\\.\\s*)?\\d{1,2}-\\d{1,2}-\\d{4}(?:\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3})?",
+			"name": "constant.other.date.regelspraak"
 		},
 		{
-			"name": "constant.numeric.date.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:dd\\.\\s*)?(?:0?[1-9]|[12]\\d|3[01])-(?:0?[1-9]|1[0-2])-\\d{4}(?:\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3})?(?![\\p{L}\\p{N}_])"
+			"match": "-?\\d+(?:,\\d+)?%",
+			"name": "constant.numeric.percentage.regelspraak"
 		},
 		{
-			"name": "constant.numeric.percentage.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])-?\\d+(?:,\\d+)?%"
+			"match": "-?\\d+(?:_\\d+)?/\\d+",
+			"name": "constant.numeric.rationeel.regelspraak"
 		},
 		{
-			"name": "constant.numeric.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_.])-?\\d+(?:_\\d+/\\d+|/\\d+|,\\d+)?(?![\\p{L}\\p{N}_])"
+			"match": "-?\\d+(?:,\\d+)?",
+			"name": "constant.numeric.regelspraak"
 		},
 		{
-			"name": "punctuation.separator.table.regelspraak",
-			"match": "\\|"
+			"match": "•+",
+			"name": "punctuation.definition.list.bullet.regelspraak"
 		},
 		{
-			"name": "punctuation.definition.list.regelspraak",
-			"match": "^\\s*(?:\\.\\.|-|•)\\s"
+			"match": "^\\s*-(?=\\s)",
+			"name": "punctuation.definition.list.dash.regelspraak"
 		},
 		{
-			"name": "keyword.other.definition.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:Wederkerig\\s+feittype|Consistentieregel|Eenheidsysteem|Beslistabel|Objecttype|Regelgroep|Parameter|Dagsoort|Dimensie|Feittype|Domein|Lijst|Regel)(?![\\p{L}\\p{N}_])"
+			"match": "\\|",
+			"name": "punctuation.separator.table.regelspraak"
 		},
 		{
-			"name": "storage.type.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:Datum\\s+en\\s+tijd\\s+in\\s+millisecondes|Datum\\s+in\\s+dagen|geheel\\s+getal|Enumeratie|Percentage|Rekendatum|Rekenjaar|Numeriek|Boolean|getal|Tekst)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:voor het attribuut zonder voorzetsel|na het attribuut met voorzetsel)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
-			"name": "storage.modifier.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:gedimensioneerd\\s+met|moeten\\s+uniek\\s+zijn|is\\s+van\\s+het\\s+type|\\(bezittelijk\\)|\\(bijvoeglijk\\)|niet-negatief|is\\s+recursief|met\\s+eenheid|\\(bezield\\)|decimalen|kenmerken|negatief|positief|cijfers|kenmerk|rollen|uniek|rol)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:Datum en tijd in millisecondes)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
 		},
 		{
-			"name": "keyword.control.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:moet\\s+geïnitialiseerd\\s+worden\\s+op|bij\\s+een\\s+even\\s+groot\\s+criterium|Als\\s+onverdeelde\\s+rest\\s+blijft|moet\\s+berekend\\s+worden\\s+als|het\\s+volgende\\s+criterium:|waarbij\\s+wordt\\s+verdeeld|moet\\s+gesteld\\s+worden\\s+op|volgende\\s+voorwaarden|volgende\\s+voorwaarde|wordt\\s+verdeeld\\s+over|volgende\\s+criteria:|in\\s+gelijke\\s+delen|op\\s+volgorde\\s+van|voor\\s+elke\\s+maand|Daarbij\\s+geldt:|naar\\s+rato\\s+van|voor\\s+elk\\s+jaar|voor\\s+elke\\s+dag|wordt\\s+voldaan|geen\\s+van\\s+de|ten\\s+hoogste|voorwaarden|ten\\s+minste|toenemende|voorwaarde|afnemende|tenminste|meerdere|precies|altijd|geldig|hebben|indien|moeten|heeft|over\\.|alle|geen|moet|één)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:moet geïnitialiseerd worden op|Als onverdeelde rest blijft|er moet worden voldaan aan|Er moet worden voldaan aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
 		},
 		{
-			"name": "keyword.operator.comparison.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:niet\\s+aan\\s+de\\s+elfproef\\s+voldoen|niet\\s+aan\\s+de\\s+elfproef\\s+voldoet|voldoen\\s+niet\\s+aan\\s+de\\s+elfproef|voldoet\\s+niet\\s+aan\\s+de\\s+elfproef|zijn\\s+niet\\s+numeriek\\s+met\\s+exact|is\\s+niet\\s+numeriek\\s+met\\s+exact|kleiner\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+kleiner\\s+of\\s+gelijk\\s+aan|eerder\\s+of\\s+gelijk\\s+zijn\\s+aan|groter\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+eerder\\s+of\\s+gelijk\\s+aan|zijn\\s+groter\\s+of\\s+gelijk\\s+aan|is\\s+kleiner\\s+of\\s+gelijk\\s+aan|kleiner\\s+of\\s+gelijk\\s+is\\s+aan|later\\s+of\\s+gelijk\\s+zijn\\s+aan|zijn\\s+later\\s+of\\s+gelijk\\s+aan|aan\\s+de\\s+elfproef\\s+voldoen|aan\\s+de\\s+elfproef\\s+voldoet|eerder\\s+of\\s+gelijk\\s+is\\s+aan|groter\\s+of\\s+gelijk\\s+is\\s+aan|is\\s+eerder\\s+of\\s+gelijk\\s+aan|is\\s+groter\\s+of\\s+gelijk\\s+aan|niet\\s+numeriek\\s+met\\s+exact|numeriek\\s+zijn\\s+met\\s+exact|voldoen\\s+aan\\s+de\\s+elfproef|voldoet\\s+aan\\s+de\\s+elfproef|zijn\\s+numeriek\\s+met\\s+exact|is\\s+later\\s+of\\s+gelijk\\s+aan|later\\s+of\\s+gelijk\\s+is\\s+aan|is\\s+numeriek\\s+met\\s+exact|kleiner\\s+of\\s+gelijk\\s+aan|numeriek\\s+is\\s+met\\s+exact|eerder\\s+of\\s+gelijk\\s+aan|groter\\s+of\\s+gelijk\\s+aan|later\\s+of\\s+gelijk\\s+aan|numeriek\\s+met\\s+exact|ongelijk\\s+zijn\\s+aan|zijn\\s+niet\\s+kenmerk|zijn\\s+ongelijk\\s+aan|kleiner\\s+zijn\\s+dan|zijn\\s+kleiner\\s+dan|aan\\s+de\\s+elfproef|eerder\\s+zijn\\s+dan|gelijk\\s+zijn\\s+aan|groter\\s+zijn\\s+dan|inconsistent\\s+is|is\\s+inconsistent|is\\s+niet\\s+kenmerk|is\\s+ongelijk\\s+aan|ongelijk\\s+is\\s+aan|zijn\\s+eerder\\s+dan|zijn\\s+gelijk\\s+aan|zijn\\s+groter\\s+dan|is\\s+kleiner\\s+dan|kleiner\\s+is\\s+dan|later\\s+zijn\\s+dan|zijn\\s+later\\s+dan|eerder\\s+is\\s+dan|gelijk\\s+is\\s+aan|groter\\s+is\\s+dan|is\\s+eerder\\s+dan|is\\s+gelijk\\s+aan|is\\s+groter\\s+dan|zijn\\s+niet\\s+rol|is\\s+later\\s+dan|later\\s+is\\s+dan|ongelijk\\s+aan|zijn\\s+kenmerk|is\\s+niet\\s+rol|kleiner\\s+dan|zijn\\s+gevuld|eerder\\s+dan|gelijk\\s+aan|gevuurd\\s+is|groter\\s+dan|is\\s+gevuurd|is\\s+kenmerk|is\\s+gevuld|later\\s+dan|zijn\\s+leeg|zijn\\s+rol|is\\s+leeg|voldoen|voldoet|is\\s+rol)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner of gelijk zijn aan|eerder of gelijk zijn aan|groter of gelijk zijn aan|kleiner of gelijk is aan|later of gelijk zijn aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
 		},
 		{
-			"name": "keyword.operator.arithmetic.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:met\\s+een\\s+maximum\\s+van|met\\s+een\\s+minimum\\s+van|gedeeld\\s+door\\s+\\(ABS\\)|verminderd\\s+met|de\\s+wortel\\s+van|gedeeld\\s+door|naar\\s+beneden|richting\\s+nul|tot\\s+de\\s+macht|verenigd\\s+met|afgerond\\s+op|rekenkundig|weg\\s+van\\s+nul|naar\\s+boven|tot\\s+en\\s+met|vanaf|maal|plus|min)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:moet berekend worden als)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
 		},
 		{
-			"name": "keyword.operator.logical.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:niet)(?![\\p{L}\\p{N}_-])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:eerder of gelijk is aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
 		},
 		{
-			"name": "support.function.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:reeks\\s+van\\s+teksten\\s+en\\s+waarden|het\\s+tijdsevenredig\\s+deel\\s+per|de\\s+absolute\\s+tijdsduur\\s+van|de\\s+absolute\\s+waarde\\s+van|de\\s+maximale\\s+waarde\\s+van|de\\s+minimale\\s+waarde\\s+van|de\\s+eerste\\s+paasdag\\s+van|gedurende\\s+de\\s+tijd\\s+dat|gedurende\\s+het\\s+gehele|de\\s+concatenatie\\s+van|gedurende\\s+de\\s+gehele|[Hh]et\\s+is\\s+de\\s+periode|[Dd]e\\s+datumtijd\\s+met|de\\s+tijdsduur\\s+van|het\\s+totaal\\s+van|de\\s+laatste\\s+van|de\\s+eerste\\s+van|[Dd]e\\s+datum\\s+met|de\\s+som\\s+van|in\\s+hele)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:Extensie van objecttype)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
-			"name": "constant.language.regelspraak",
-			"match": "(?<![\\p{L}\\p{N}_])(?:n\\.v\\.t\\.|onwaar|waar)(?![\\p{L}\\p{N}_])"
+			"match": "(?<![\\p{L}\\p{N}-])(?:groter of gelijk is aan|tijdsevenredig deel per|absolute tijdsduur van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
 		},
 		{
-			"name": "keyword.other.unit.regelspraak",
-			"match": "(?:°|\\$|€)"
+			"match": "(?<![\\p{L}\\p{N}-])(?:het volgende criterium)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
 		},
 		{
-			"name": "keyword.operator.assignment.regelspraak",
-			"match": "(?:=)"
+			"match": "(?<![\\p{L}\\p{N}-])(?:later of gelijk is aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:met variabel startpunt)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:moet gesteld worden op|waarbij wordt verdeeld|gedurende de tijd dat)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner of gelijk aan|als die er niet zijn|eerder of gelijk aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:er wordt voldaan aan|even groot criterium)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:groter of gelijk aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:heeft tijdvakken van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:volgende voorwaarden)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:absolute waarde van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gedimensioneerd met)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:later of gelijk aan|maximale waarde van|met een maximum van|met een minimum van|minimale waarde van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:volgende voorwaarde)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Wederkerig feittype)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:wordt verdeeld over)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:eerste paasdag van|en een maximum van|gedeeld door \\(ABS\\))(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:wordt bepaald door|het is de periode)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:ongelijk zijn aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:volgende criteria)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:bestaande uit de)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:concatenatie van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:in gelijke delen)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner zijn dan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:moet voldoen aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:aan de elfproef|aantal dagen in)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:de gehele maand)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:eerder zijn dan|gelijk zijn aan|groter zijn dan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:het gehele jaar)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:is van het type)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:ongelijk is aan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:op volgorde van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Datum in dagen)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Eenheidsysteem)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner is dan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:laatstgenoemde)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:later zijn dan|verminderd met)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Daarbij geldt)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:datumtijd met|eerder is dan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:eerstgenoemde)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gelijk is aan|groter is dan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:naar rato van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:niet-negatief)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:tijdsduur van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:wordt voldaan)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gedeeld door)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:geheel getal)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:inconsistent)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:later is dan|naar beneden|ongelijk aan|richting nul|tot de macht)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:verenigd met)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:afgerond op)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Beslistabel)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:bezittelijk|bijvoeglijk)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner dan|laatste van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:met eenheid)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:regelversie)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:rekenkundig)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:startend op)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:ten hoogste)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:weg van nul|eerder dan|eerste van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Enumeratie)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gelijk aan|groter dan|naar boven)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Objecttype)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Percentage)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Rekendatum)(?![\\p{L}\\p{N}-])",
+			"name": "constant.language.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:ten minste|tenhoogste)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:toenemende|tot en met)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:totaal van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:uniek zijn)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:wortel van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:afnemende)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:datum met)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:decimalen)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gedurende)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:getal met)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:later dan|met exact)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Parameter)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Rekenjaar)(?![\\p{L}\\p{N}-])",
+			"name": "constant.language.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:startpunt)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:tenminste)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Dagsoort|Dimensie|Feittype)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:genoemde|meerdere)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:negatief)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:numeriek)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Numeriek|positief)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Tijdlijn|bezield)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Boolean)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:cijfers)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gevuurd)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:kenmerk)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:precies)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:som van)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:voldoen|voldoet)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:aantal)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:altijd)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Domein)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:geldig|Geldig)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:gevuld)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:indien|moeten)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:n\\.v\\.t\\.|onwaar)(?![\\p{L}\\p{N}-])",
+			"name": "constant.language.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:getal)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Regel)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Tekst)(?![\\p{L}\\p{N}-])",
+			"name": "storage.type.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:vanaf)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:alle|geen)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:hele|leeg|maal)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:moet)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:niet)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:plus)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:waar)(?![\\p{L}\\p{N}-])",
+			"name": "constant.language.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:aan|als|dat|die|Eén|één)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:min)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:t\\/m|tot)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:al|er)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:mv)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:=)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.operator.assignment.regelspraak"
 		}
 	]
 }
