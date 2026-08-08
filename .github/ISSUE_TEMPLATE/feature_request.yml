@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an editor capability, or ask for a language construct to be supported better.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, it is worth checking the **Roadmap** section of the
+        README — a good deal is already planned and sequenced (navigation and
+        rename, the full validation catalogue, formatting, running rules
+        against scenario data). Saying that a planned item matters to you is
+        genuinely useful; it influences the order.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the situation you hit, rather than the solution you have in mind — it often admits a better answer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the extension to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: RegelSpraak showing the case, in invented names (not from the Belastingdienst specification).
+      render: text
+
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Is this already on the roadmap?
+      options:
+        - "No / I don't think so"
+        - "Yes — I'd like to say it matters to me"
+        - "Not sure"
+    validations:
+      required: true

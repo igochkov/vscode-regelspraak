@@ -114,6 +114,25 @@ npm run compile
 
 `npm run watch` recompiles on change. `npm run lint` runs ESLint.
 
+## Building a complete .vsix
+
+A packaged extension contains both halves, so packaging assembles the server
+in from its own repository (build it there first):
+
+```sh
+node scripts/assemble-server.mjs ../regelspraak-lsp   # stages server/ + grammar/gen
+npm run package                                       # -> vscode-regelspraak.vsix
+npm run verify:vsix                                   # unpacks it and runs a real LSP session
+```
+
+`verify:vsix` is worth running every time: `vsce` will happily produce a
+`.vsix` whose server cannot load, and only unpacking the artifact and starting
+it reveals that. See [docs/RELEASING.md](docs/RELEASING.md) for the full
+process and why the assembly step is needed.
+
+Note that `assemble-server.mjs` replaces the development link described below
+with a real copy. Recreate the link afterwards to go back to developing.
+
 ## Pointing the extension at a language server
 
 This repository contains no language server of its own — the server lives in a separate repository — so **a fresh clone needs one setup step before <kbd>F5</kbd> works.** Without it the extension reports that it found no server, which is the expected unconfigured state, not a fault.

@@ -1,11 +1,19 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Language support for RegelSpraak",
-	"author": "Ivaylo Gochkov",
+	"description": "Language support for RegelSpraak: semantic highlighting, live validation, completion, hover and outline for .rgs files.",
+	"author": {
+		"name": "Ivaylo Gochkov",
+		"url": "https://github.com/igochkov"
+	},
 	"license": "Apache-2.0",
-	"version": "0.0.1",
-	"publisher": "regelspraak",
+	"version": "0.1.0",
+	"publisher": "igochkov",
+	"icon": "images/icon.png",
+	"galleryBanner": {
+		"color": "#1E1B2E",
+		"theme": "dark"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/igochkov/vscode-regelspraak.git"
@@ -15,11 +23,15 @@
 	},
 	"homepage": "https://github.com/igochkov/vscode-regelspraak#readme",
 	"categories": [
-		"Programming Languages"
+		"Programming Languages",
+		"Linters"
 	],
 	"keywords": [
 		"regelspraak",
-		"rules as code"
+		"rules as code",
+		"belastingdienst",
+		"rules engine",
+		"dutch"
 	],
 	"engines": {
 		"vscode": "^1.100.0"
@@ -168,13 +180,21 @@
 			}
 		}
 	},
+	"//dependencies": "antlr4ng is the runtime dependency of the bundled language server and of the generated parser it loads. Both resolve it by walking up to the extension root, so it is declared here rather than inside server/ — see scripts/assemble-server.mjs. Keep it in step with regelspraak-lsp's root package.json; the assemble script fails on drift.",
+	"dependencies": {
+		"antlr4ng": "^3.0.16"
+	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"lint": "eslint",
 		"postinstall": "cd client && npm install",
-		"test": "sh ./scripts/e2e.sh"
+		"test": "sh ./scripts/e2e.sh",
+		"assemble:server": "node scripts/assemble-server.mjs",
+		"package": "npm run compile && npx --yes @vscode/vsce@3.9.2 package -o vscode-regelspraak.vsix",
+		"verify:vsix": "node scripts/verify-vsix.mjs vscode-regelspraak.vsix",
+		"build:icon": "node scripts/build-icon.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",

@@ -5,6 +5,12 @@ node_modules
 *.vsix
 
 # The language server is built from a separate, private repository and is only
-# dropped in here at packaging time. It must never be committed to this repo.
+# dropped in here at packaging time (scripts/assemble-server.mjs), or linked in
+# for development. It must never be committed to this repo.
 server/
 client/server
+
+# Staged alongside the server: the ANTLR-generated parser it loads, and the
+# workflow's checkout of the server repository.
+grammar/
+.server-src/

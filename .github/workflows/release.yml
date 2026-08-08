@@ -1,0 +1,111 @@
+name: Release
+
+# Publishes to the VS Code Marketplace when a version tag is pushed, e.g.:
+#   git tag v0.1.0 && git push origin v0.1.0
+# The tag must match "version" in package.json (guarded below).
+#
+# Marketplace auth uses Microsoft Entra ID via GitHub OIDC — no stored publish
+# token. Azure DevOps global PATs are retired on 2026-12-01, so VSCE_PAT is
+# deliberately not used.
+#
+# Unlike a single-repo extension, the .vsix is assembled from two
+# repositories: this one (client, manifest, grammar for highlighting) and the
+# private igochkov/regelspraak-lsp (language server + generated parser). See
+# docs/RELEASING.md for the one-time setup of both credentials.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  id-token: write # request the GitHub OIDC token for azure/login
+  contents: write # create the GitHub Release and upload the .vsix
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release # the Entra federated credential is scoped to this environment
+    env:
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the language server
+        uses: actions/checkout@v4
+        with:
+          repository: igochkov/regelspraak-lsp
+          token: ${{ secrets.SERVER_REPO_TOKEN }}
+          path: .server-src
+          # The server build must be reproducible from a tag, not from
+          # whatever main happens to be. Override per release if needed.
+          ref: ${{ vars.SERVER_REF || 'main' }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ANTLR's code generator is a Java tool.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG  package.json=$PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG. Bump package.json and re-tag."
+            exit 1
+          fi
+
+      - name: Build and test the language server
+        working-directory: .server-src
+        run: |
+          npm ci
+          npm run gen:parser
+          npm run compile
+          npm test
+
+      - name: Install client dependencies
+        run: npm ci
+
+      - name: Compile and lint the client
+        run: |
+          npm run compile
+          npm run lint
+
+      - name: Stage the server into the extension
+        run: node scripts/assemble-server.mjs .server-src
+
+      - name: Package VSIX
+        run: npx --yes @vscode/vsce@3.9.2 package -o "vscode-regelspraak-${GITHUB_REF_NAME}.vsix"
+
+      # Nothing is published before the artifact is proven to work: the
+      # packaged server must start and return a diagnostic.
+      - name: Verify the packaged extension
+        run: node scripts/verify-vsix.mjs "vscode-regelspraak-${GITHUB_REF_NAME}.vsix"
+
+      - name: Azure login (Entra ID via GitHub OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          # Publishing needs only an Entra token, not a subscription context — and the
+          # publish identity has no subscription role, so don't require one.
+          allow-no-subscriptions: true
+
+      - name: Publish to VS Code Marketplace
+        run: npx --yes @vscode/vsce@3.9.2 publish --packagePath "vscode-regelspraak-${GITHUB_REF_NAME}.vsix" --azure-credential
+
+      - name: Create GitHub Release with the VSIX
+        run: gh release create "$GITHUB_REF_NAME" "vscode-regelspraak-${GITHUB_REF_NAME}.vsix" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Optional mirror to Open VSX (still token-based). Add an OVSX_PAT secret to enable.
+      - name: Publish to Open VSX (optional)
+        if: ${{ env.OVSX_PAT != '' }}
+        run: npx --yes ovsx@1.0.2 publish "vscode-regelspraak-${GITHUB_REF_NAME}.vsix" -p "$OVSX_PAT"

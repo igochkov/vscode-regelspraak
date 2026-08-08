@@ -1,0 +1,48 @@
+<!--
+  Extension icon — original work for this project.
+
+  Deliberately NOT the regelspraak.nl / Belastingdienst mark: this is an
+  unofficial extension, and borrowing the official logo would imply an
+  endorsement that does not exist (and would sit badly beside this project's
+  clean-room provenance record). See NOTICE.
+
+  The idea instead comes from the extension's own distinguishing feature.
+  RegelSpraak is "rule speech" — legislation written as language — so the
+  shape is a speech bubble. What it contains is the thing this extension
+  adds that a plain highlighter cannot: lines of rule text coloured by what
+  each name *means*, in the four convention colours (purple object types,
+  green attributes, orange characteristics, blue roles and parameters).
+
+  Rendered to images/icon.png by scripts/build-icon.mjs. Edit this file, not
+  the PNG.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+	<!-- Ground: matches the galleryBanner colour in package.json. -->
+	<rect width="256" height="256" rx="56" fill="#1E1B2E"/>
+
+	<!-- Speech bubble: "spraak". Tail drawn as part of the same path so the
+	     silhouette stays one shape at small sizes. -->
+	<path fill="#F7F5FF" d="
+		M 68 52
+		H 188
+		a 28 28 0 0 1 28 28
+		V 156
+		a 28 28 0 0 1 -28 28
+		H 128
+		L 74 220
+		L 86 184
+		H 68
+		a 28 28 0 0 1 -28 -28
+		V 80
+		a 28 28 0 0 1 28 -28
+		Z"/>
+
+	<!-- Four rule lines in the colour convention, light-theme palette so they
+	     carry contrast against the bubble. -->
+	<g>
+		<rect x="68" y="72"  width="120" height="14" rx="7" fill="#7A3E9D"/>
+		<rect x="68" y="98"  width="88"  height="14" rx="7" fill="#2E7D32"/>
+		<rect x="68" y="124" width="104" height="14" rx="7" fill="#B65C00"/>
+		<rect x="68" y="150" width="72"  height="14" rx="7" fill="#0B5CAD"/>
+	</g>
+</svg>

@@ -1,11 +1,26 @@
+# Development-only files.
 .vscode/**
-**/*.ts
-**/*.map
+.github/**
 .gitignore
+.gitattributes
+.editorconfig
+eslint.config.mjs
 scripts/**
 client/testFixture/**
 **/tsconfig.json
 **/tsconfig.base.json
+**/*.tsbuildinfo
+**/*.map
+
+# TypeScript sources. The `!` re-includes below must not re-admit these, so
+# this rule stays above them (last match wins in .vscodeignore).
+**/*.ts
+
+# The icon is shipped as PNG; the SVG it is generated from is not needed.
+images/icon.svg
+
+# Client runtime dependencies are curated by hand: ship what the language
+# client actually loads, not the whole tree.
 client/node_modules/**
 !client/node_modules/vscode-jsonrpc/**
 !client/node_modules/vscode-languageclient/**
@@ -13,3 +28,11 @@ client/node_modules/**
 !client/node_modules/vscode-languageserver-types/**
 !client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
 !client/node_modules/{semver,lru-cache,yallist}/**
+
+# `server/` and `grammar/gen/` are staged by scripts/assemble-server.mjs and
+# must ship: the extension is non-functional without them. Only their
+# non-runtime files are dropped (the rules above already exclude *.ts/*.map).
+server/**/*.md
+server/**/*.markdown
+grammar/gen/*.interp
+grammar/gen/*.tokens
