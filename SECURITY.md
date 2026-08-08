@@ -51,6 +51,6 @@ that ships.
 ## Third-party components
 
 Released `.vsix` packages bundle the RegelSpraak language server, which is
-proprietary and built from a separate private repository (see
+proprietary and built separately (see
 [NOTICE](NOTICE)). Vulnerabilities in it are reported the same way and fixed
 in the same release cycle.

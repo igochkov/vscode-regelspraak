@@ -10,9 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  # Everything that can be checked from this repository alone. Runs for every
-  # contributor, including forks, which cannot reach the private server repo.
-  client:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -65,82 +63,7 @@ jobs:
             }
           '
 
-      - name: Check the manifest version is not already published
-        run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          echo "package.json version: $VERSION"
-          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
-            echo "::warning::v$VERSION is already tagged. Bump the version before releasing."
-          fi
-
-  # The .vsix is only complete with the language server, which lives in a
-  # private repository. This job therefore cannot run for forked pull
-  # requests — it is skipped rather than failed, so external contributions
-  # still get a green `client` job.
-  package:
-    runs-on: ubuntu-latest
-    needs: client
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check out the language server
-        id: server
-        continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: igochkov/regelspraak-lsp
-          token: ${{ secrets.SERVER_REPO_TOKEN }}
-          path: .server-src
-
-      - name: Skip if the server repository is unavailable
-        if: steps.server.outcome != 'success'
-        run: |
-          echo "::warning::Could not check out igochkov/regelspraak-lsp — is the SERVER_REPO_TOKEN secret set? Skipping packaging."
-          exit 0
-
-      - uses: actions/setup-node@v4
-        if: steps.server.outcome == 'success'
-        with:
-          node-version: 20
-          cache: npm
-
-      # ANTLR's code generator is a Java tool.
-      - uses: actions/setup-java@v4
-        if: steps.server.outcome == 'success'
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Build the language server
-        if: steps.server.outcome == 'success'
-        working-directory: .server-src
-        run: |
-          npm ci
-          npm run gen:parser
-          npm run compile
-          npm test
-
-      - name: Install client dependencies
-        if: steps.server.outcome == 'success'
-        run: npm ci
-
-      - name: Stage the server into the extension
-        if: steps.server.outcome == 'success'
-        run: node scripts/assemble-server.mjs .server-src
-
-      - name: Package
-        if: steps.server.outcome == 'success'
-        run: npx --yes @vscode/vsce@3.9.2 package -o vscode-regelspraak.vsix
-
-      - name: Verify the packaged server starts and answers
-        if: steps.server.outcome == 'success'
-        run: node scripts/verify-vsix.mjs vscode-regelspraak.vsix
-
-      - name: Upload VSIX artifact
-        if: steps.server.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: vsix
-          path: vscode-regelspraak.vsix
-          if-no-files-found: error
+      # This repository holds the client half of the extension; a publishable
+      # .vsix also needs the language server, which is built and released
+      # elsewhere. Everything checkable from here is checked above — packaging
+      # and publishing are verified where both halves are available.

@@ -15,11 +15,11 @@ client/testFixture/**
 images/icon.svg
 
 # --- Dependencies -----------------------------------------------------------
-# Root: antlr4ng and nothing else — it has no dependencies of its own. Stated
-# as an allowlist rather than by excluding known offenders, so an ad-hoc
-# install (`npm install --no-save sharp` to rebuild the icon pulls in ~12 MB
-# of native binaries) can never reach the .vsix. CI uses `npm ci` and would
-# not have them, but a local `npm run package` would.
+# Root: nothing this repository installs belongs in the package. The parser
+# runtime the bundled server loads is staged into node_modules/antlr4ng at
+# release time and is re-included here; an allowlist rather than a blacklist,
+# so an ad-hoc install (`npm install --no-save sharp` to rebuild the icon
+# pulls in ~12 MB of native binaries) can never reach the .vsix.
 node_modules/**
 !node_modules/antlr4ng/**
 

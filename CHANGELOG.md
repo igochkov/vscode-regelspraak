@@ -2,7 +2,8 @@
 
 All notable changes to the RegelSpraak extension are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions follow the phase mapping described in [docs/RELEASING.md](docs/RELEASING.md).
+and versions map to delivered capability phases: each phase of the implementation
+plan gets a minor release, through to `1.0.0`.
 
 ## [0.1.0] — First public preview
 

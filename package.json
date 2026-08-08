@@ -180,10 +180,6 @@
 			}
 		}
 	},
-	"//dependencies": "antlr4ng is the runtime dependency of the bundled language server and of the generated parser it loads. Both resolve it by walking up to the extension root, so it is declared here rather than inside server/ — see scripts/assemble-server.mjs. Keep it in step with regelspraak-lsp's root package.json; the assemble script fails on drift.",
-	"dependencies": {
-		"antlr4ng": "^3.0.16"
-	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
@@ -191,9 +187,6 @@
 		"lint": "eslint",
 		"postinstall": "cd client && npm install",
 		"test": "sh ./scripts/e2e.sh",
-		"assemble:server": "node scripts/assemble-server.mjs",
-		"package": "npm run compile && npx --yes @vscode/vsce@3.9.2 package -o vscode-regelspraak.vsix",
-		"verify:vsix": "node scripts/verify-vsix.mjs vscode-regelspraak.vsix",
 		"build:icon": "node scripts/build-icon.mjs"
 	},
 	"devDependencies": {

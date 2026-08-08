@@ -114,56 +114,45 @@ npm run compile
 
 `npm run watch` recompiles on change. `npm run lint` runs ESLint.
 
-## Building a complete .vsix
-
-A packaged extension contains both halves, so packaging assembles the server
-in from its own repository (build it there first):
-
-```sh
-node scripts/assemble-server.mjs ../regelspraak-lsp   # stages server/ + grammar/gen
-npm run package                                       # -> vscode-regelspraak.vsix
-npm run verify:vsix                                   # unpacks it and runs a real LSP session
-```
-
-`verify:vsix` is worth running every time: `vsce` will happily produce a
-`.vsix` whose server cannot load, and only unpacking the artifact and starting
-it reveals that. See [docs/RELEASING.md](docs/RELEASING.md) for the full
-process and why the assembly step is needed.
-
-Note that `assemble-server.mjs` replaces the development link described below
-with a real copy. Recreate the link afterwards to go back to developing.
+This repository builds the **client** — the half that ships as source. A
+publishable `.vsix` also contains the language server, which is built and
+released separately; packaging and publishing happen there, so nothing in this
+repository needs access to it.
 
 ## Pointing the extension at a language server
 
-This repository contains no language server of its own — the server lives in a separate repository — so **a fresh clone needs one setup step before <kbd>F5</kbd> works.** Without it the extension reports that it found no server, which is the expected unconfigured state, not a fault.
+This repository contains no language server of its own, so **a fresh clone needs one setup step before <kbd>F5</kbd> works.** Without it the extension reports that it found no server, which is the expected unconfigured state, not a fault.
 
 The client resolves a server in this order:
 
 1. The `regelspraak.server.path` setting, if set — absolute, or relative to the first workspace folder.
 2. `server/out/server.js` inside the extension folder, which is where released `.vsix` packages carry the bundled server.
 
-**Recommended: link your server build into slot 2.** This needs no setting at all, and `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
+**Recommended: link a server build into slot 2.** This needs no setting at all, and `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
 
 ```
 # Windows (run in the repository root; junction, so no admin rights needed)
-mklink /J server ..\regelspraak-lsp\server
+mklink /J server <path-to-server-build>\server
 # macOS / Linux
-ln -s ../regelspraak-lsp/server server
+ln -s <path-to-server-build>/server server
 ```
 
-Build the server once in its own repository (`npm install && npm run compile` there) and the link picks up every later rebuild.
+The link picks up every later rebuild of that server, so this is a one-time step.
 
 **Alternative: set the path.** Useful for pointing at a build somewhere else:
 
 ```jsonc
 {
-	"regelspraak.server.path": "D:\\path\\to\\regelspraak-lsp\\server\\out\\server.js"
+	"regelspraak.server.path": "D:\\path\\to\\server\\out\\server.js"
 }
 ```
 
-⚠️ The setting is read by the window **running** the extension. When debugging that is the Extension Development Host — so it belongs in your User settings, or in `client/testFixture/.vscode/settings.json` (the folder the host opens), **not** in the settings of the window you press <kbd>F5</kbd> in. Because a relative path resolves against the first workspace folder, the fixture-folder form can be written as `../../../regelspraak-lsp/server/out/server.js`.
+⚠️ The setting is read by the window **running** the extension. When debugging that is the Extension Development Host — so it belongs in your User settings, or in `client/testFixture/.vscode/settings.json` (the folder the host opens), **not** in the settings of the window you press <kbd>F5</kbd> in. Because a relative path resolves against the first workspace folder, the fixture-folder form can be written as a path relative to `client/testFixture`.
 
 Changing the setting restarts the server; no window reload needed.
+
+If you do not have a server build, the client still compiles, lints and is
+developable — you simply cannot exercise the language features.
 
 ## Debugging
 
