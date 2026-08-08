@@ -87,8 +87,9 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		// Register the server for RegelSpraak documents
 		documentSelector: [{ scheme: 'file', language: 'regelspraak' }],
 		synchronize: {
-			// Notify the server about file changes to '.clientrc files contained in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+			// The server indexes every .rgs file in the workspace into one
+			// model (FSD §3.5); watched-file events keep unopened files fresh.
+			fileEvents: workspace.createFileSystemWatcher('**/*.rgs')
 		}
 	};
 

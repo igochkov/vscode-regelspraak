@@ -25,6 +25,9 @@
 		"vscode": "^1.100.0"
 	},
 	"main": "./client/out/extension",
+	"activationEvents": [
+		"workspaceContains:**/*.rgs"
+	],
 	"contributes": {
 		"languages": [
 			{
@@ -55,6 +58,32 @@
 					"type": "string",
 					"default": "",
 					"markdownDescription": "Path to the RegelSpraak language server entry point (`server.js`). Absolute, or relative to the first workspace folder. Leave empty to use the language server bundled with the extension."
+				},
+				"regelspraak.validation.enable": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Schakelt semantische validatie van RegelSpraak-bestanden in."
+				},
+				"regelspraak.validation.scope": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"openFiles",
+						"workspace"
+					],
+					"default": "openFiles",
+					"description": "Bepaalt of diagnostiek alleen voor geopende bestanden of voor de hele werkruimte wordt gemeld."
+				},
+				"regelspraak.validation.runOn": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"type",
+						"save"
+					],
+					"default": "type",
+					"description": "Bepaalt wanneer diagnostiek opnieuw wordt berekend: tijdens het typen of bij het opslaan."
 				},
 				"regelspraakLanguageServer.trace.server": {
 					"scope": "window",
