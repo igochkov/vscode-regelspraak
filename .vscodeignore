@@ -15,25 +15,26 @@ client/testFixture/**
 images/icon.svg
 
 # --- Dependencies -----------------------------------------------------------
-# Root: nothing this repository installs belongs in the package. The parser
-# runtime the bundled server loads is staged into node_modules/antlr4ng at
-# release time and is re-included here; an allowlist rather than a blacklist,
-# so an ad-hoc install (`npm install --no-save sharp` to rebuild the icon
-# pulls in ~12 MB of native binaries) can never reach the .vsix.
+# Neither tree ships. Both halves are bundled with their dependencies inlined:
+# the client by scripts/bundle-client.mjs, the language server before it is
+# staged in. This replaces a hand-maintained allowlist of runtime packages,
+# which would have broken silently the first time a dependency of
+# vscode-languageclient changed.
 node_modules/**
-!node_modules/antlr4ng/**
-
-# Client: ship what the language client actually loads, not the whole tree.
 client/node_modules/**
-!client/node_modules/vscode-jsonrpc/**
-!client/node_modules/vscode-languageclient/**
-!client/node_modules/vscode-languageserver-protocol/**
-!client/node_modules/vscode-languageserver-types/**
-!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
-!client/node_modules/{semver,lru-cache,yallist}/**
 
-# `server/` and `grammar/gen/` are staged by scripts/assemble-server.mjs and
-# must ship: the extension is non-functional without them.
+# Development build output. `client/out/extension.js` is overwritten by the
+# bundle at packaging time and is the only file from here that ships.
+client/out/**
+!client/out/extension.js
+
+# The client's manifest only describes dependencies that are now inlined;
+# `main` resolves to the file above directly, so nothing reads these.
+client/package.json
+client/package-lock.json
+
+# `server/` is staged at release time and must ship: the extension is
+# non-functional without it.
 
 # --- Never ship (kept last so the re-includes above cannot re-admit them) ---
 **/*.ts
@@ -42,5 +43,3 @@ client/node_modules/**
 **/tsconfig.base.json
 **/*.tsbuildinfo
 **/.bin/**
-grammar/gen/*.interp
-grammar/gen/*.tokens

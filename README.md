@@ -119,6 +119,11 @@ publishable `.vsix` also contains the language server, which is built and
 released separately; packaging and publishing happen there, so nothing in this
 repository needs access to it.
 
+`npm run bundle` is a **packaging** step, not part of the development loop: it
+overwrites `client/out/extension.js` with a minified bundle of the client and
+its dependencies. `npm run compile` puts the debuggable build back, so run it
+before returning to <kbd>F5</kbd>.
+
 ## Pointing the extension at a language server
 
 This repository contains no language server of its own, so **a fresh clone needs one setup step before <kbd>F5</kbd> works.** Without it the extension reports that it found no server, which is the expected unconfigured state, not a fault.

@@ -68,39 +68,109 @@
 			}
 		],
 		"semanticTokenTypes": [
-			{ "id": "objecttype", "description": "Objecttype" },
-			{ "id": "attribuut", "description": "Attribuut van een objecttype" },
-			{ "id": "kenmerk", "description": "Kenmerk van een objecttype" },
-			{ "id": "domein", "description": "Domein" },
-			{ "id": "enumwaarde", "description": "Enumeratiewaarde" },
-			{ "id": "eenheid", "description": "Eenheid of eenheidsysteem" },
-			{ "id": "dimensie", "description": "Dimensie of dimensiewaarde" },
-			{ "id": "dagsoort", "description": "Dagsoort" },
-			{ "id": "tijdlijn", "description": "Tijdlijn" },
-			{ "id": "parameter", "description": "Parameter" },
-			{ "id": "feittype", "description": "Feittype" },
-			{ "id": "rol", "description": "Rol in een feittype" },
-			{ "id": "regel", "description": "Regel of beslistabel" },
-			{ "id": "variabele", "description": "Regelvariabele (Daarbij geldt)" }
+			{
+				"id": "objecttype",
+				"description": "Objecttype"
+			},
+			{
+				"id": "attribuut",
+				"description": "Attribuut van een objecttype"
+			},
+			{
+				"id": "kenmerk",
+				"description": "Kenmerk van een objecttype"
+			},
+			{
+				"id": "domein",
+				"description": "Domein"
+			},
+			{
+				"id": "enumwaarde",
+				"description": "Enumeratiewaarde"
+			},
+			{
+				"id": "eenheid",
+				"description": "Eenheid of eenheidsysteem"
+			},
+			{
+				"id": "dimensie",
+				"description": "Dimensie of dimensiewaarde"
+			},
+			{
+				"id": "dagsoort",
+				"description": "Dagsoort"
+			},
+			{
+				"id": "tijdlijn",
+				"description": "Tijdlijn"
+			},
+			{
+				"id": "parameter",
+				"description": "Parameter"
+			},
+			{
+				"id": "feittype",
+				"description": "Feittype"
+			},
+			{
+				"id": "rol",
+				"description": "Rol in een feittype"
+			},
+			{
+				"id": "regel",
+				"description": "Regel of beslistabel"
+			},
+			{
+				"id": "variabele",
+				"description": "Regelvariabele (Daarbij geldt)"
+			}
 		],
 		"semanticTokenScopes": [
 			{
 				"language": "regelspraak",
 				"scopes": {
-					"objecttype": ["entity.name.type.class.regelspraak"],
-					"attribuut": ["variable.other.member.regelspraak"],
-					"kenmerk": ["entity.other.attribute-name.regelspraak"],
-					"domein": ["entity.name.type.regelspraak"],
-					"enumwaarde": ["variable.other.enummember.regelspraak"],
-					"eenheid": ["keyword.other.unit.regelspraak"],
-					"dimensie": ["entity.name.type.enum.regelspraak"],
-					"dagsoort": ["support.constant.regelspraak"],
-					"tijdlijn": ["entity.name.type.regelspraak"],
-					"parameter": ["variable.parameter.regelspraak"],
-					"feittype": ["entity.name.type.interface.regelspraak"],
-					"rol": ["variable.other.constant.regelspraak"],
-					"regel": ["entity.name.function.regelspraak"],
-					"variabele": ["variable.other.readwrite.regelspraak"]
+					"objecttype": [
+						"entity.name.type.class.regelspraak"
+					],
+					"attribuut": [
+						"variable.other.member.regelspraak"
+					],
+					"kenmerk": [
+						"entity.other.attribute-name.regelspraak"
+					],
+					"domein": [
+						"entity.name.type.regelspraak"
+					],
+					"enumwaarde": [
+						"variable.other.enummember.regelspraak"
+					],
+					"eenheid": [
+						"keyword.other.unit.regelspraak"
+					],
+					"dimensie": [
+						"entity.name.type.enum.regelspraak"
+					],
+					"dagsoort": [
+						"support.constant.regelspraak"
+					],
+					"tijdlijn": [
+						"entity.name.type.regelspraak"
+					],
+					"parameter": [
+						"variable.parameter.regelspraak"
+					],
+					"feittype": [
+						"entity.name.type.interface.regelspraak"
+					],
+					"rol": [
+						"variable.other.constant.regelspraak"
+					],
+					"regel": [
+						"entity.name.function.regelspraak"
+					],
+					"variabele": [
+						"variable.other.readwrite.regelspraak"
+					]
 				}
 			}
 		],
@@ -181,18 +251,20 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run compile && npm run bundle",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"lint": "eslint",
 		"postinstall": "cd client && npm install",
 		"test": "sh ./scripts/e2e.sh",
-		"build:icon": "node scripts/build-icon.mjs"
+		"build:icon": "node scripts/build-icon.mjs",
+		"bundle": "node scripts/bundle-client.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",
 		"@stylistic/eslint-plugin": "^2.9.0",
 		"@types/node": "^22",
+		"esbuild": "0.28.2",
 		"eslint": "^9.13.0",
 		"typescript": "^5.9.2",
 		"typescript-eslint": "^8.39.0"
