@@ -49,6 +49,49 @@
 				"path": "./syntaxes/regelspraak.tmLanguage.json"
 			}
 		],
+		"snippets": [
+			{
+				"language": "regelspraak",
+				"path": "./snippets/regelspraak.code-snippets"
+			}
+		],
+		"semanticTokenTypes": [
+			{ "id": "objecttype", "description": "Objecttype" },
+			{ "id": "attribuut", "description": "Attribuut van een objecttype" },
+			{ "id": "kenmerk", "description": "Kenmerk van een objecttype" },
+			{ "id": "domein", "description": "Domein" },
+			{ "id": "enumwaarde", "description": "Enumeratiewaarde" },
+			{ "id": "eenheid", "description": "Eenheid of eenheidsysteem" },
+			{ "id": "dimensie", "description": "Dimensie of dimensiewaarde" },
+			{ "id": "dagsoort", "description": "Dagsoort" },
+			{ "id": "tijdlijn", "description": "Tijdlijn" },
+			{ "id": "parameter", "description": "Parameter" },
+			{ "id": "feittype", "description": "Feittype" },
+			{ "id": "rol", "description": "Rol in een feittype" },
+			{ "id": "regel", "description": "Regel of beslistabel" },
+			{ "id": "variabele", "description": "Regelvariabele (Daarbij geldt)" }
+		],
+		"semanticTokenScopes": [
+			{
+				"language": "regelspraak",
+				"scopes": {
+					"objecttype": ["entity.name.type.class.regelspraak"],
+					"attribuut": ["variable.other.member.regelspraak"],
+					"kenmerk": ["entity.other.attribute-name.regelspraak"],
+					"domein": ["entity.name.type.regelspraak"],
+					"enumwaarde": ["variable.other.enummember.regelspraak"],
+					"eenheid": ["keyword.other.unit.regelspraak"],
+					"dimensie": ["entity.name.type.enum.regelspraak"],
+					"dagsoort": ["support.constant.regelspraak"],
+					"tijdlijn": ["entity.name.type.regelspraak"],
+					"parameter": ["variable.parameter.regelspraak"],
+					"feittype": ["entity.name.type.interface.regelspraak"],
+					"rol": ["variable.other.constant.regelspraak"],
+					"regel": ["entity.name.function.regelspraak"],
+					"variabele": ["variable.other.readwrite.regelspraak"]
+				}
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "RegelSpraak",
@@ -95,6 +138,32 @@
 					],
 					"default": "off",
 					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		},
+		"configurationDefaults": {
+			"editor.semanticTokenColorCustomizations": {
+				"[*Light*]": {
+					"rules": {
+						"objecttype": "#7A3E9D",
+						"attribuut": "#2E7D32",
+						"enumwaarde": "#2E7D32",
+						"kenmerk": "#B65C00",
+						"dimensie": "#B65C00",
+						"rol": "#0B5CAD",
+						"parameter": "#0B5CAD"
+					}
+				},
+				"[*Dark*]": {
+					"rules": {
+						"objecttype": "#C586C0",
+						"attribuut": "#6BB86A",
+						"enumwaarde": "#6BB86A",
+						"kenmerk": "#E8A857",
+						"dimensie": "#E8A857",
+						"rol": "#569CD6",
+						"parameter": "#569CD6"
+					}
 				}
 			}
 		}
