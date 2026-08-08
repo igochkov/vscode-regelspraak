@@ -22,10 +22,7 @@ by it and remain under their respective copyrights and licenses.
 --------------------------------------------------------------------------------
 3. Generated TextMate grammar (syntaxes/regelspraak.tmLanguage.json)
    This file is generated output: it is emitted from the RegelSpraak v2.3.0
-   ANTLR lexer maintained in the regelspraak-lsp repository, by that
+   ANTLR lexer maintained in separate private repository, by that
    repository's `npm run build:grammar` tooling, and must not be edited by
    hand. The lexer it derives from is that project's own work, authored
-   independently from the Belastingdienst specification (see the clean-room
-   record in regelspraak-lsp). Earlier revisions of this file were generated
-   from a lexer derived from a third-party grammar; as of the v2.3.0 rewrite
-   no third-party grammar material remains.
+   independently from the Belastingdienst specification.
