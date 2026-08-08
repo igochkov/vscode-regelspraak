@@ -1,4 +1,8 @@
-# Development-only files.
+# Ordering matters: .vscodeignore is last-match-wins, so a `!` re-include
+# below overrides any exclusion above it. The blanket "never ship" rules are
+# therefore kept at the bottom of this file.
+
+# --- Development-only files -------------------------------------------------
 .vscode/**
 .github/**
 .gitignore
@@ -6,21 +10,20 @@
 .editorconfig
 eslint.config.mjs
 scripts/**
+docs/**
 client/testFixture/**
-**/tsconfig.json
-**/tsconfig.base.json
-**/*.tsbuildinfo
-**/*.map
-
-# TypeScript sources. The `!` re-includes below must not re-admit these, so
-# this rule stays above them (last match wins in .vscodeignore).
-**/*.ts
-
-# The icon is shipped as PNG; the SVG it is generated from is not needed.
 images/icon.svg
 
-# Client runtime dependencies are curated by hand: ship what the language
-# client actually loads, not the whole tree.
+# --- Dependencies -----------------------------------------------------------
+# Root: antlr4ng and nothing else — it has no dependencies of its own. Stated
+# as an allowlist rather than by excluding known offenders, so an ad-hoc
+# install (`npm install --no-save sharp` to rebuild the icon pulls in ~12 MB
+# of native binaries) can never reach the .vsix. CI uses `npm ci` and would
+# not have them, but a local `npm run package` would.
+node_modules/**
+!node_modules/antlr4ng/**
+
+# Client: ship what the language client actually loads, not the whole tree.
 client/node_modules/**
 !client/node_modules/vscode-jsonrpc/**
 !client/node_modules/vscode-languageclient/**
@@ -30,9 +33,14 @@ client/node_modules/**
 !client/node_modules/{semver,lru-cache,yallist}/**
 
 # `server/` and `grammar/gen/` are staged by scripts/assemble-server.mjs and
-# must ship: the extension is non-functional without them. Only their
-# non-runtime files are dropped (the rules above already exclude *.ts/*.map).
-server/**/*.md
-server/**/*.markdown
+# must ship: the extension is non-functional without them.
+
+# --- Never ship (kept last so the re-includes above cannot re-admit them) ---
+**/*.ts
+**/*.map
+**/tsconfig.json
+**/tsconfig.base.json
+**/*.tsbuildinfo
+**/.bin/**
 grammar/gen/*.interp
 grammar/gen/*.tokens
