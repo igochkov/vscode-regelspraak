@@ -7,7 +7,14 @@
 			"request": "launch",
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			// The fixture folder is opened as the development host's workspace:
+			// without a folder there is no .rgs file to activate on
+			// (`workspaceContains:**/*.rgs`) and no workspace to hold a
+			// `regelspraak.server.path` setting, so the host comes up inert.
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"${workspaceRoot}/client/testFixture"
+			],
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js",
 				"${workspaceRoot}/server/out/**/*.js"

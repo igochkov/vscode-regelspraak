@@ -63,9 +63,18 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	const { module: serverModule, origin } = resolveServerModule(context);
 
 	if (!fs.existsSync(serverModule)) {
+		// A released .vsix bundles the server, so reaching this in a release is
+		// a packaging fault. In a checkout of this repository it is the normal
+		// unconfigured state, and the way out is a development setup step —
+		// name both options, because the setting has to be set in the window
+		// that runs the extension (the development host), which is easy to get
+		// wrong, whereas linking the build in needs no setting at all.
 		void window.showErrorMessage(
 			`The RegelSpraak language server was not found at ${serverModule}, resolved from ${origin}. ` +
-			`Set "${SERVER_PATH_SETTING}" to a language server build.`
+			`Link a server build in as "server/" inside the extension folder, ` +
+			`or point "${SERVER_PATH_SETTING}" at one (in this window's settings — ` +
+			`when debugging that is the Extension Development Host, not the window you pressed F5 in). ` +
+			`See the README section "Pointing the extension at a language server".`
 		);
 		return;
 	}

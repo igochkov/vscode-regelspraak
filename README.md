@@ -116,14 +116,25 @@ npm run compile
 
 ## Pointing the extension at a language server
 
-This repository contains no language server of its own, so running it requires a server build. The client resolves one in this order:
+This repository contains no language server of its own — the server lives in a separate repository — so **a fresh clone needs one setup step before <kbd>F5</kbd> works.** Without it the extension reports that it found no server, which is the expected unconfigured state, not a fault.
+
+The client resolves a server in this order:
 
 1. The `regelspraak.server.path` setting, if set — absolute, or relative to the first workspace folder.
 2. `server/out/server.js` inside the extension folder, which is where released `.vsix` packages carry the bundled server.
 
-If neither exists the extension reports the path it tried and which of the two produced it, rather than failing silently. Changing the setting restarts the server; no window reload needed.
+**Recommended: link your server build into slot 2.** This needs no setting at all, and `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
 
-For development, either set the path to your server build:
+```
+# Windows (run in the repository root; junction, so no admin rights needed)
+mklink /J server ..\regelspraak-lsp\server
+# macOS / Linux
+ln -s ../regelspraak-lsp/server server
+```
+
+Build the server once in its own repository (`npm install && npm run compile` there) and the link picks up every later rebuild.
+
+**Alternative: set the path.** Useful for pointing at a build somewhere else:
 
 ```jsonc
 {
@@ -131,23 +142,19 @@ For development, either set the path to your server build:
 }
 ```
 
-...or place the build where the bundled server would go, which needs no configuration at all. `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
+⚠️ The setting is read by the window **running** the extension. When debugging that is the Extension Development Host — so it belongs in your User settings, or in `client/testFixture/.vscode/settings.json` (the folder the host opens), **not** in the settings of the window you press <kbd>F5</kbd> in. Because a relative path resolves against the first workspace folder, the fixture-folder form can be written as `../../../regelspraak-lsp/server/out/server.js`.
 
-```
-# Windows
-mklink /J server ..\regelspraak-lsp\server
-# macOS / Linux
-ln -s ../regelspraak-lsp/server server
-```
-
-Note that the setting has to be readable by the window running the extension. When debugging, that is the Extension Development Host — so set it in your User settings, or in the settings of whichever folder you open inside that window, not in the settings of the window you press F5 from.
+Changing the setting restarts the server; no window reload needed.
 
 ## Debugging
 
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> to start the TypeScript compiler in watch mode.
 - Switch to the Run and Debug view (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd>) and pick `Launch Client`.
 - Press <kbd>F5</kbd> to open an [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension) window.
-- Open any `.rgs` file and check the "RegelSpraak Language Server" output channel to confirm the server started.
+
+The host opens [client/testFixture](client/testFixture) as its workspace — a small, deliberately error-free two-file RegelSpraak model in an invented domain. That gives the extension something to activate on (`workspaceContains:**/*.rgs`) and something to exercise cross-file resolution against: hovering `Bestelling` in `tuincentrum-regels.rgs` resolves to its declaration in `tuincentrum-gegevens.rgs`. Delete a declaration there and the matching `RS1xx` diagnostic should appear in the rules file.
+
+Check the "RegelSpraak Language Server" output channel to confirm the server started.
 
 ## Syntax highlighting
 
