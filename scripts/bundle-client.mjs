@@ -39,7 +39,8 @@ await build({
 	minify: true,
 	platform: 'node',
 	format: 'cjs',
-	target: 'node20',
+	// The extension host of the oldest VS Code we support (engines.vscode).
+	target: 'node24',
 	// Supplied by the VS Code runtime, never from node_modules.
 	external: ['vscode'],
 	// No map is shipped: it would only serve to un-minify, and the sources are

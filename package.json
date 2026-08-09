@@ -1,7 +1,7 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Semantic colour, live validation, completion and hover for RegelSpraak.",
+	"description": "Semantische kleuring, live validatie, aanvulling en hover voor RegelSpraak.",
 	"author": {
 		"name": "Ivaylo Gochkov",
 		"url": "https://github.com/igochkov"
@@ -34,13 +34,20 @@
 		"dutch"
 	],
 	"engines": {
-		"vscode": "^1.100.0"
+		"vscode": "^1.123.0"
 	},
 	"main": "./client/out/extension",
 	"activationEvents": [
 		"workspaceContains:**/*.rgs"
 	],
 	"contributes": {
+		"commands": [
+			{
+				"command": "regelspraak.restartServer",
+				"title": "Taalserver opnieuw starten",
+				"category": "RegelSpraak"
+			}
+		],
 		"languages": [
 			{
 				"id": "regelspraak",
@@ -182,7 +189,7 @@
 					"scope": "machine-overridable",
 					"type": "string",
 					"default": "",
-					"markdownDescription": "Path to the RegelSpraak language server entry point (`server.js`). Absolute, or relative to the first workspace folder. Leave empty to use the language server bundled with the extension."
+					"markdownDescription": "Pad naar het startpunt van de RegelSpraak-taalserver (`server.js`). Absoluut, of relatief ten opzichte van de eerste werkmap. Laat leeg om de taalserver te gebruiken die met de extensie is meegeleverd."
 				},
 				"regelspraak.validation.enable": {
 					"scope": "resource",
@@ -219,7 +226,7 @@
 						"verbose"
 					],
 					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"description": "Registreert de communicatie tussen VS Code en de taalserver."
 				}
 			}
 		},
@@ -227,24 +234,24 @@
 			"editor.semanticTokenColorCustomizations": {
 				"[*Light*]": {
 					"rules": {
-						"objecttype": "#7A3E9D",
-						"attribuut": "#2E7D32",
-						"enumwaarde": "#2E7D32",
-						"kenmerk": "#B65C00",
-						"dimensie": "#B65C00",
-						"rol": "#0B5CAD",
-						"parameter": "#0B5CAD"
+						"objecttype:regelspraak": "#7A3E9D",
+						"attribuut:regelspraak": "#2E7D32",
+						"enumwaarde:regelspraak": "#2E7D32",
+						"kenmerk:regelspraak": "#B65C00",
+						"dimensie:regelspraak": "#B65C00",
+						"rol:regelspraak": "#0B5CAD",
+						"parameter:regelspraak": "#0B5CAD"
 					}
 				},
 				"[*Dark*]": {
 					"rules": {
-						"objecttype": "#C586C0",
-						"attribuut": "#6BB86A",
-						"enumwaarde": "#6BB86A",
-						"kenmerk": "#E8A857",
-						"dimensie": "#E8A857",
-						"rol": "#569CD6",
-						"parameter": "#569CD6"
+						"objecttype:regelspraak": "#C586C0",
+						"attribuut:regelspraak": "#6BB86A",
+						"enumwaarde:regelspraak": "#6BB86A",
+						"kenmerk:regelspraak": "#E8A857",
+						"dimensie:regelspraak": "#E8A857",
+						"rol:regelspraak": "#569CD6",
+						"parameter:regelspraak": "#569CD6"
 					}
 				}
 			}

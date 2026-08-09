@@ -21,7 +21,14 @@
 		["\"", "\""],
 		["'", "'"]
 	],
-	"wordPattern": "[\\p{L}][\\p{L}\\p{N}_'-]*",
+	// Object form, because VS Code compiles the string form with no flags at
+	// all: `\p{L}` would then be the literal characters, not a letter class,
+	// and a double-click would select "p" instead of the word. Names carry
+	// diacritics, so the class has to be Unicode-aware.
+	"wordPattern": {
+		"pattern": "[\\p{L}][\\p{L}\\p{N}_'-]*",
+		"flags": "u"
+	},
 	"folding": {
 		"markers": {
 			"start": "^\\s*//\\s*#region\\b",
