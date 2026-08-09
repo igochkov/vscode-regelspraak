@@ -13,12 +13,11 @@ export default tseslint.config(
 		ignores: [
 			'**/.vscode-test',
 			'**/out',
-			// Staged into this repository by scripts/assemble-server.mjs for
-			// packaging: compiled server output and the ANTLR-generated
-			// parser. Not this project's sources, and not ours to lint.
+			// The language server, which is built elsewhere and staged here
+			// before packaging (README, "Pointing the extension at a language
+			// server"). Build output rather than sources of this project, and
+			// absent from a plain checkout.
 			'server/**',
-			'grammar/**',
-			'.server-src/**',
 		]
 	},
 	js.configs.recommended,
