@@ -1,9 +1,10 @@
 {
+	"//": "Internal sub-package: the language client's own dependencies and build. It is never published — the extension manifest is the package.json at the repository root, and that one owns the version the Marketplace sees. The version below is not kept in step with it, and nothing reads it.",
 	"name": "vscode-regelspraak-client",
 	"description": "VS Code language client for RegelSpraak",
 	"license": "Apache-2.0",
+	"private": true,
 	"version": "0.0.1",
-	"publisher": "regelspraak",
 	"engines": {
 		"vscode": "^1.100.0"
 	},

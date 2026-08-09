@@ -1,7 +1,7 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Language support for RegelSpraak: semantic highlighting, live validation, completion, hover and outline for .rgs files.",
+	"description": "Semantic colour, live validation, completion and hover for RegelSpraak.",
 	"author": {
 		"name": "Ivaylo Gochkov",
 		"url": "https://github.com/igochkov"
@@ -11,7 +11,7 @@
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
-		"color": "#1E1B2E",
+		"color": "#2E2A45",
 		"theme": "dark"
 	},
 	"repository": {
