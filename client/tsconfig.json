@@ -9,7 +9,15 @@
 		"outDir": "out",
 		"rootDir": "src",
 		"sourceMap": true,
-		"strict": true
+		"strict": true,
+		// vscode-jsonrpc's LinkedMap declares keys()/values()/entries() as
+		// IterableIterator while extending Map, whose iterators are
+		// MapIterator. @types/node pulls in esnext.disposable, which adds
+		// [Symbol.dispose] to MapIterator and makes the two incompatible, so
+		// the library's own .d.ts stops type-checking (TS2416). It is not our
+		// declaration to fix, and the newest vscode-jsonrpc still declares it
+		// that way.
+		"skipLibCheck": true
 	},
 	"include": [
 		"src"

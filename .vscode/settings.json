@@ -4,5 +4,12 @@
 	"js/ts.preferences.quoteStyle": "single",
 	"editor.codeActionsOnSave": {
 		"source.fixAll.eslint": "explicit"
-	}
+	},
+	// VS Code starts the extension host with --experimental-network-inspection,
+	// and js-debug turns the domain on for the debug session. Node then throws
+	// "Missing dataLength in event" on every HTTP response that some extension
+	// in the development host reads with setEncoding() — and swallows that
+	// response's body. See nodejs/node#64494 (fix pending in #64496).
+	// Drop this once the runtime carries the fix.
+	"debug.javascript.enableNetworkView": false
 }
