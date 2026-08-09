@@ -1,0 +1,42 @@
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+import { activate, getDocUri } from './helper';
+
+/**
+ * The word pattern from language-configuration.json, exercised through the
+ * editor rather than by re-parsing the file: VS Code compiles the string form
+ * of a pattern with no flags, so `\p{L}` silently became the literal
+ * characters and a double-click selected "p" instead of the word. Nothing in
+ * a unit test would have noticed — the JSON was valid either way.
+ */
+suite('Woordpatroon', () => {
+	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+
+	suiteSetup(async () => {
+		await activate(docUri);
+	});
+
+	test('een woord met diakriet telt als één woord', async () => {
+		const document = await vscode.workspace.openTextDocument(docUri);
+		const offset = document.getText().indexOf('spaartegoed');
+		assert.ok(offset > 0, 'fixture bevat "spaartegoed" niet');
+
+		// Halfway into the word, where a broken pattern gives a stray match.
+		const positie = document.positionAt(offset + 4);
+		const bereik = document.getWordRangeAtPosition(positie);
+
+		assert.ok(bereik, 'geen woordbereik gevonden');
+		assert.strictEqual(document.getText(bereik), 'spaartegoed');
+	});
+
+	test('een hoofdletterwoord telt als één woord', async () => {
+		const document = await vscode.workspace.openTextDocument(docUri);
+		const offset = document.getText().indexOf('Klanten');
+		const positie = document.positionAt(offset + 2);
+		const bereik = document.getWordRangeAtPosition(positie);
+
+		assert.ok(bereik, 'geen woordbereik gevonden');
+		assert.strictEqual(document.getText(bereik), 'Klanten');
+	});
+});

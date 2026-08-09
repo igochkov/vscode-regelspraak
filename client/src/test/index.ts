@@ -19,7 +19,11 @@ export function run(): Promise<void> {
 
 	const testsRoot = __dirname;
 
-	return glob.glob('**.test.js', { cwd: testsRoot }).then(async files => {
+	// TEST_FILE=diagnostiek narrows a run to one suite; end-to-end failures are
+	// otherwise hard to pull apart from the state earlier suites leave behind.
+	const patroon = process.env.TEST_FILE ? `${process.env.TEST_FILE}*.test.js` : '**.test.js';
+
+	return glob.glob(patroon, { cwd: testsRoot }).then(async files => {
 
 		// Add files to the test suite
 		files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
