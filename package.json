@@ -11,8 +11,8 @@
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
-		"color": "#2E2A45",
-		"theme": "dark"
+		"color": "#F7F5FF",
+		"theme": "light"
 	},
 	"repository": {
 		"type": "git",
