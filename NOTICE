@@ -1,0 +1,28 @@
+vscode-regelspraak
+Copyright 2026 Ivaylo Gochkov
+
+The Apache License, Version 2.0 that governs this project (see LICENSE) applies
+to this project's own original work. The materials listed below are not covered
+by it and remain under their respective copyrights and licenses.
+
+--------------------------------------------------------------------------------
+1. RegelSpraak language server (bundled in released extensions)
+   The published extension bundles the RegelSpraak language server, which is
+   proprietary and is NOT covered by this repository's Apache-2.0 license. It
+   is licensed for use only as part of this extension. Its source is not
+   included in this repository.
+
+--------------------------------------------------------------------------------
+2. RegelSpraak language specification (reference material)
+   The RegelSpraak language specification documents are
+   Copyright 2025 Belastingdienst (Dutch Tax and Customs Administration).
+   They are not redistributed in this repository; see the Belastingdienst
+   publications for the authoritative specification.
+
+--------------------------------------------------------------------------------
+3. Generated TextMate grammar (syntaxes/regelspraak.tmLanguage.json)
+   This file is generated output: it is emitted from the RegelSpraak v2.3.0
+   ANTLR lexer maintained in separate private repository, by that
+   repository's `npm run build:grammar` tooling, and must not be edited by
+   hand. The lexer it derives from is that project's own work, authored
+   independently from the Belastingdienst specification.

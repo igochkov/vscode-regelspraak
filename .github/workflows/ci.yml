@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Validate contributed JSON
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            // The snippet file and language configuration allow comments in
+            // VS Code, so strip them before parsing.
+            const strip = (s) => s.replace(/^\s*\/\/.*$/gm, "");
+            for (const f of [
+              "package.json",
+              "language-configuration.json",
+              "snippets/regelspraak.code-snippets",
+              "syntaxes/regelspraak.tmLanguage.json",
+            ]) {
+              JSON.parse(strip(fs.readFileSync(f, "utf8")));
+              console.log("ok", f);
+            }
+          '
+
+      - name: Check the Marketplace icon
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const b = fs.readFileSync("images/icon.png");
+            if (b.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") {
+              throw new Error("images/icon.png is not a PNG");
+            }
+            // IHDR width/height are big-endian uint32 at offsets 16 and 20.
+            const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+            console.log(`icon ${w}x${h}`);
+            if (w < 128 || h < 128) {
+              throw new Error("the Marketplace requires an icon of at least 128x128");
+            }
+          '
+
+      # This repository holds the client half of the extension; a publishable
+      # .vsix also needs the language server, which is built and released
+      # elsewhere. Everything checkable from here is checked above — packaging
+      # and publishing are verified where both halves are available.

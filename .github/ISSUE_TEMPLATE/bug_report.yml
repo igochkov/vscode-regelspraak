@@ -1,0 +1,85 @@
+name: Bug report
+description: Something in the editor behaves incorrectly — wrong colours, a wrong or missing error, bad completion, a crash.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The most useful bug report contains a small piece of
+        RegelSpraak that reproduces the problem.
+
+        **Please do not paste material from the Belastingdienst specification**
+        (including its worked examples). This project deliberately keeps that
+        material out of its sources and issue tracker. A few invented lines that
+        show the same construct are both sufficient and preferred.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample
+    attributes:
+      label: RegelSpraak that reproduces it
+      description: The smallest `.rgs` fragment that shows the problem. Invented names, please.
+      render: text
+      placeholder: |
+        Objecttype de Kluis (mv: Kluizen)
+        	de huurprijs   Numeriek (geheel getal);
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the extension?
+      options:
+        - Colouring (semantic tokens or syntax highlighting)
+        - Errors and warnings (diagnostics)
+        - Completion
+        - Hover
+        - Outline, breadcrumbs or folding
+        - Snippets, indentation or bracket behaviour
+        - The extension failed to start
+        - Something else / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: diagnostic-code
+    attributes:
+      label: Diagnostic code, if the report is about an error or warning
+      description: The `RSxxx` code shown in the Problems panel — for example `RS102`.
+      placeholder: RS102
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Find it on the RegelSpraak entry in the Extensions view.
+      placeholder: 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: vscode
+    attributes:
+      label: VS Code version and OS
+      placeholder: 1.100.0, Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output channel
+      description: |
+        If the extension failed to start or behaves oddly, paste the
+        "RegelSpraak Language Server" output channel (View → Output, pick it
+        from the dropdown). Setting `regelspraakLanguageServer.trace.server`
+        to `verbose` adds detail.
+      render: text

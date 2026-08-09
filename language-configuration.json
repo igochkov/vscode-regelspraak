@@ -1,0 +1,57 @@
+{
+	"comments": {
+		"lineComment": "//"
+	},
+	"brackets": [
+		["(", ")"],
+		["{", "}"],
+		["«", "»"]
+	],
+	"autoClosingPairs": [
+		{ "open": "(", "close": ")" },
+		{ "open": "{", "close": "}" },
+		{ "open": "«", "close": "»" },
+		{ "open": "\"", "close": "\"" },
+		{ "open": "'", "close": "'", "notIn": ["string", "comment"] }
+	],
+	"surroundingPairs": [
+		["(", ")"],
+		["{", "}"],
+		["«", "»"],
+		["\"", "\""],
+		["'", "'"]
+	],
+	"wordPattern": "[\\p{L}][\\p{L}\\p{N}_'-]*",
+	"folding": {
+		"markers": {
+			"start": "^\\s*//\\s*#region\\b",
+			"end": "^\\s*//\\s*#endregion\\b"
+		}
+	},
+	"indentationRules": {
+		"increaseIndentPattern": "(:\\s*$)|(^\\s*(Objecttype|Extensie van objecttype|Eenheidsysteem|Dimensie|Feittype|Wederkerig feittype|Regel|Beslistabel)\\b.*$)|(^\\s*[Gg]eldig\\b.*$)",
+		"decreaseIndentPattern": "^\\s+[Gg]eldig\\b.*$"
+	},
+	"onEnterRules": [
+		{
+			"beforeText": "^\\s*•••\\s.*\\S.*$",
+			"action": { "indent": "none", "appendText": "••• " }
+		},
+		{
+			"beforeText": "^\\s*••\\s.*\\S.*$",
+			"action": { "indent": "none", "appendText": "•• " }
+		},
+		{
+			"beforeText": "^\\s*•\\s.*\\S.*$",
+			"action": { "indent": "none", "appendText": "• " }
+		},
+		{
+			"beforeText": "^\\s*\\.\\.\\s.*\\S.*$",
+			"action": { "indent": "none", "appendText": ".. " }
+		},
+		{
+			"beforeText": "^\\s*-\\s.*\\S.*,\\s*$",
+			"action": { "indent": "none", "appendText": "- " }
+		}
+	]
+}

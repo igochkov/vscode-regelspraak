@@ -1,0 +1,45 @@
+# Ordering matters: .vscodeignore is last-match-wins, so a `!` re-include
+# below overrides any exclusion above it. The blanket "never ship" rules are
+# therefore kept at the bottom of this file.
+
+# --- Development-only files -------------------------------------------------
+.vscode/**
+.github/**
+.gitignore
+.gitattributes
+.editorconfig
+eslint.config.mjs
+scripts/**
+docs/**
+client/testFixture/**
+images/icon.svg
+
+# --- Dependencies -----------------------------------------------------------
+# Neither tree ships. Both halves are bundled with their dependencies inlined:
+# the client by scripts/bundle-client.mjs, the language server before it is
+# staged in. This replaces a hand-maintained allowlist of runtime packages,
+# which would have broken silently the first time a dependency of
+# vscode-languageclient changed.
+node_modules/**
+client/node_modules/**
+
+# Development build output. `client/out/extension.js` is overwritten by the
+# bundle at packaging time and is the only file from here that ships.
+client/out/**
+!client/out/extension.js
+
+# The client's manifest only describes dependencies that are now inlined;
+# `main` resolves to the file above directly, so nothing reads these.
+client/package.json
+client/package-lock.json
+
+# `server/` is staged at release time and must ship: the extension is
+# non-functional without it.
+
+# --- Never ship (kept last so the re-includes above cannot re-admit them) ---
+**/*.ts
+**/*.map
+**/tsconfig.json
+**/tsconfig.base.json
+**/*.tsbuildinfo
+**/.bin/**

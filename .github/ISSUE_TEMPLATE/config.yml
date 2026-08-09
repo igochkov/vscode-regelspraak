@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question about the RegelSpraak language itself
+    url: https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak
+    about: This repository is an unofficial editor extension. Questions about the language, its specification or its semantics belong with the Belastingdienst / Wendbare wetsuitvoering community.
+  - name: Security vulnerability
+    url: https://github.com/igochkov/vscode-regelspraak/security/advisories/new
+    about: Please report privately rather than opening a public issue.

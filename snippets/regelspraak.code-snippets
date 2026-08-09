@@ -1,0 +1,173 @@
+{
+	"Objecttype": {
+		"prefix": "objecttype",
+		"description": "Objecttype met meervoud en een eerste attribuut",
+		"body": [
+			"Objecttype de ${1:Naam} (mv: ${2:Namen})",
+			"\tde ${3:attribuutnaam}\t\t${4:Tekst};"
+		]
+	},
+	"Extensie van objecttype": {
+		"prefix": "extensie",
+		"description": "Extensie die een bestaand objecttype heropent",
+		"body": [
+			"Extensie van objecttype de ${1:Naam}",
+			"\tde ${2:attribuutnaam}\t\t${3:Tekst};"
+		]
+	},
+	"Attribuut": {
+		"prefix": "attribuut",
+		"description": "Attribuut binnen een objecttype",
+		"body": [
+			"de ${1:attribuutnaam}\t\t${2:Numeriek (geheel getal)};"
+		]
+	},
+	"Kenmerk": {
+		"prefix": "kenmerk",
+		"description": "Kenmerk binnen een objecttype",
+		"body": [
+			"de ${1:kenmerknaam}\t\tkenmerk;"
+		]
+	},
+	"Domein": {
+		"prefix": "domein",
+		"description": "Domein met een datatype",
+		"body": [
+			"Domein ${1:Naam} is van het type ${2:Numeriek (getal met 2 decimalen)}"
+		]
+	},
+	"Enumeratie": {
+		"prefix": "enumeratie",
+		"description": "Domein als enumeratie met waarden",
+		"body": [
+			"Domein ${1:Naam} is van het type Enumeratie",
+			"\t'${2:eerste waarde}'",
+			"\t'${3:tweede waarde}'"
+		]
+	},
+	"Eenheidsysteem": {
+		"prefix": "eenheidsysteem",
+		"description": "Eenheidsysteem met een eerste eenheid",
+		"body": [
+			"Eenheidsysteem ${1:naam}",
+			"\tde ${2:eenheid} (mv: ${3:eenheden})\t\t${4:afk}"
+		]
+	},
+	"Dimensie": {
+		"prefix": "dimensie",
+		"description": "Dimensie met twee waarden",
+		"body": [
+			"Dimensie de ${1:dimensienaam}, bestaande uit de ${2:dimensienamen} (na het attribuut met voorzetsel ${3:in}):",
+			"\t1. ${4:eerste waarde}",
+			"\t2. ${5:tweede waarde}"
+		]
+	},
+	"Dagsoort": {
+		"prefix": "dagsoort",
+		"description": "Dagsoortdeclaratie",
+		"body": [
+			"Dagsoort de ${1:naam} (mv: ${2:namen});"
+		]
+	},
+	"Tijdlijn": {
+		"prefix": "tijdlijn",
+		"description": "Benoemde tijdlijn met tijdvakken",
+		"body": [
+			"Tijdlijn de ${1:naam} heeft tijdvakken van een ${2:maand} met variabel startpunt;"
+		]
+	},
+	"Parameter": {
+		"prefix": "parameter",
+		"description": "Parameterdeclaratie",
+		"body": [
+			"Parameter de ${1:naam} : ${2:Numeriek (geheel getal)}"
+		]
+	},
+	"Feittype": {
+		"prefix": "feittype",
+		"description": "Feittype met twee rollen en kardinaliteit",
+		"body": [
+			"Feittype ${1:relatienaam}",
+			"\tde ${2:rol}\t\t${3:objecttypenaam}",
+			"\tde ${4:tweede rol} (mv: ${5:tweede rollen})\t\t${6:objecttypenaam}",
+			"Eén ${2} ${7:heeft} meerdere ${5}"
+		]
+	},
+	"Wederkerig feittype": {
+		"prefix": "wederkerig",
+		"description": "Wederkerig feittype met één rol",
+		"body": [
+			"Wederkerig feittype ${1:relatienaam}",
+			"\tde ${2:rol} (mv: ${3:rollen})\t\t${4:objecttypenaam}",
+			"Eén ${2} ${5:heeft} één ${2}"
+		]
+	},
+	"Regel": {
+		"prefix": "regel",
+		"description": "Regel met versie en berekening",
+		"body": [
+			"Regel ${1:naam van de regel}",
+			"\tgeldig altijd",
+			"\t\tDe ${2:attribuutnaam} van een ${3:objecttypenaam} moet berekend worden als ${4:de expressie}."
+		]
+	},
+	"Regel met voorwaarde": {
+		"prefix": "regel-indien",
+		"description": "Regel met een indien-voorwaarde",
+		"body": [
+			"Regel ${1:naam van de regel}",
+			"\tgeldig altijd",
+			"\t\tDe ${2:attribuutnaam} van een ${3:objecttypenaam} moet berekend worden als ${4:de expressie}",
+			"\t\tindien zijn ${5:attribuut} kleiner is dan ${6:5}."
+		]
+	},
+	"Beslistabel": {
+		"prefix": "beslistabel",
+		"description": "Beslistabel met kop- en waarderijen",
+		"body": [
+			"Beslistabel ${1:naam}",
+			"\tgeldig altijd",
+			"| | de ${2:uitkomst} van een ${3:objecttypenaam} moet gesteld worden op | indien zijn ${4:attribuut} kleiner is dan |",
+			"| 1 | ${5:eerste waarde} | ${6:grenswaarde} |",
+			"| 2 | ${7:tweede waarde} | n.v.t. |"
+		]
+	},
+	"Verdeling": {
+		"prefix": "verdeling",
+		"description": "Regel die een waarde verdeelt (gelijke delen)",
+		"body": [
+			"Regel ${1:naam van de regel}",
+			"\tgeldig altijd",
+			"\t\tHet ${2:te verdelen bedrag} van een ${3:objecttypenaam} wordt verdeeld over ${4:de delen van alle ontvangers}, waarbij wordt verdeeld in gelijke delen."
+		]
+	},
+	"Daarbij geldt": {
+		"prefix": "daarbij",
+		"description": "Variabelendeel van een regel",
+		"body": [
+			"Daarbij geldt:",
+			"\t\t${1:de variabele} is ${2:de expressie}."
+		]
+	},
+	"Gelijkstelling": {
+		"prefix": "gelijkstelling",
+		"description": "Resultaatdeel: stellen op een waarde",
+		"body": [
+			"De ${1:attribuutnaam} van een ${2:objecttypenaam} moet gesteld worden op ${3:de expressie}."
+		]
+	},
+	"Initialisatie": {
+		"prefix": "initialisatie",
+		"description": "Resultaatdeel: initialiseren op een waarde",
+		"body": [
+			"De ${1:attribuutnaam} van een ${2:objecttypenaam} moet geïnitialiseerd worden op ${3:de expressie}."
+		]
+	},
+	"Startpuntbepaling": {
+		"prefix": "startpuntbepaling",
+		"description": "Resultaatdeel: startpunt van een tijdlijn bepalen",
+		"body": [
+			"Het startpunt van een ${1:spaartermijn} voor een ${2:objecttypenaam} wordt bepaald door ${3:zijn startdatum}."
+		]
+	}
+}
