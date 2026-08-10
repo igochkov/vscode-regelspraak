@@ -13,13 +13,14 @@ below from that shared model rather than from pattern matching.
 
 ### Added
 
-- **Semantic highlighting.** Names are coloured by what they mean, following the
-  RegelSpraak convention — purple object types, green attributes and enumeration
-  values, orange characteristics and dimensions, blue roles and parameters.
-  Multi-word phrases are segmented by meaning, so in `de dagen te laat van de
-  Uitlening` the attribute and the object type colour separately. Ships with
-  defaults for light and dark themes, overridable through
-  `editor.semanticTokenColorCustomizations`.
+- **Semantic highlighting.** Names are coloured by what they mean: object types,
+  attributes, characteristics, enumeration values, units, roles, parameters,
+  rules and rule variables each get their own token type. Multi-word phrases are
+  segmented by meaning, so in `de dagen te laat van de Uitlening` the attribute
+  and the object type colour separately. **The colours come from your theme** —
+  each token type maps to a standard TextMate scope, so RegelSpraak matches the
+  rest of your editor and no theme you chose is overridden. Per-language rules
+  under `editor.semanticTokenColorCustomizations` let you pick your own.
 - **Diagnostics** as you type, in Dutch, each with a stable code: syntax
   (`RS001`–`RS003`); reference resolution across files — unknown object type or
   role (`RS101`), attribute or characteristic not a member of the resolved type
