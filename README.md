@@ -14,16 +14,35 @@ The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.
 
 Every name in RegelSpraak is an ordinary Dutch phrase — `de contributie`, `het jeugdlid`, `de aanvrager` all look alike to a text-based highlighter. Only a parser plus a model of your declarations can tell an object type from an attribute from a role.
 
-The extension therefore ships **two layers**: a TextMate grammar generated from the language's own lexer (keywords, literals, comments, operators), and **semantic tokens** computed by the language server, which colour each name by what it actually is, following the established RegelSpraak convention:
+The extension therefore ships **two layers**: a TextMate grammar generated from the language's own lexer (keywords, literals, comments, operators), and **semantic tokens** computed by the language server, which colour each name by what it actually is.
 
-| Colour | Elements |
+**Your colour theme picks the colours.** The extension says what each name *is* and maps it to a standard scope; the theme you chose paints it. So RegelSpraak looks like the rest of your editor in light, dark and high-contrast themes alike, including themes that did not exist when this extension was built — and nothing overrides a theme you picked on purpose.
+
+| A name that is a… | is coloured the way your theme colours a… |
 | --- | --- |
-| 🟣 Purple | Object types |
-| 🟢 Green | Attributes, enumeration values |
-| 🟠 Orange | Characteristics (kenmerken), dimensions |
-| 🔵 Blue | Roles, parameters |
+| object type, fact type, domain, dimension, timeline | type or class |
+| attribute, parameter, rule variable | variable or member |
+| characteristic (kenmerk), role, enumeration value, day kind | constant or enum member |
+| rule or decision table | function |
+| unit | unit of measure |
 
-Multi-word phrases are segmented by meaning, not by spaces: in `de dagen te laat van de Uitlening`, the attribute and the object type are coloured separately even though the whole phrase is one grammatical unit. Defaults ship for light and dark themes and can be overridden with `editor.semanticTokenColorCustomizations`.
+Multi-word phrases are segmented by meaning, not by spaces: in `de dagen te laat van de Uitlening`, the attribute and the object type are coloured separately even though the whole phrase is one grammatical unit.
+
+Want different colours? Set them yourself. These rules are per-language, so they change nothing outside `.rgs` files:
+
+```jsonc
+"editor.semanticTokenColorCustomizations": {
+	"rules": {
+		"objecttype:regelspraak": "#C586C0",
+		"attribuut:regelspraak": "#6BB86A",
+		"kenmerk:regelspraak": "#E8A857"
+	}
+}
+```
+
+The token types are `objecttype`, `attribuut`, `kenmerk`, `domein`, `enumwaarde`, `eenheid`, `dimensie`, `dagsoort`, `tijdlijn`, `parameter`, `feittype`, `rol`, `regel` and `variabele`. How many of them your theme tells apart is up to the theme: a theme with a small palette may paint several alike, and high-contrast themes trade hue variety for contrast by design. Set the rules above if you need a distinction your theme does not make.
+
+Two notes. *Light High Contrast* does not enable semantic highlighting at all, so names stay uncoloured there unless you set `"editor.semanticHighlighting.enabled": true`. And while the server is still starting, colouring falls back to the TextMate layer, so keywords are coloured and names are not yet.
 
 ### Errors while you type
 

@@ -143,7 +143,7 @@
 						"variable.other.member.regelspraak"
 					],
 					"kenmerk": [
-						"entity.other.attribute-name.regelspraak"
+						"variable.other.constant.regelspraak"
 					],
 					"domein": [
 						"entity.name.type.regelspraak"
@@ -158,7 +158,7 @@
 						"entity.name.type.enum.regelspraak"
 					],
 					"dagsoort": [
-						"support.constant.regelspraak"
+						"variable.other.constant.regelspraak"
 					],
 					"tijdlijn": [
 						"entity.name.type.regelspraak"
@@ -227,32 +227,6 @@
 					],
 					"default": "off",
 					"description": "Registreert de communicatie tussen VS Code en de taalserver."
-				}
-			}
-		},
-		"configurationDefaults": {
-			"editor.semanticTokenColorCustomizations": {
-				"[*Light*]": {
-					"rules": {
-						"objecttype:regelspraak": "#7A3E9D",
-						"attribuut:regelspraak": "#2E7D32",
-						"enumwaarde:regelspraak": "#2E7D32",
-						"kenmerk:regelspraak": "#B65C00",
-						"dimensie:regelspraak": "#B65C00",
-						"rol:regelspraak": "#0B5CAD",
-						"parameter:regelspraak": "#0B5CAD"
-					}
-				},
-				"[*Dark*]": {
-					"rules": {
-						"objecttype:regelspraak": "#C586C0",
-						"attribuut:regelspraak": "#6BB86A",
-						"enumwaarde:regelspraak": "#6BB86A",
-						"kenmerk:regelspraak": "#E8A857",
-						"dimensie:regelspraak": "#E8A857",
-						"rol:regelspraak": "#569CD6",
-						"parameter:regelspraak": "#569CD6"
-					}
 				}
 			}
 		}
