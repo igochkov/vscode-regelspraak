@@ -133,7 +133,19 @@ The client resolves a server in this order:
 1. The `regelspraak.server.path` setting, if set — absolute, or relative to the first workspace folder.
 2. `server/out/server.js` inside the extension folder, which is where released `.vsix` packages carry the bundled server.
 
-**Recommended: link a server build into slot 2.** This needs no setting at all, and `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
+**Recommended: set the path.** Slot 1 is the one packaging cannot disturb — see the warning below — and it points anywhere:
+
+```jsonc
+{
+	"regelspraak.server.path": "D:\\path\\to\\server\\out\\server.js"
+}
+```
+
+⚠️ The setting is read by the window **running** the extension. When debugging that is the Extension Development Host — so it belongs in your User settings, or in `client/testFixture/.vscode/settings.json` (the folder the host opens), **not** in the settings of the window you press <kbd>F5</kbd> in. Because a relative path resolves against the first workspace folder, the fixture-folder form can be written as a path relative to `client/testFixture`. That file is gitignored: it names a path on one machine.
+
+Changing the setting restarts the server; no window reload needed.
+
+**Alternative: link a server build into slot 2.** This needs no setting at all, and `.gitignore` reserves `server/` for exactly this, so the link can never be committed:
 
 ```
 # Windows (run in the repository root; junction, so no admin rights needed)
@@ -144,17 +156,15 @@ ln -s <path-to-server-build>/server server
 
 The link picks up every later rebuild of that server, so this is a one-time step.
 
-**Alternative: set the path.** Useful for pointing at a build somewhere else:
+⚠️ **Packaging overwrites slot 2.** Building a release stages the real bundled
+server at `server/out/server.js`, replacing the link. Development then keeps
+running — against a frozen copy of the server as it was at packaging time,
+which looks like a working setup whose bugs never get fixed. Recreate the link
+after packaging, or use slot 1, which packaging never touches.
 
-```jsonc
-{
-	"regelspraak.server.path": "D:\\path\\to\\server\\out\\server.js"
-}
-```
-
-⚠️ The setting is read by the window **running** the extension. When debugging that is the Extension Development Host — so it belongs in your User settings, or in `client/testFixture/.vscode/settings.json` (the folder the host opens), **not** in the settings of the window you press <kbd>F5</kbd> in. Because a relative path resolves against the first workspace folder, the fixture-folder form can be written as a path relative to `client/testFixture`.
-
-Changing the setting restarts the server; no window reload needed.
+**Which server am I running?** The `RegelSpraak Language Server` output channel
+reports the resolved path, which slot it came from, and when that build was
+made, every time the server starts.
 
 If you do not have a server build, the client still compiles, lints and is
 developable — you simply cannot exercise the language features.

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { commands, window, workspace, ExtensionContext, FileSystemWatcher } from 'vscode';
+import { commands, window, workspace, ExtensionContext, FileSystemWatcher, OutputChannel } from 'vscode';
 
 import {
 	LanguageClient,
@@ -14,6 +14,12 @@ const RESTART_COMMAND = 'regelspraak.restartServer';
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
+
+/**
+ * Owned here rather than left to `LanguageClient`, so the resolution report
+ * below survives a restart and shares one channel with the server's own log.
+ */
+let uitvoer: OutputChannel | undefined;
 
 /**
  * Restarts run one at a time on this chain. They can now arrive close
@@ -37,6 +43,9 @@ async function herstart(context: ExtensionContext): Promise<void> {
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
+	uitvoer = window.createOutputChannel('RegelSpraak Language Server');
+	context.subscriptions.push(uitvoer);
+
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
 	context.subscriptions.push(
@@ -92,8 +101,28 @@ function resolveServerModule(context: ExtensionContext): { module: string; origi
 	};
 }
 
+/**
+ * Records which server this session is actually running, and when it was built.
+ *
+ * Both are otherwise invisible: the two resolution slots look identical from
+ * the outside, and a server left over from an earlier packaging run behaves
+ * like a working one — it simply answers with the language as it was then.
+ * That failure presents as "my change had no effect", which is a long way from
+ * its cause.
+ */
+function meldServerHerkomst(module: string, origin: string): void {
+	uitvoer?.appendLine(`Taalserver : ${module}`);
+	uitvoer?.appendLine(`Herkomst   : ${origin}`);
+	try {
+		uitvoer?.appendLine(`Gebouwd    : ${fs.statSync(module).mtime.toLocaleString('nl-NL')}`);
+	} catch {
+		uitvoer?.appendLine('Gebouwd    : niet gevonden');
+	}
+}
+
 async function startClient(context: ExtensionContext): Promise<void> {
 	const { module: serverModule, origin } = resolveServerModule(context);
+	meldServerHerkomst(serverModule, origin);
 
 	if (!fs.existsSync(serverModule)) {
 		// A released .vsix bundles the server, so reaching this in a release is
@@ -135,7 +164,10 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		documentSelector: [{ scheme: 'file', language: 'regelspraak' }],
 		synchronize: {
 			fileEvents: watcher
-		}
+		},
+		// Ours, so the resolution report above and the server's log end up in
+		// one place; the extension disposes it, not the client.
+		outputChannel: uitvoer
 	};
 
 	client = new LanguageClient(
