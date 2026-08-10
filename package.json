@@ -1,7 +1,7 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Semantische kleuring, live validatie, aanvulling en hover voor RegelSpraak.",
+	"description": "Semantic highlighting, live validation, completion and hover for RegelSpraak.",
 	"author": {
 		"name": "Ivaylo Gochkov",
 		"url": "https://github.com/igochkov"
