@@ -136,7 +136,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			`Koppel een serverbuild als "server/" in de extensiemap, ` +
 			`of laat "${SERVER_PATH_SETTING}" naar een serverbuild verwijzen (in de instellingen van dít ` +
 			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt). ` +
-			`Zie het README-hoofdstuk "Pointing the extension at a language server".`
+			`Zie docs/DEVELOPING.md, "Pointing the extension at a language server".`
 		);
 		return;
 	}
