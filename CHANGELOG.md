@@ -5,6 +5,77 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
+## [0.2.0] — Navigation and refactoring
+
+Moving through a multi-file model, and restructuring one safely. Everything here
+runs on the same resolved model the colouring and diagnostics already use, so a
+name is navigated as the thing it *means* — not as matching text.
+
+### Added
+
+- **Go to definition** (<kbd>F12</kbd>) from any name to its declaration, across
+  files: attributes and characteristics, object types, roles, parameters,
+  variables, domains, dimensions, day kinds, units — including from a plural form
+  to its singular declaration, from an `Extensie van objecttype` header to the
+  type it re-opens, and from a unit abbreviation such as `pt` to the unit that
+  declares it. The cursor may sit anywhere inside a multi-word name.
+- **Go to type definition** from an attribute or parameter to its `Domein`, from
+  a role to the object type that fills it, from an enumeration value to its
+  domain. Where a declaration uses an inline datatype instead of a domain, it
+  leads to the declaration itself — that is where the datatype is written.
+- **Go to implementation**, read as *"which rule derives this?"* — from an
+  attribute or characteristic to every rule whose result part assigns it
+  (`moet berekend/gesteld worden`, `moet geïnitialiseerd worden`, a
+  characteristic assignment, a distribution). A consistency rule checks rather
+  than derives, so it is not listed.
+- **Find all references** (<kbd>Shift</kbd>+<kbd>F12</kbd>) across the workspace:
+  uses inside rules and conditions, fact-type role lines, and other declarations.
+  Singular and plural forms of one name are one list.
+- **Highlight occurrences** in the active file, distinguishing **written** from
+  **read**: the attribute a rule derives is marked as a write, the values it
+  reads on the way are not.
+- **Go to Symbol in Workspace** (<kbd>Ctrl</kbd>+<kbd>T</kbd>) over every
+  declaration in every `.rgs` file of every workspace folder. Matching is built
+  for Dutch multi-word names: a hit in the middle of a name counts
+  (`laat` → `de dagen te laat`), so do the words you remember with the ones you
+  forgot left out (`dagen laat`), and initials (`dtl`).
+- **Rename** (<kbd>F2</kbd>) of any model symbol, updating every reference across
+  every file in one edit, with the multi-word name replaced as a whole. Three
+  safeguards, because renaming is the one feature that writes:
+  - it **refuses a name that already exists in the same scope**, and says which
+    declaration and which file it collides with — the scope being the model's
+    global namespace, the members of one object type, or the variables of one
+    rule;
+  - it **refuses where the name under the cursor resolves more than one way**,
+    rather than edit some occurrences of the wrong declaration;
+  - it **reports what it did not change**: a plural form `(mv: …)` that now needs
+    the same treatment, and any remaining text the model does not account for —
+    a comment, a unit inside an expression, a decision-table cell.
+
+### Changed
+
+- A characteristic, role or day kind named in a condition or a characteristic
+  assignment (`Een Lid is jeugdlid`, `indien alle Leden jeugdlid zijn`) is now
+  part of the model, so it is coloured, has hover documentation, and can be
+  navigated and renamed like any other name.
+- A rule referred to by `Regelversie <naam> is gevuurd` now resolves to that
+  rule.
+- Names in rules no longer resolve to declarations that cannot occur there — a
+  domain, a unit system, a fact type or a rule. RegelSpraak models routinely name
+  a rule after the characteristic it assigns ("Regel Jeugdlid" sets `jeugdlid`),
+  and the name in the rule body now resolves to the characteristic rather than to
+  the rule.
+
+### Notes
+
+- A decision table derives its result column's attribute too, but its tabular
+  layout sits outside the language grammar; decision-table cells join the model
+  with the validation release, and until then contribute no derivations and are
+  reported as text a rename did not cover.
+- Enumeration values and units written inside expressions are literals that the
+  model does not yet resolve, so a rename of one edits its declaration and tells
+  you about the rest.
+
 ## [0.1.0] — First public preview
 
 The extension understands your model: it parses every `.rgs` file in the

@@ -1,12 +1,12 @@
 # RegelSpraak for Visual Studio Code
 
-Write, read and review RegelSpraak models with the editor support you expect from a programming language: colour that reflects meaning, errors while you type, model-aware completion, hover documentation and a navigable outline.
+Write, read and review RegelSpraak models with the editor support you expect from a programming language: colour that reflects meaning, errors while you type, model-aware completion, hover documentation, an outline, and navigation and rename that follow what a name means across every file.
 
 [RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
 
 The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
 
-> **Status: preview.** Everything under [Features](#features) works today. The extension understands your model — declarations and rules, across every `.rgs` file in the workspace — but does not yet execute it. See the [Roadmap](#roadmap).
+> **Status: preview.** Everything under [Features](#features) works today. The extension understands your model — declarations and rules, across every `.rgs` file in the workspace — and lets you navigate and restructure it, but does not yet execute it. Validation is still deliberately partial; see the [Roadmap](#roadmap).
 
 ## Features
 
@@ -80,6 +80,27 @@ Multi-word names complete as one item and replace what you have already typed, s
 
 Hover any name — declared or referenced, in this file or another — to see its kind, its datatype or domain, its owning object type, and the `//` comment block written above its declaration.
 
+### Navigation that follows meaning, not text
+
+Every one of these resolves the name under the cursor through the subject chain and the object-type context — the same resolution that drives the colouring — so `de boete` finds the attribute of the object type this rule is about, and not the identically named attribute of another.
+
+| | What it does |
+| --- | --- |
+| <kbd>F12</kbd> **Go to definition** | Jump from any name to its declaration, in whichever file that is. Works from a plural form to its singular declaration, from an `Extensie van objecttype` header to the type it re-opens, and from a unit abbreviation like `pt` to the unit that declares it. Put the cursor anywhere inside a multi-word name. |
+| **Go to type definition** | From an attribute or parameter to its `Domein`; from a role to the object type filling it; from an enumeration value to its domain. A declaration with an inline datatype leads to itself — that is where the datatype is. |
+| **Go to implementation** | Read as *"which rule derives this?"*: from an attribute or characteristic to every rule whose result part assigns it. Consistency rules check rather than derive, so they are not listed. |
+| <kbd>Shift</kbd>+<kbd>F12</kbd> **Find all references** | Every use across the workspace — rules, conditions, fact-type role lines, other declarations. Singular and plural are one list. |
+| **Highlight occurrences** | Marks occurrences in the active file, distinguishing the attribute a rule *writes* from the values it *reads*. |
+| <kbd>Ctrl</kbd>+<kbd>T</kbd> **Go to Symbol in Workspace** | Every declaration in every `.rgs` file of every workspace folder. Matching is built for Dutch phrases: `laat` finds `de dagen te laat`, so does `dagen laat`, and so does `dtl`. |
+
+### Rename that refuses to corrupt your model
+
+<kbd>F2</kbd> renames any model symbol and updates every reference in every file in one edit, replacing the multi-word name as a whole. Because this is the one feature that writes, it is deliberately careful:
+
+- **It refuses a name that is already taken in the same scope**, and tells you which declaration and which file it would clash with. Scope means what it means in RegelSpraak: the model-wide namespace, the members of one object type, or the variables of one rule — so reusing an attribute name in a *different* object type is allowed, and reusing it in the same one is not.
+- **It refuses when the name under the cursor resolves more than one way**, rather than edit some occurrences of the wrong declaration.
+- **It tells you what it left alone.** A plural form `(mv: …)` is a different word, so it is not guessed at — you are told it still needs your attention. So is any remaining text the model does not account for: a mention in a comment, a unit inside an expression, a decision-table cell. A partial rename you know about is fixable; a silent one is not.
+
 ### Outline, breadcrumbs and folding
 
 Object types with their attributes and characteristics, fact types with their roles, domains with their enumeration values, unit systems with their units, rules with their variables — all appear in the Outline view, the breadcrumb bar and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> "Go to Symbol". Folding is grammar-aware (every declaration, and each `geldig …` version of a multi-version rule) and also honours `//#region` … `//#endregion` markers.
@@ -104,9 +125,9 @@ Delivered and planned, in order. Each release builds on the shared model the ext
 
 | | Release | What it adds |
 | --- | --- | --- |
-| ✅ | **Preview** (current) | Semantic colour, live diagnostics, completion, hover, outline, folding, snippets |
-| ⬅ | **Navigation** (next) | Go to definition and type definition · Find all references · Highlight occurrences · Workspace symbol search (`#`) · Safe cross-file rename of multi-word names · "Which rule derives this attribute?" |
-| | **Validation** | The full diagnostics catalogue — type compatibility, unit convertibility, rounding and precision, empty-value (`leeg`) policy, timeline granularity, distribution and decision-table rules — with quick fixes, plus signature help for date constructors and distribution clauses |
+| ✅ | **Preview** | Semantic colour, live diagnostics, completion, hover, outline, folding, snippets |
+| ✅ | **Navigation** (current) | Go to definition and type definition · Find all references · Highlight occurrences · Workspace symbol search · Safe cross-file rename of multi-word names · "Which rule derives this attribute?" |
+| ⬅ | **Validation** (next) | The full diagnostics catalogue — type compatibility, unit convertibility, rounding and precision, empty-value (`leeg`) policy, timeline granularity, distribution and decision-table rules — with quick fixes, plus signature help for date constructors and distribution clauses |
 | | **Formatting & ergonomics** | Document, range and on-type formatting that preserves RegelSpraak's significant layout · CodeLens reference counts · Inlay hints for inferred datatypes and units · Smart selection expansion |
 | | **Execution** | Run rules and decision tables against scenario data · Results and derivation traces in-editor · Scenarios as tests in the Test Explorer |
 | | **Workbench** | A RegelSpraak view container with a Model Explorer tree · Task provider · Rule-dependency hierarchy · A visual Beslistabel editor |
