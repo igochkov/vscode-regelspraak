@@ -4,6 +4,22 @@ Everything a contributor needs that a user does not. For what the extension
 does, see the [README](../README.md); for what each release added, the
 [CHANGELOG](../CHANGELOG.md).
 
+## Conventions
+
+Tabs for indentation, matching the existing sources.
+
+**Identifiers and comments in new code are English.** Dutch is reserved for the
+RegelSpraak language itself — its keywords and the domain terms with no English
+equivalent worth inventing (`kenmerk`, `beslistabel`) — and for every string a
+user sees, which is Dutch throughout, matching the language.
+
+Some of what is here predates that decision and is Dutch, including the test
+suites, whose descriptions read as Dutch specification prose. **It is not being
+converted:** a rename on that scale would bury whatever change it travelled with
+for no user-visible gain. So expect a mixed tree. When extending a Dutch module,
+follow its local vocabulary rather than leaving a half-translated file; new
+files are English.
+
 ## Architecture
 
 The extension is split in two:

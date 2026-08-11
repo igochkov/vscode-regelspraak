@@ -236,7 +236,7 @@
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"lint": "eslint",
-		"postinstall": "cd client && npm install",
+		"postinstall": "node scripts/install-nested.mjs client",
 		"test": "sh ./scripts/e2e.sh",
 		"build:icon": "node scripts/build-icon.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
