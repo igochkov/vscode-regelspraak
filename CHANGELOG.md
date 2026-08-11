@@ -7,11 +7,27 @@ plan gets a minor release, through to `1.0.0`.
 
 ## [0.2.0] — Navigation and refactoring
 
+### Added
+
+- **RegelSpraak in Markdown.** A fenced code block marked `regelspraak` (or
+  `rgs`) is highlighted as RegelSpraak inside any `.md` file — documentation,
+  a design note, a pull-request description rendered locally. The fence
+  behaves like every built-in language block: `~~~` works, so do longer
+  fences, an indented block inside a list item works, and an info string
+  (```` ```regelspraak{1,3} ````) is accepted.
+
+  This is the syntax layer only — keywords, literals, comments. The
+  meaning-aware colouring, diagnostics, hover and navigation all need a model,
+  and a Markdown file is not one, so a block is coloured but not analysed. No
+  language server is started for a `.md` file, and none is needed: the
+  highlighting is a declarative contribution, so it applies with no `.rgs` file
+  in the workspace.
+
 Moving through a multi-file model, and restructuring one safely. Everything here
 runs on the same resolved model the colouring and diagnostics already use, so a
 name is navigated as the thing it *means* — not as matching text.
 
-### Added
+### Added (navigation)
 
 - **Go to definition** (<kbd>F12</kbd>) from any name to its declaration, across
   files: attributes and characteristics, object types, roles, parameters,

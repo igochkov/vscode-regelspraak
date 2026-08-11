@@ -66,6 +66,16 @@
 				"language": "regelspraak",
 				"scopeName": "source.regelspraak",
 				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			},
+			{
+				"scopeName": "markdown.regelspraak.codeblock",
+				"path": "./syntaxes/regelspraak.markdown-injection.json",
+				"injectTo": [
+					"text.html.markdown"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.block.regelspraak": "regelspraak"
+				}
 			}
 		],
 		"snippets": [

@@ -152,6 +152,17 @@ sync with the language definition; the generated file is committed here because
 the extension needs it at runtime. It colours what is decidable from the text:
 keywords, literals, comments, operators.
 
+[syntaxes/regelspraak.markdown-injection.json](../syntaxes/regelspraak.markdown-injection.json)
+is the third piece and **is** hand-written: it recognises a ```` ```regelspraak ````
+fence in a Markdown file and hands its contents to `source.regelspraak`. Nothing
+in it derives from the lexer, which is why it is not generated. Its fence
+patterns are character-for-character Markdown's own, with the language names
+swapped — deliberately, so a RegelSpraak block behaves exactly like every
+built-in language block, including where an unclosed fence stops. The
+language-server repository tests it against VS Code's real Markdown grammar,
+which is the only way to see whether the injection beats Markdown's catch-all
+rule for unknown languages.
+
 On top of it the server emits **semantic tokens**, which colour each name by
 what the model says it is. The token types contributed in `package.json` are
 `objecttype`, `attribuut`, `kenmerk`, `domein`, `enumwaarde`, `eenheid`,

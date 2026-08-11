@@ -18,6 +18,7 @@ The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.
 - **Rename** (<kbd>F2</kbd>) across every file, replacing a multi-word name as a whole. It refuses a name already taken in the same scope, refuses a position that resolves more than one way, and reports what it deliberately left alone.
 - **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware and honours `//#region` markers.
 - **Snippets** for every frequent construct, each body validated against the language grammar in CI, plus bracket, quote and guillemet (`«»`) matching, `//` comment toggling, indentation rules and bullet-list continuation.
+- **RegelSpraak in Markdown**: a fenced code block marked `regelspraak` (or `rgs`) is highlighted inside any `.md` file, so a model reads properly in documentation and design notes. Syntax only — a Markdown file is not a model, so a block is coloured but not analysed.
 
 All of it resolves **across files**: rules in one file are coloured, checked, navigated and renamed against the GegevensSpraak declarations in another. Per-release detail — including the full list of diagnostic codes — is in the [CHANGELOG](CHANGELOG.md).
 
