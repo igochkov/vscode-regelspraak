@@ -16,9 +16,21 @@ user sees, which is Dutch throughout, matching the language.
 Some of what is here predates that decision and is Dutch, including the test
 suites, whose descriptions read as Dutch specification prose. **It is not being
 converted:** a rename on that scale would bury whatever change it travelled with
-for no user-visible gain. So expect a mixed tree. When extending a Dutch module,
-follow its local vocabulary rather than leaving a half-translated file; new
-files are English.
+for no user-visible gain. So expect a mixed tree, and do not "fix" the mixture
+on the way past.
+
+**Every name you introduce is English, including inside a Dutch file.** A type,
+function, parameter, local or test helper you are adding is new code, and the
+file it lands in does not change that. The local-vocabulary clause is narrower
+than it reads, and this is its whole extent: when you add a member to a
+declaration that already uses an established Dutch term, match that term, so the
+declaration does not end up half-translated. It licenses reusing a word already
+present in the declaration you are extending — not the surrounding file's style.
+
+In a test file, the sanctioned Dutch is the `describe`/`it` prose, not the
+helpers and variables around it. **In doubt, English:** an English name in a
+Dutch file is a seam the eventual mechanical pass converges on, while a Dutch
+name in new code enlarges that pass.
 
 ## Architecture
 
