@@ -1,6 +1,12 @@
-# Ordering matters: .vscodeignore is last-match-wins, so a `!` re-include
-# below overrides any exclusion above it. The blanket "never ship" rules are
-# therefore kept at the bottom of this file.
+# Ordering does NOT matter here. vsce does not resolve these rules in order:
+# a `!` line re-includes everything it matches no matter where it sits, and no
+# exclusion anywhere in this file overrides it. Verified by widening
+# `!client/out/extension.js` to `!client/out/**` — every `.map` under it was
+# packaged, straight past the `**/*.map` rule at the bottom.
+#
+# So the "never ship" rules at the end are a reading aid, not a backstop, and
+# the only real protection is keeping every negation as narrow as the one file
+# it needs to re-admit. Widen one and it silently ships whatever it now covers.
 
 # --- Development-only files -------------------------------------------------
 .vscode/**
@@ -36,7 +42,7 @@ client/package-lock.json
 # `server/` is staged at release time and must ship: the extension is
 # non-functional without it.
 
-# --- Never ship (kept last so the re-includes above cannot re-admit them) ---
+# --- Never ship (grouped last for readability; see the note at the top) -----
 **/*.ts
 **/*.map
 **/tsconfig.json
