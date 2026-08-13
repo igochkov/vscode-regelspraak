@@ -89,6 +89,24 @@
 			"name": "punctuation.definition.list.dash.regelspraak"
 		},
 		{
+			"begin": "^(?=[ \\t]*\\|)",
+			"end": "$",
+			"name": "meta.table.beslistabel.regelspraak",
+			"patterns": [
+				{
+					"match": "\\|",
+					"name": "punctuation.separator.table.regelspraak"
+				},
+				{
+					"match": "(?<=\\|)[ \\t]*\\d+[ \\t]*(?=\\|)",
+					"name": "constant.numeric.rijnummer.regelspraak"
+				},
+				{
+					"include": "$self"
+				}
+			]
+		},
+		{
 			"match": "\\|",
 			"name": "punctuation.separator.table.regelspraak"
 		},
