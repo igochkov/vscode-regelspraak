@@ -231,6 +231,24 @@
 					"default": "type",
 					"description": "Bepaalt wanneer diagnostiek opnieuw wordt berekend: tijdens het typen of bij het opslaan."
 				},
+				"regelspraak.validation.strictPrecision": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Meldt afrondings- en precisieproblemen (`RS401`, `RS402`, `RS403`): een uitkomst met meer decimalen dan het doelattribuut toestaat, een ontbrekende verplichte afronding, en een precisie die niet vastligt."
+				},
+				"regelspraak.validation.emptyValueHazards": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS504`)."
+				},
+				"regelspraak.semanticHighlighting.enable": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Kleurt namen op wat het model van ze weet: objecttype, attribuut, kenmerk, parameter, rol. Uitgeschakeld kleurt alleen de TextMate-grammatica, die de sleutelwoorden kent maar de namen niet.\n\nDe kleuren zelf komen van het thema; deze extensie stelt er geen in."
+				},
 				"regelspraakLanguageServer.trace.server": {
 					"scope": "window",
 					"type": "string",
