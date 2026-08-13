@@ -214,6 +214,10 @@
 						"openFiles",
 						"workspace"
 					],
+					"enumDescriptions": [
+						"Alleen bestanden die in een editor geopend zijn.",
+						"Alle .rgs-bestanden in de werkruimte, ook bestanden die niemand heeft geopend."
+					],
 					"default": "openFiles",
 					"description": "Bepaalt of diagnostiek alleen voor geopende bestanden of voor de hele werkruimte wordt gemeld."
 				},
