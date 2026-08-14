@@ -20,7 +20,7 @@ import { EXTENSION_ID, getDocUri } from './helper';
  * `.md` file is coloured with no `.rgs` file in sight and no server running.
  */
 suite('Markdown-injectie (D1)', () => {
-	interface Grammatica {
+	interface Grammar {
 		language?: string;
 		scopeName: string;
 		path: string;
@@ -28,42 +28,42 @@ suite('Markdown-injectie (D1)', () => {
 		embeddedLanguages?: Record<string, string>;
 	}
 
-	const INJECTIE = 'markdown.regelspraak.codeblock';
-	let bijdrage: Grammatica | undefined;
+	const INJECTION = 'markdown.regelspraak.codeblock';
+	let contributed: Grammar | undefined;
 
 	suiteSetup(() => {
 		const ext = vscode.extensions.getExtension(EXTENSION_ID);
 		assert.ok(ext, `extensie ${EXTENSION_ID} niet gevonden`);
-		const grammars = ext.packageJSON.contributes?.grammars as Grammatica[] | undefined;
+		const grammars = ext.packageJSON.contributes?.grammars as Grammar[] | undefined;
 		assert.ok(grammars, 'de extensie draagt geen grammatica bij');
-		bijdrage = grammars.find(g => g.scopeName === INJECTIE);
+		contributed = grammars.find(g => g.scopeName === INJECTION);
 	});
 
 	test('de injectie wordt bijgedragen aan Markdown', () => {
-		assert.ok(bijdrage, `geen bijdrage met scopeName ${INJECTIE}`);
-		assert.deepStrictEqual(bijdrage.injectTo, ['text.html.markdown']);
-		assert.strictEqual(bijdrage.language, undefined,
+		assert.ok(contributed, `geen bijdrage met scopeName ${INJECTION}`);
+		assert.deepStrictEqual(contributed.injectTo, ['text.html.markdown']);
+		assert.strictEqual(contributed.language, undefined,
 			'een injectie hoort aan geen enkele taal te hangen');
-		assert.deepStrictEqual(bijdrage.embeddedLanguages,
+		assert.deepStrictEqual(contributed.embeddedLanguages,
 			{ 'meta.embedded.block.regelspraak': 'regelspraak' });
 	});
 
 	test('het bestand bestaat en draagt dezelfde scopeName', async () => {
-		assert.ok(bijdrage);
+		assert.ok(contributed);
 		const ext = vscode.extensions.getExtension(EXTENSION_ID)!;
-		const pad = vscode.Uri.joinPath(ext.extensionUri, bijdrage.path);
-		const ruw = await vscode.workspace.fs.readFile(pad);
-		const grammatica = JSON.parse(Buffer.from(ruw).toString('utf8')) as {
+		const path = vscode.Uri.joinPath(ext.extensionUri, contributed.path);
+		const raw = await vscode.workspace.fs.readFile(path);
+		const grammar = JSON.parse(Buffer.from(raw).toString('utf8')) as {
 			scopeName: string;
 			injectionSelector?: string;
 		};
-		assert.strictEqual(grammatica.scopeName, INJECTIE,
+		assert.strictEqual(grammar.scopeName, INJECTION,
 			'de scopeName in het bestand en die in het manifest horen gelijk te zijn');
-		assert.ok(grammatica.injectionSelector?.startsWith('L:'),
+		assert.ok(grammar.injectionSelector?.startsWith('L:'),
 			'zonder L: komt de injectie ná de eigen omheiningsregels van Markdown');
 	});
 
-	// De fixture is er ook om met F5 met eigen ogen te bekijken.
+	// The fixture is also there to look at with your own eyes under F5.
 	test('de Markdown-fixture bevat een regelspraak-blok', async () => {
 		const doc = await vscode.workspace.openTextDocument(getDocUri('voorbeeld.md'));
 		assert.strictEqual(doc.languageId, 'markdown');

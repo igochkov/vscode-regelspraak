@@ -23,20 +23,20 @@ suite('Woordpatroon', () => {
 		assert.ok(offset > 0, 'fixture bevat "spaartegoed" niet');
 
 		// Halfway into the word, where a broken pattern gives a stray match.
-		const positie = document.positionAt(offset + 4);
-		const bereik = document.getWordRangeAtPosition(positie);
+		const position = document.positionAt(offset + 4);
+		const range = document.getWordRangeAtPosition(position);
 
-		assert.ok(bereik, 'geen woordbereik gevonden');
-		assert.strictEqual(document.getText(bereik), 'spaartegoed');
+		assert.ok(range, 'geen woordbereik gevonden');
+		assert.strictEqual(document.getText(range), 'spaartegoed');
 	});
 
 	test('een hoofdletterwoord telt als één woord', async () => {
 		const document = await vscode.workspace.openTextDocument(docUri);
 		const offset = document.getText().indexOf('Klanten');
-		const positie = document.positionAt(offset + 2);
-		const bereik = document.getWordRangeAtPosition(positie);
+		const position = document.positionAt(offset + 2);
+		const range = document.getWordRangeAtPosition(position);
 
-		assert.ok(bereik, 'geen woordbereik gevonden');
-		assert.strictEqual(document.getText(bereik), 'Klanten');
+		assert.ok(range, 'geen woordbereik gevonden');
+		assert.strictEqual(document.getText(range), 'Klanten');
 	});
 });

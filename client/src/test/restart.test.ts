@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-import { activate, getDocUri, wachtTot } from './helper';
+import { activate, getDocUri, waitUntil } from './helper';
 
 /**
  * NFR-5: a crashed or wedged server has to be recoverable without reloading
@@ -25,12 +25,12 @@ suite('Taalserver herstarten (NFR-5)', () => {
 
 		await vscode.commands.executeCommand('regelspraak.restartServer');
 
-		const na = await wachtTot('symbolen na de herstart', async () => {
-			const uitkomst = await vscode.commands.executeCommand<vscode.DocumentSymbol[] | undefined>(
+		const na = await waitUntil('symbolen na de herstart', async () => {
+			const outcome = await vscode.commands.executeCommand<vscode.DocumentSymbol[] | undefined>(
 				'vscode.executeDocumentSymbolProvider',
 				docUri
 			);
-			return uitkomst && uitkomst.length > 0 ? uitkomst : undefined;
+			return outcome && outcome.length > 0 ? outcome : undefined;
 		});
 
 		assert.strictEqual(na.length, voor.length, 'de outline is na de herstart niet dezelfde');
@@ -44,20 +44,20 @@ suite('Taalserver herstarten (NFR-5)', () => {
 			vscode.commands.executeCommand('regelspraak.restartServer')
 		]);
 
-		const symbolen = await wachtTot('symbolen na twee herstarts', async () => {
-			const uitkomst = await vscode.commands.executeCommand<vscode.DocumentSymbol[] | undefined>(
+		const symbols = await waitUntil('symbolen na twee herstarts', async () => {
+			const outcome = await vscode.commands.executeCommand<vscode.DocumentSymbol[] | undefined>(
 				'vscode.executeDocumentSymbolProvider',
 				docUri
 			);
-			return uitkomst && uitkomst.length > 0 ? uitkomst : undefined;
+			return outcome && outcome.length > 0 ? outcome : undefined;
 		});
 
 		// Two servers answering the same request would double the outline.
-		const namen = symbolen.map(s => s.name);
+		const names = symbols.map(s => s.name);
 		assert.strictEqual(
-			new Set(namen).size,
-			namen.length,
-			`dubbele symbolen na herstart: ${namen.join(', ')}`
+			new Set(names).size,
+			names.length,
+			`dubbele symbolen na herstart: ${names.join(', ')}`
 		);
 	});
 });

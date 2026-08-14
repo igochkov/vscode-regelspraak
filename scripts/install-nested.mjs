@@ -28,17 +28,17 @@ if (!map) {
 	process.exit(1);
 }
 
-const pad = resolve(map);
-if (!existsSync(join(pad, 'package.json'))) {
-	console.error(`install-nested: geen package.json in ${pad}`);
+const path = resolve(map);
+if (!existsSync(join(path, 'package.json'))) {
+	console.error(`install-nested: geen package.json in ${path}`);
 	process.exit(1);
 }
 
-const heeftLock = existsSync(join(pad, 'package-lock.json'));
-const opdracht = process.env.CI && heeftLock ? 'ci' : 'install';
+const hasLock = existsSync(join(path, 'package-lock.json'));
+const command = process.env.CI && hasLock ? 'ci' : 'install';
 
-console.log(`install-nested: npm ${opdracht} in ${map}` +
-	(opdracht === 'install' && process.env.CI ? ' (geen lockfile)' : ''));
+console.log(`install-nested: npm ${command} in ${map}` +
+	(command === 'install' && process.env.CI ? ' (geen lockfile)' : ''));
 
 // Through the npm that invoked us, which a lifecycle script always has in
 // `npm_execpath`. Spawning `npm.cmd` instead would need `shell: true` on
@@ -46,11 +46,11 @@ console.log(`install-nested: npm ${opdracht} in ${map}` +
 // concatenates its arguments, which Node deprecates for good reason.
 const npm = process.env.npm_execpath;
 if (npm) {
-	execFileSync(process.execPath, [npm, opdracht], { cwd: pad, stdio: 'inherit' });
+	execFileSync(process.execPath, [npm, command], { cwd: path, stdio: 'inherit' });
 } else {
 	// Run by hand rather than through npm.
-	execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', [opdracht], {
-		cwd: pad,
+	execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', [command], {
+		cwd: path,
 		stdio: 'inherit',
 		shell: process.platform === 'win32'
 	});

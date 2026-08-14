@@ -29,26 +29,26 @@ export const getDocUri = (p: string) => {
  * makes it flaky, and a flaky end-to-end suite is worse than none — it teaches
  * people to re-run instead of to look.
  */
-export async function wachtTot<T>(
-	waarop: string,
-	peiling: () => Thenable<T | undefined> | (T | undefined),
+export async function waitUntil<T>(
+	awaited: string,
+	poll: () => Thenable<T | undefined> | (T | undefined),
 	timeoutMs = 60000
 ): Promise<T> {
-	const uiterlijk = Date.now() + timeoutMs;
-	let laatsteFout: unknown;
+	const deadline = Date.now() + timeoutMs;
+	let lastError: unknown;
 
 	for (;;) {
 		try {
-			const uitkomst = await peiling();
-			if (uitkomst !== undefined) {
-				return uitkomst;
+			const outcome = await poll();
+			if (outcome !== undefined) {
+				return outcome;
 			}
-		} catch (fout) {
-			laatsteFout = fout;
+		} catch (error) {
+			lastError = error;
 		}
-		if (Date.now() >= uiterlijk) {
-			const staart = laatsteFout === undefined ? '' : ` Laatste fout: ${String(laatsteFout)}`;
-			throw new Error(`Time-out na ${timeoutMs} ms bij het wachten op ${waarop}.${staart}`);
+		if (Date.now() >= deadline) {
+			const tail = lastError === undefined ? '' : ` Laatste fout: ${String(lastError)}`;
+			throw new Error(`Time-out na ${timeoutMs} ms bij het wachten op ${awaited}.${tail}`);
 		}
 		await new Promise(resolve => setTimeout(resolve, 100));
 	}
@@ -71,12 +71,12 @@ export async function activate(docUri: vscode.Uri): Promise<void> {
 	// The server starts, scans the workspace and indexes asynchronously. The
 	// outline is the cheapest proof that it is up *and* has this document in
 	// its model — every other provider needs the same thing.
-	await wachtTot('een taalserver die dit document geïndexeerd heeft', async () => {
-		const symbolen = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+	await waitUntil('een taalserver die dit document geïndexeerd heeft', async () => {
+		const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
 			'vscode.executeDocumentSymbolProvider',
 			docUri
 		);
-		return symbolen && symbolen.length > 0 ? symbolen : undefined;
+		return symbols && symbols.length > 0 ? symbols : undefined;
 	});
 }
 
@@ -89,10 +89,10 @@ export async function setTestContent(content: string): Promise<boolean> {
 }
 
 /** Positions the cursor-independent lookup helpers used across the suite. */
-export function positieVan(tekst: string, binnen = doc): vscode.Position {
-	const offset = binnen.getText().indexOf(tekst);
+export function positionOf(text: string, within = doc): vscode.Position {
+	const offset = within.getText().indexOf(text);
 	if (offset < 0) {
-		throw new Error(`"${tekst}" komt niet voor in ${binnen.uri.fsPath}`);
+		throw new Error(`"${text}" komt niet voor in ${within.uri.fsPath}`);
 	}
-	return binnen.positionAt(offset);
+	return within.positionAt(offset);
 }

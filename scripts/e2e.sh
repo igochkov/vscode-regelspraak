@@ -6,8 +6,8 @@
 # folder as a script and fails with MODULE_NOT_FOUND. None of it belongs to the
 # child.
 unset ELECTRON_RUN_AS_NODE
-for naam in $(env | sed -n 's/^\(VSCODE_[A-Za-z0-9_]*\)=.*/\1/p'); do
-	unset "$naam"
+for name in $(env | sed -n 's/^\(VSCODE_[A-Za-z0-9_]*\)=.*/\1/p'); do
+	unset "$name"
 done
 
 export CODE_TESTS_PATH="$(pwd)/client/out/test"

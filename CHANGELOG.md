@@ -5,6 +5,114 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
+## [0.3.0] — Deep validation and quick fixes
+
+The extension now reads your expressions, not just your names. It works out what
+every value **is** — its datatype, its precision, its unit, the period its
+timeline cuts it into — and checks the arithmetic, the comparisons and the
+assignments against it. Where a check finds something, it usually offers to fix
+it.
+
+One rule runs through all of it: **where the model cannot be sure, it says
+nothing.** An unresolvable name, an ambiguous phrase, a value whose precision a
+division leaves open — none of these produce a report. A false warning on a
+correct sentence costs more than a missed one, so the checks are measured
+against the sample models and the conformance corpus on every build, and none of
+them may report anything there.
+
+### Added
+
+- **Type checking of expressions** (`RS201`–`RS210`): arithmetic on something
+  that is not a number, `groter`/`kleiner` on something that is not a number,
+  `eerder`/`later` on something that is not a date, an equality between two
+  different datatypes, an assignment whose expression does not fit its target, a
+  characteristic or role applied to a value instead of to an object, the
+  `elfproef` and the `numeriek met exact … cijfers` check on the wrong sort of
+  operand, a day kind applied to something that is not a date, and
+  `moet berekend worden als` used for something that is not a calculation.
+- **Unit checking** (`RS301`–`RS306`). Units are compared by *meaning*, not by
+  spelling: `€`, `EUR` and `euro` are one unit, and so are `kg` and a kilogram
+  written out. Conversions declared with `= 1000 g` are followed, so `kg` beside
+  `g` is reported as convertible-but-unequal (a warning about precision) while
+  `pt` beside `€` is not convertible at all. Days and months have **no**
+  conversion — a month is not a fixed number of days — and mixing them is its own
+  code. `tot de macht` wants plain numbers; `het totaal van` and
+  `het tijdsevenredig deel per …` want a value *per* time unit, such as
+  `€/maand`.
+- **Precision and rounding** (`RS401`–`RS403`): a result with more decimals than
+  its target allows, the rounding §6.1.3 makes mandatory after `de wortel van`
+  and `tot de macht`, and — as a warning — a result whose precision is not
+  determined, which is what a division leaves you with unless you round it.
+- **Empty values** (`RS501`–`RS504`), as warnings: dividing by a value that may
+  be empty, comparing two possibly-empty values of a non-numeric type, a
+  `Startpuntbepaling` that may yield nothing, a distribution criterion that may be
+  empty. "May be empty" is drawn narrowly on purpose — only a value that
+  *nothing* fills unconditionally counts, and a rule that checks `gevuld` first is
+  left alone — because the alternative is a warning on every division in every
+  model.
+- **Timelines** (`RS701`–`RS703`): deriving a value cut per month from one cut per
+  day (the finer detail is lost), a timeline with `met variabel startpunt` that no
+  rule gives a start point to, and `het totaal van` or `het tijdsevenredig deel`
+  left without parentheses or a variable to bound it.
+- **Distributions** (`RS801`–`RS804`): a maximum or a rounding without an
+  `Als onverdeelde rest blijft … over`, a maximum combined with `in gelijke
+  delen`, and `naar rato van` a criterion that is not a number.
+- **Decision tables** (`RS901`–`RS903`) now have a model. The table's rows and
+  cells are read, its conclusion column is composed into a sentence and checked,
+  and a malformed table — a row with a different number of columns, a missing
+  title row — is reported. Two consequences beyond the checks: **"which rule
+  derives this?" now lists decision tables**, and the phrase in a table's
+  conclusion column is coloured, hoverable, navigable and renameable like any
+  other. Table rows are also highlighted as tables, with the row-number column
+  distinguished from the values.
+- **More reference checks**, now that the model can tell what a position expects:
+  an unknown day kind after a date (`RS108`), an unknown rule in
+  `Regelversie … is gevuurd` (`RS110`), an enumeration value the domain does not
+  define — or that belongs to a different domain (`RS111`), and a role of a
+  `Wederkerig feittype` used without an ordinal to say which side is meant
+  (`RS112`, a warning).
+- **More structural checks**: a rule that derives a value from itself (`RS606`),
+  `hij` used where the subject's object type is not `(bezield)` (`RS609`), the
+  wrong quotation marks for the datatype in that position (`RS610` — reported
+  instead of the general type mismatch, so the fix can simply swap them), a rule
+  with no result part (`RS602`) or no universal subject (`RS603`), and united
+  uniqueness checks whose operands do not line up (`RS612`).
+- **Quick fixes** (<kbd>Ctrl</kbd>+<kbd>.</kbd>) for the checks that have an
+  obvious repair: declare the missing object type or domain, add the missing
+  attribute to the type it was looked for in, add the mandatory or the missing
+  rounding, swap the quotation marks, add the plural form, add a
+  `Startpuntbepaling`, put the parentheses in, add the `onverdeelde rest`. Each
+  action states exactly what it will insert, and a fix that would have to edit
+  another file is not offered rather than written into the wrong one.
+- **Signature help** while you type the constructs that have named slots: the
+  labelled `de datum met jaar: …, maand: … en dag: …` and its datetime
+  counterpart, the clauses of a distribution, and the columns of a decision table
+  — where it shows the title row, which is the thing a cell three lines below it
+  cannot tell you.
+
+### Changed
+
+- **Enumeration values and units inside expressions are part of the model.**
+  `5 pt` and `'roman'` are coloured, hoverable and navigable, and renaming a unit
+  or an enumeration value now reaches its uses instead of reporting them as text
+  it did not cover.
+- A characteristic assignment inside a subselection (`… die … : zijn gewicht is
+  groter dan 10 kg`) is understood as being about the *selected* object rather
+  than about the rule's subject. The same holds for a distribution's criteria,
+  which belong to the recipients. Both were previously left unresolved, so they
+  had no colour, no hover and no navigation.
+
+### Notes
+
+- **Three unknown-name codes are deliberately not reported.** When a bare phrase
+  in a rule resolves to nothing, the sentence does not say whether a role, a
+  parameter, a variable or a mistyped attribute was meant — so reporting one of
+  them would be wrong most of the time. The positions where the language *does*
+  settle the kind are reported (see `RS108`, `RS110`, `RS111` above).
+- Enumeration values and units **inside decision-table cells** are still text a
+  rename does not cover. The conclusion column is part of the model; the
+  condition columns and the value cells are not yet.
+
 ## [0.2.0] — Navigation and refactoring
 
 Moving through a multi-file model, and restructuring one safely. Everything here
