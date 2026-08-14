@@ -8,29 +8,22 @@ does, see the [README](../README.md); for what each release added, the
 
 Tabs for indentation, matching the existing sources.
 
-**Identifiers and comments in new code are English.** Dutch is reserved for the
+**Identifiers, comments and file names are English.** Dutch is reserved for the
 RegelSpraak language itself — its keywords and the domain terms with no English
-equivalent worth inventing (`kenmerk`, `beslistabel`) — and for every string a
-user sees, which is Dutch throughout, matching the language.
+equivalent worth inventing (`kenmerk`, `beslistabel`) — for every string a user
+sees, which is Dutch throughout, matching the language, and for the `suite`/`test`
+prose of the end-to-end suites, which reads as specification sentences.
 
-Some of what is here predates that decision and is Dutch, including the test
-suites, whose descriptions read as Dutch specification prose. **It is not being
-converted:** a rename on that scale would bury whatever change it travelled with
-for no user-visible gain. So expect a mixed tree, and do not "fix" the mixture
-on the way past.
+What predates that decision has been converted; the mechanical pass is done, so
+the tree is no longer mixed and a Dutch identifier in it is a bug. The one thing
+to know if you ever repeat the exercise: a name is not a text substitution. In a
+test file the sanctioned Dutch is the suite prose, not the helpers and variables
+around it — and a helper must not be named after a Mocha global, since it shadows
+it for the rest of the scope.
 
-**Every name you introduce is English, including inside a Dutch file.** A type,
-function, parameter, local or test helper you are adding is new code, and the
-file it lands in does not change that. The local-vocabulary clause is narrower
-than it reads, and this is its whole extent: when you add a member to a
-declaration that already uses an established Dutch term, match that term, so the
-declaration does not end up half-translated. It licenses reusing a word already
-present in the declaration you are extending — not the surrounding file's style.
-
-In a test file, the sanctioned Dutch is the `describe`/`it` prose, not the
-helpers and variables around it. **In doubt, English:** an English name in a
-Dutch file is a seam the eventual mechanical pass converges on, while a Dutch
-name in new code enlarges that pass.
+**In doubt, English.** The `.rgs` fixtures under `client/testFixture` are the
+exception that proves the rule: they are RegelSpraak documents, so both their
+contents and their names stay Dutch.
 
 ## Architecture
 
@@ -149,7 +142,7 @@ started.
 
 `npm test` runs the end-to-end suite in a downloaded VS Code, against whichever
 server the resolution order above finds — so it needs a server build.
-`TEST_FILE=navigatie npm test` narrows a run to one suite; end-to-end failures
+`TEST_FILE=navigation npm test` narrows a run to one suite; end-to-end failures
 are otherwise hard to pull apart from the state earlier suites leave behind.
 
 CI runs only what is checkable without a server: compile, lint, the contributed

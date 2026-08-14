@@ -19,7 +19,7 @@ let watcher: FileSystemWatcher | undefined;
  * Owned here rather than left to `LanguageClient`, so the resolution report
  * below survives a restart and shares one channel with the server's own log.
  */
-let uitvoer: OutputChannel | undefined;
+let output: OutputChannel | undefined;
 
 /**
  * Restarts run one at a time on this chain. They can now arrive close
@@ -27,30 +27,30 @@ let uitvoer: OutputChannel | undefined;
  * invocation — and interleaved stop/start phases would leave a second server
  * process running with nothing left referring to it.
  */
-let keten: Promise<void> = Promise.resolve();
+let chain: Promise<void> = Promise.resolve();
 
-function achterElkaar(werk: () => Promise<void>): Promise<void> {
-	const volgende = keten.then(werk, werk);
+function inSuccession(work: () => Promise<void>): Promise<void> {
+	const next = chain.then(work, work);
 	// The chain has to survive a failing link, and must never itself reject:
 	// it is only a queue.
-	keten = volgende.catch(() => undefined);
-	return volgende;
+	chain = next.catch(() => undefined);
+	return next;
 }
 
-async function herstart(context: ExtensionContext): Promise<void> {
+async function restart(context: ExtensionContext): Promise<void> {
 	await stopClient();
 	await startClient(context);
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
-	uitvoer = window.createOutputChannel('RegelSpraak Language Server');
-	context.subscriptions.push(uitvoer);
+	output = window.createOutputChannel('RegelSpraak Language Server');
+	context.subscriptions.push(output);
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
 	context.subscriptions.push(
 		commands.registerCommand(RESTART_COMMAND, async () => {
-			await achterElkaar(() => herstart(context));
+			await inSuccession(() => restart(context));
 			if (client) {
 				window.setStatusBarMessage('RegelSpraak-taalserver opnieuw gestart.', 3000);
 			}
@@ -62,12 +62,12 @@ export async function activate(context: ExtensionContext): Promise<void> {
 	context.subscriptions.push(
 		workspace.onDidChangeConfiguration(event => {
 			if (event.affectsConfiguration(SERVER_PATH_SETTING)) {
-				void achterElkaar(() => herstart(context));
+				void inSuccession(() => restart(context));
 			}
 		})
 	);
 
-	await achterElkaar(() => startClient(context));
+	await inSuccession(() => startClient(context));
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -110,19 +110,19 @@ function resolveServerModule(context: ExtensionContext): { module: string; origi
  * That failure presents as "my change had no effect", which is a long way from
  * its cause.
  */
-function meldServerHerkomst(module: string, origin: string): void {
-	uitvoer?.appendLine(`Taalserver : ${module}`);
-	uitvoer?.appendLine(`Herkomst   : ${origin}`);
+function reportServerOrigin(module: string, origin: string): void {
+	output?.appendLine(`Taalserver : ${module}`);
+	output?.appendLine(`Herkomst   : ${origin}`);
 	try {
-		uitvoer?.appendLine(`Gebouwd    : ${fs.statSync(module).mtime.toLocaleString('nl-NL')}`);
+		output?.appendLine(`Gebouwd    : ${fs.statSync(module).mtime.toLocaleString('nl-NL')}`);
 	} catch {
-		uitvoer?.appendLine('Gebouwd    : niet gevonden');
+		output?.appendLine('Gebouwd    : niet gevonden');
 	}
 }
 
 async function startClient(context: ExtensionContext): Promise<void> {
 	const { module: serverModule, origin } = resolveServerModule(context);
-	meldServerHerkomst(serverModule, origin);
+	reportServerOrigin(serverModule, origin);
 
 	if (!fs.existsSync(serverModule)) {
 		// A released .vsix bundles the server, so reaching this in a release is
@@ -167,7 +167,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		},
 		// Ours, so the resolution report above and the server's log end up in
 		// one place; the extension disposes it, not the client.
-		outputChannel: uitvoer
+		outputChannel: output
 	};
 
 	client = new LanguageClient(
@@ -182,21 +182,21 @@ async function startClient(context: ExtensionContext): Promise<void> {
 }
 
 async function stopClient(): Promise<void> {
-	const draaiend = client;
-	const teSluiten = watcher;
+	const running = client;
+	const toClose = watcher;
 	client = undefined;
 	watcher = undefined;
 
 	try {
-		await draaiend?.stop();
-	} catch (fout) {
+		await running?.stop();
+	} catch (error) {
 		// A client that never started cleanly still has to let go of what it
 		// holds; a restart matters more here than the failure being reported.
-		console.error(fout);
+		console.error(error);
 	} finally {
 		// `synchronize.fileEvents` subscribes to the watcher without adopting
 		// it, so every restart would otherwise leave a live workspace-wide
 		// file watcher behind.
-		teSluiten?.dispose();
+		toClose?.dispose();
 	}
 }

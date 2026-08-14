@@ -22,9 +22,9 @@ suite('Activatie', () => {
 	});
 
 	test('het herstartcommando is geregistreerd', async () => {
-		const commandos = await vscode.commands.getCommands(true);
+		const commandNames = await vscode.commands.getCommands(true);
 		assert.ok(
-			commandos.includes('regelspraak.restartServer'),
+			commandNames.includes('regelspraak.restartServer'),
 			'regelspraak.restartServer ontbreekt in het commandoregister'
 		);
 	});

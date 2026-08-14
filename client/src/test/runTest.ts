@@ -13,11 +13,11 @@ import { runTests } from '@vscode/test-electron';
  * an extension that only ever runs on the newest build has no evidence for the
  * floor it advertises. Override with VSCODE_TEST_VERSION to check another one.
  */
-function ondersteundeOndergrens(root: string): string {
+function supportedFloor(root: string): string {
 	const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-	const bereik: string = manifest.engines?.vscode ?? '';
-	const versie = bereik.replace(/^[^0-9]*/, '');
-	return versie.length > 0 ? versie : 'stable';
+	const range: string = manifest.engines?.vscode ?? '';
+	const version = range.replace(/^[^0-9]*/, '');
+	return version.length > 0 ? version : 'stable';
 }
 
 async function main() {
@@ -37,7 +37,7 @@ async function main() {
 			?? path.resolve(__dirname, '../../testFixture');
 
 		const version = process.env.VSCODE_TEST_VERSION
-			?? ondersteundeOndergrens(extensionDevelopmentPath);
+			?? supportedFloor(extensionDevelopmentPath);
 
 		// Download VS Code, unzip it and run the integration test
 		await runTests({
@@ -54,9 +54,9 @@ async function main() {
 				'--disable-workspace-trust'
 			]
 		});
-	} catch (fout) {
+	} catch (error) {
 		console.error('Failed to run tests');
-		console.error(fout);
+		console.error(error);
 		process.exit(1);
 	}
 }
