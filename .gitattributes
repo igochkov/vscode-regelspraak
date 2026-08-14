@@ -2,3 +2,13 @@
 # script, which writes LF. Pin it so core.autocrlf cannot leave the file showing
 # as modified after every regeneration when nothing actually changed.
 syntaxes/*.json text eol=lf
+
+# Shell scripts, whose line endings are otherwise decided by the checkout: with
+# core.autocrlf on Windows, `scripts/e2e.sh` comes out of a clone with CRLF, and
+# whether that matters then depends on the shell. Git Bash strips the CR, so the
+# script runs; WSL and a plain POSIX sh do not, and each line's last token keeps
+# a trailing CR — which for this script means `unset ELECTRON_RUN_AS_NODE` unsets
+# a differently-named variable and the run dies with MODULE_NOT_FOUND, the exact
+# failure the script exists to prevent. Pinning removes the guesswork, and stops
+# the file showing as modified whenever a tool rewrites it with LF.
+*.sh text eol=lf
