@@ -5,6 +5,61 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
+## [Unreleased] — Formatting and editor ergonomics
+
+Layout you no longer have to keep by hand, and four small features that show you
+what the model already knows about the file in front of you.
+
+### Added
+
+- **Document opmaken** (`Shift+Alt+F`, the editor context menu, or the command
+  palette). Indentation follows the structure of the model rather than a guess at
+  the line: an object type's members, a rule's versions and their sentences, the
+  bullets of a compound condition, the criteria of a distribution. Columns line up
+  per block — attribute name against datatype, unit against abbreviation against
+  conversion, role against object type — and a decision table's pipes line up too.
+  Bullets get one space, trailing whitespace goes, and the end of the file follows
+  your own `files.trimFinalNewlines` and `files.insertFinalNewline`.
+- **Only whitespace ever changes.** A name in RegelSpraak is a run of ordinary
+  words, and a rule's name is free text, so respacing inside one would rename it.
+  The formatter edits the gaps between words and never a word, never joins or
+  splits a line, and never shortens a column separator to a single space, which
+  would erase the boundary the language reads. A file that does not parse is left
+  exactly as it is — and the command tells you so, where the editor's own would
+  quietly do nothing.
+- **Opmaken van een selectie**, with the same rules over the selected lines, and
+  aligned against the whole block so the selected half does not drift out of line.
+- **Opmaken tijdens het typen** (when `editor.formatOnType` is on): a `;` settles
+  the member you just finished into its columns, and Enter settles the line above.
+  Never more than that one line.
+- **Tellingen boven een declaratie** (CodeLens): how often an object type, a rule
+  or a decision table is named elsewhere, and — above an object type — how many
+  rules derive something it declares. Clicking one opens the list.
+- **Afgeleide types in beeld** (inlay hints, `regelspraak.inlayHints.enable`):
+  the datatype and unit a rule derives, and the same for every `Daarbij geldt:`
+  variable, which has no written type at all. At `all`, also the object type a
+  `zijn` or `hij` refers to. Where the model is not sure, nothing is shown.
+- **Selectie uitbreiden** along the structure of the sentence: word, then the
+  whole name, then the subject chain, the expression, the sentence, the version,
+  the rule. Names are several words, so the editor's word-by-word expansion had
+  little to offer here.
+- **Koppelingen in commentaar**: a URL, and the name of another `.rgs` file of the
+  model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
+
+### Settings
+
+- `regelspraak.format.enable` — turn the formatter off.
+- `regelspraak.inlayHints.enable` — `off`, `types` (the default) or `all`.
+
+### Notes
+
+- **References to the specification are not linked.** `§13.4.2` in a comment stays
+  text: the RegelSpraak specification is the Belastingdienst's, is not
+  redistributable, and where you have a copy this extension does not know where.
+- A rule that is missing its closing `.` is *not* repaired by the formatter. That
+  would change the words, not the layout — and it is a syntax error, which the
+  file already reports.
+
 ## [0.3.0] — Deep validation and quick fixes
 
 The extension now reads your expressions, not just your names. It works out what
