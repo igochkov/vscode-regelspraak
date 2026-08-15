@@ -235,13 +235,13 @@
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Meldt afrondings- en precisieproblemen (`RS401`, `RS402`, `RS403`): een uitkomst met meer decimalen dan het doelattribuut toestaat, een ontbrekende verplichte afronding, en een precisie die niet vastligt."
+					"markdownDescription": "Meldt afrondings- en precisieproblemen (`RS401`, `RS402`, `RS403`): een uitkomst met meer decimalen dan het doelattribuut toestaat, een ontbrekende verplichte afronding, en een precisie die niet vastligt. Ook `RS306`, de waarschuwing over een omrekening tussen twee tijdseenheden, die dezelfde vraag stelt."
 				},
 				"regelspraak.validation.emptyValueHazards": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS504`)."
+					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS505`)."
 				},
 				"regelspraak.semanticHighlighting.enable": {
 					"scope": "resource",

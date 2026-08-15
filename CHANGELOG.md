@@ -30,7 +30,7 @@ them may report anything there.
   `elfproef` and the `numeriek met exact … cijfers` check on the wrong sort of
   operand, a day kind applied to something that is not a date, and
   `moet berekend worden als` used for something that is not a calculation.
-- **Unit checking** (`RS301`–`RS306`). Units are compared by *meaning*, not by
+- **Unit checking** (`RS301`–`RS307`). Units are compared by *meaning*, not by
   spelling: `€`, `EUR` and `euro` are one unit, and so are `kg` and a kilogram
   written out. Conversions declared with `= 1000 g` are followed, so `kg` beside
   `g` is reported as convertible-but-unequal (a warning about precision) while
@@ -38,15 +38,17 @@ them may report anything there.
   conversion — a month is not a fixed number of days — and mixing them is its own
   code. `tot de macht` wants plain numbers; `het totaal van` and
   `het tijdsevenredig deel per …` want a value *per* time unit, such as
-  `€/maand`.
+  `€/maand`. A percentage cannot be an operand of `maal` at all (§6.4).
 - **Precision and rounding** (`RS401`–`RS403`): a result with more decimals than
   its target allows, the rounding §6.1.3 makes mandatory after `de wortel van`
   and `tot de macht`, and — as a warning — a result whose precision is not
   determined, which is what a division leaves you with unless you round it.
-- **Empty values** (`RS501`–`RS504`), as warnings: dividing by a value that may
+- **Empty values** (`RS501`–`RS505`), as warnings: dividing by a value that may
   be empty, comparing two possibly-empty values of a non-numeric type, a
   `Startpuntbepaling` that may yield nothing, a distribution criterion that may be
-  empty. "May be empty" is drawn narrowly on purpose — only a value that
+  empty, and an `eerder`/`later` date comparison where both sides may be. An
+  *inequality* between two empty values is not among them: §8.1.1 makes that
+  simply `onwaar`, with no run-time error. "May be empty" is drawn narrowly on purpose — only a value that
   *nothing* fills unconditionally counts, and a rule that checks `gevuld` first is
   left alone — because the alternative is a warning on every division in every
   model.
@@ -54,9 +56,13 @@ them may report anything there.
   day (the finer detail is lost), a timeline with `met variabel startpunt` that no
   rule gives a start point to, and `het totaal van` or `het tijdsevenredig deel`
   left without parentheses or a variable to bound it.
-- **Distributions** (`RS801`–`RS804`): a maximum or a rounding without an
+- **Distributions** (`RS801`–`RS808`): a maximum or a rounding without an
   `Als onverdeelde rest blijft … over`, a maximum combined with `in gelijke
-  delen`, and `naar rato van` a criterion that is not a number.
+  delen`, a criterion that is not a number where the distribution computes with
+  it, and one without an order where it sorts by it. Plus the three checks about
+  *which side* an attribute belongs to: a criterion belongs to the recipient, the
+  undistributed remainder to the distributor, and a distribution runs only
+  between objects that a fact type relates one-to-many.
 - **Decision tables** (`RS901`–`RS903`) now have a model. The table's rows and
   cells are read, its conclusion column is composed into a sentence and checked,
   and a malformed table — a row with a different number of columns, a missing
