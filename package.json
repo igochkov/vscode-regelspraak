@@ -43,9 +43,36 @@
 	"contributes": {
 		"commands": [
 			{
+				"command": "regelspraak.formatDocument",
+				"title": "Document opmaken",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "regelspraak.formatDocument",
+					"when": "editorLangId == regelspraak"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "regelspraak.formatDocument",
+					"when": "editorLangId == regelspraak",
+					"group": "1_modification"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "regelspraak.formatDocument",
+				"key": "shift+alt+f",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
 			}
 		],
 		"languages": [

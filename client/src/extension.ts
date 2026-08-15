@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location, OutputChannel,
-	Position, Uri
+	commands, languages, window, workspace, ExtensionContext, FileSystemWatcher, Location,
+	OutputChannel, Position, Uri
 } from 'vscode';
 
 import {
@@ -25,6 +25,21 @@ const RESTART_COMMAND = 'regelspraak.restartServer';
  * call and has no business in the Command Palette.
  */
 const SHOW_REFERENCES_COMMAND = 'regelspraak.showReferences';
+
+/**
+ * Formats the active RegelSpraak document, and says so when it will not.
+ *
+ * The editor's own **Format Document** already reaches the server, so the value
+ * of a command of our own is entirely in the two cases where formatting produces
+ * nothing: the setting is off, or the file does not parse and the formatter
+ * refuses to guess at its layout. Both leave `Shift+Alt+F` looking broken. This
+ * one takes that keystroke inside `.rgs` files, delegates in the normal case, and
+ * explains in the other two.
+ */
+const FORMAT_COMMAND = 'regelspraak.formatDocument';
+
+/** The syntax family (FSD §12.1); the codes that mean "this does not parse". */
+const SYNTAX_CODES = ['RS001', 'RS002', 'RS003'];
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
@@ -87,6 +102,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
 			})
 	);
 
+	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
+
 	// Re-resolve on change, so pointing the setting at a different server build
 	// takes effect without reloading the window.
 	context.subscriptions.push(
@@ -102,6 +119,32 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
 export function deactivate(): Thenable<void> | undefined {
 	return stopClient();
+}
+
+async function formatDocument(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	const enabled = workspace
+		.getConfiguration('regelspraak', editor.document)
+		.get<boolean>('format.enable', true);
+	if (!enabled) {
+		void window.showInformationMessage(
+			'Opmaken is uitgeschakeld. Zet "regelspraak.format.enable" aan om het te gebruiken.');
+		return;
+	}
+	// The server reads the layout off the parse tree, so a file that does not
+	// parse is left exactly as it is. Without this the command looks broken at
+	// precisely the moment the file is half-typed.
+	const broken = languages.getDiagnostics(editor.document.uri)
+		.some(diagnostic => SYNTAX_CODES.includes(String(diagnostic.code)));
+	if (broken) {
+		void window.showWarningMessage(
+			'Dit bestand bevat een syntaxfout en wordt niet opgemaakt; los de fout eerst op.');
+		return;
+	}
+	await commands.executeCommand('editor.action.formatDocument');
 }
 
 /**
