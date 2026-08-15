@@ -5,7 +5,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
-## [Unreleased] — Formatting and editor ergonomics
+## [0.4.0] — Formatting and editor ergonomics
 
 Layout you no longer have to keep by hand, and four small features that show you
 what the model already knows about the file in front of you.
