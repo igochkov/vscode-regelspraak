@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-	commands, languages, window, workspace, ExtensionContext, FileSystemWatcher, Location,
+	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
 	OutputChannel, Position, Uri
 } from 'vscode';
 
@@ -38,8 +38,24 @@ const SHOW_REFERENCES_COMMAND = 'regelspraak.showReferences';
  */
 const FORMAT_COMMAND = 'regelspraak.formatDocument';
 
-/** The syntax family (FSD §12.1); the codes that mean "this does not parse". */
-const SYNTAX_CODES = ['RS001', 'RS002', 'RS003'];
+/**
+ * Asks the server why formatting would do nothing, rather than working it out.
+ *
+ * Both reasons are the server's own — it reads `regelspraak.format.enable`, and
+ * whether a document parses is a fact about its parse tree. This used to be
+ * inferred from the published `RS001`/`RS002`/`RS003` diagnostics, which is a
+ * side channel with two holes in it: `regelspraak.validation.enable: false`
+ * publishes nothing at all, and `regelspraak.validation.runOn: "save"` publishes
+ * nothing between saves, so the command fell silent in exactly the states it
+ * exists to speak in. It also meant holding a copy of the server's syntax codes
+ * that nothing across the repository boundary could check.
+ *
+ * The method name is the one thing both halves still have to agree on by hand,
+ * and a wire method is the smallest such contract there is.
+ */
+const FORMAT_STATE_REQUEST = 'regelspraak/formatState';
+
+type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
@@ -126,25 +142,33 @@ async function formatDocument(): Promise<void> {
 	if (!editor || editor.document.languageId !== 'regelspraak') {
 		return;
 	}
-	const enabled = workspace
-		.getConfiguration('regelspraak', editor.document)
-		.get<boolean>('format.enable', true);
-	if (!enabled) {
-		void window.showInformationMessage(
-			'Opmaken is uitgeschakeld. Zet "regelspraak.format.enable" aan om het te gebruiken.');
-		return;
+	// The message is this half's — it knows what the user pressed — and the
+	// reason is the server's. Where there is no server to ask, or it is too old
+	// to know the request, delegating is the honest answer: the editor's own
+	// Format Document is what the keystroke would have done anyway.
+	switch (await formatState(editor.document.uri.toString())) {
+		case 'disabled':
+			void window.showInformationMessage(
+				'Opmaken is uitgeschakeld. Zet "regelspraak.format.enable" aan om het te gebruiken.');
+			return;
+		case 'syntaxError':
+			void window.showWarningMessage(
+				'Dit bestand bevat een syntaxfout en wordt niet opgemaakt; los de fout eerst op.');
+			return;
+		default:
+			await commands.executeCommand('editor.action.formatDocument');
 	}
-	// The server reads the layout off the parse tree, so a file that does not
-	// parse is left exactly as it is. Without this the command looks broken at
-	// precisely the moment the file is half-typed.
-	const broken = languages.getDiagnostics(editor.document.uri)
-		.some(diagnostic => SYNTAX_CODES.includes(String(diagnostic.code)));
-	if (broken) {
-		void window.showWarningMessage(
-			'Dit bestand bevat een syntaxfout en wordt niet opgemaakt; los de fout eerst op.');
-		return;
+}
+
+async function formatState(uri: string): Promise<FormatState> {
+	if (!client) {
+		return 'unknown';
 	}
-	await commands.executeCommand('editor.action.formatDocument');
+	try {
+		return await client.sendRequest<FormatState>(FORMAT_STATE_REQUEST, { uri });
+	} catch {
+		return 'unknown';
+	}
 }
 
 /**
