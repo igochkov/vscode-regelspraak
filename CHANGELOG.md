@@ -12,10 +12,11 @@ what the model already knows about the file in front of you.
 
 ### Added
 
-- **Document opmaken** (`Shift+Alt+F`, the editor context menu, or the command
-  palette). Indentation follows the structure of the model rather than a guess at
-  the line: an object type's members, a rule's versions and their sentences, the
-  bullets of a compound condition, the criteria of a distribution. Columns line up
+- **Format document** (`Shift+Alt+F`, the editor context menu, or the
+  **Document opmaken** command in the palette). Indentation follows the structure
+  of the model rather than a guess at the line: an object type's members, a
+  rule's versions and their sentences, the bullets of a compound condition, the
+  criteria of a distribution. Columns line up
   per block — attribute name against datatype, unit against abbreviation against
   conversion, role against object type — and a decision table's pipes line up too.
   Bullets get one space, trailing whitespace goes, and the end of the file follows
@@ -27,23 +28,24 @@ what the model already knows about the file in front of you.
   would erase the boundary the language reads. A file that does not parse is left
   exactly as it is — and the command tells you so, where the editor's own would
   quietly do nothing.
-- **Opmaken van een selectie**, with the same rules over the selected lines, and
+- **Format selection**, with the same rules over the selected lines, and
   aligned against the whole block so the selected half does not drift out of line.
-- **Opmaken tijdens het typen** (when `editor.formatOnType` is on): a `;` settles
+- **Format as you type** (when `editor.formatOnType` is on): a `;` settles
   the member you just finished into its columns, and Enter settles the line above.
   Never more than that one line.
-- **Tellingen boven een declaratie** (CodeLens): how often an object type, a rule
+- **Counts above a declaration** (CodeLens): how often an object type, a rule
   or a decision table is named elsewhere, and — above an object type — how many
   rules derive something it declares. Clicking one opens the list.
-- **Afgeleide types in beeld** (inlay hints, `regelspraak.inlayHints.enable`):
+- **Derived types in view** (inlay hints, `regelspraak.inlayHints.enable`):
   the datatype and unit a rule derives, and the same for every `Daarbij geldt:`
   variable, which has no written type at all. At `all`, also the object type a
-  `zijn` or `hij` refers to. Where the model is not sure, nothing is shown.
-- **Selectie uitbreiden** along the structure of the sentence: word, then the
+  `zijn` or `hij` refers to. All three read as `: <type>` against the word they
+  belong to. Where the model is not sure, nothing is shown.
+- **Expand selection** along the structure of the sentence: word, then the
   whole name, then the subject chain, the expression, the sentence, the version,
   the rule. Names are several words, so the editor's word-by-word expansion had
   little to offer here.
-- **Koppelingen in commentaar**: a URL, and the name of another `.rgs` file of the
+- **Links in comments**: a URL, and the name of another `.rgs` file of the
   model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
 
 ### Settings
