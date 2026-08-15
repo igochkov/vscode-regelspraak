@@ -243,6 +243,12 @@
 					"default": true,
 					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS505`)."
 				},
+				"regelspraak.format.enable": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Maakt RegelSpraak-bestanden op: inspringing volgens de opbouw van het model, uitgelijnde kolommen in een objecttype, eenheidsysteem of feittype, en uitgelijnde pijpen in een beslistabel. Alleen witruimte verandert; een bestand met een syntaxfout wordt niet opgemaakt."
+				},
 				"regelspraak.semanticHighlighting.enable": {
 					"scope": "resource",
 					"type": "boolean",
