@@ -255,6 +255,22 @@
 					"default": true,
 					"markdownDescription": "Kleurt namen op wat het model van ze weet: objecttype, attribuut, kenmerk, parameter, rol. Uitgeschakeld kleurt alleen de TextMate-grammatica, die de sleutelwoorden kent maar de namen niet.\n\nDe kleuren zelf komen van het thema; deze extensie stelt er geen in."
 				},
+				"regelspraak.inlayHints.enable": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"off",
+						"types",
+						"all"
+					],
+					"enumDescriptions": [
+						"Geen hints.",
+						"Het afgeleide type van een regel en van elke variabele uit Daarbij geldt.",
+						"Ook het objecttype waar een zijn/hij over gaat."
+					],
+					"default": "types",
+					"markdownDescription": "Toont wat het model afleidt maar de tekst niet zegt: het datatype en de eenheid van een regelresultaat en van een `Daarbij geldt:`-variabele, en met `all` ook het objecttype achter een `zijn` of `hij`. Waar het model het antwoord niet weet, blijft de hint weg."
+				},
 				"regelspraakLanguageServer.trace.server": {
 					"scope": "window",
 					"type": "string",
