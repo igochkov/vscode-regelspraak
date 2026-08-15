@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -43,9 +43,36 @@
 	"contributes": {
 		"commands": [
 			{
+				"command": "regelspraak.formatDocument",
+				"title": "Document opmaken",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "regelspraak.formatDocument",
+					"when": "editorLangId == regelspraak"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "regelspraak.formatDocument",
+					"when": "editorLangId == regelspraak",
+					"group": "1_modification"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "regelspraak.formatDocument",
+				"key": "shift+alt+f",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
 			}
 		],
 		"languages": [
@@ -235,19 +262,41 @@
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Meldt afrondings- en precisieproblemen (`RS401`, `RS402`, `RS403`): een uitkomst met meer decimalen dan het doelattribuut toestaat, een ontbrekende verplichte afronding, en een precisie die niet vastligt."
+					"markdownDescription": "Meldt afrondings- en precisieproblemen (`RS401`, `RS402`, `RS403`): een uitkomst met meer decimalen dan het doelattribuut toestaat, een ontbrekende verplichte afronding, en een precisie die niet vastligt. Ook `RS306`, de waarschuwing over een omrekening tussen twee tijdseenheden, die dezelfde vraag stelt."
 				},
 				"regelspraak.validation.emptyValueHazards": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS504`)."
+					"markdownDescription": "Meldt plekken waar een lege waarde tot een fout leidt tijdens uitvoering (`RS501` tot en met `RS505`)."
+				},
+				"regelspraak.format.enable": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Maakt RegelSpraak-bestanden op: inspringing volgens de opbouw van het model, uitgelijnde kolommen in een objecttype, eenheidsysteem of feittype, en uitgelijnde pijpen in een beslistabel. Alleen witruimte verandert; een bestand met een syntaxfout wordt niet opgemaakt."
 				},
 				"regelspraak.semanticHighlighting.enable": {
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
 					"markdownDescription": "Kleurt namen op wat het model van ze weet: objecttype, attribuut, kenmerk, parameter, rol. Uitgeschakeld kleurt alleen de TextMate-grammatica, die de sleutelwoorden kent maar de namen niet.\n\nDe kleuren zelf komen van het thema; deze extensie stelt er geen in."
+				},
+				"regelspraak.inlayHints.enable": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"off",
+						"types",
+						"all"
+					],
+					"enumDescriptions": [
+						"Geen hints.",
+						"Het afgeleide type van een regel en van elke variabele uit Daarbij geldt.",
+						"Ook het objecttype waar een zijn/hij over gaat."
+					],
+					"default": "types",
+					"markdownDescription": "Toont wat het model afleidt maar de tekst niet zegt: het datatype en de eenheid van een regelresultaat en van een `Daarbij geldt:`-variabele, en met `all` ook het objecttype achter een `zijn` of `hij`. Waar het model het antwoord niet weet, blijft de hint weg."
 				},
 				"regelspraakLanguageServer.trace.server": {
 					"scope": "window",

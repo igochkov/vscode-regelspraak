@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { commands, window, workspace, ExtensionContext, FileSystemWatcher, OutputChannel } from 'vscode';
+import {
+	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
+	OutputChannel, Position, Range, Uri
+} from 'vscode';
 
 import {
 	LanguageClient,
@@ -11,6 +14,64 @@ import {
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
+
+/**
+ * Opens the peek list a CodeLens counted (P13).
+ *
+ * `editor.action.showReferences` is VS Code's own and does exactly this, but it
+ * takes a `Uri` and a `Position` — class instances — while a `Command` reaches
+ * the client as plain JSON, so the server cannot invoke it directly. This one
+ * converts and delegates. Registered but not contributed: it is the server's to
+ * call and has no business in the Command Palette.
+ */
+const SHOW_REFERENCES_COMMAND = 'regelspraak.showReferences';
+
+/**
+ * The two protocol shapes that command carries, which are plain JSON on the wire.
+ *
+ * Named, and converted **whole**, because collapsing each location to its start
+ * lost the half of it that does the work: `editor.action.showReferences` takes
+ * `Location[]`, and a location with a real range is what makes the peek highlight
+ * the phrase it found rather than putting a caret in front of the line. The
+ * server already computes both ends and puts both on the wire.
+ */
+interface WirePosition { line: number; character: number }
+interface WireLocation { uri: string; range: { start: WirePosition; end: WirePosition } }
+
+const toPosition = (p: WirePosition): Position => new Position(p.line, p.character);
+const toRange = (r: { start: WirePosition; end: WirePosition }): Range =>
+	new Range(toPosition(r.start), toPosition(r.end));
+
+/**
+ * Formats the active RegelSpraak document, and says so when it will not.
+ *
+ * The editor's own **Format Document** already reaches the server, so the value
+ * of a command of our own is entirely in the two cases where formatting produces
+ * nothing: the setting is off, or the file does not parse and the formatter
+ * refuses to guess at its layout. Both leave `Shift+Alt+F` looking broken. This
+ * one takes that keystroke inside `.rgs` files, delegates in the normal case, and
+ * explains in the other two.
+ */
+const FORMAT_COMMAND = 'regelspraak.formatDocument';
+
+/**
+ * Asks the server why formatting would do nothing, rather than working it out.
+ *
+ * Both reasons are the server's own — it reads `regelspraak.format.enable`, and
+ * whether a document parses is a fact about its parse tree. This used to be
+ * inferred from the published `RS001`/`RS002`/`RS003` diagnostics, which is a
+ * side channel with two holes in it: `regelspraak.validation.enable: false`
+ * publishes nothing at all, and `regelspraak.validation.runOn: "save"` publishes
+ * nothing between saves, so the command fell silent in exactly the states it
+ * exists to speak in. It also meant holding a copy of the server's syntax codes
+ * that nothing across the repository boundary could check.
+ *
+ * The method name is the one thing both halves still have to agree on by hand,
+ * and a wire method is the smallest such contract there is.
+ */
+const FORMAT_STATE_REQUEST = 'regelspraak/formatState';
+
+type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
@@ -57,6 +118,20 @@ export async function activate(context: ExtensionContext): Promise<void> {
 		})
 	);
 
+	context.subscriptions.push(
+		commands.registerCommand(SHOW_REFERENCES_COMMAND,
+			(uri: string, position: WirePosition, locations: WireLocation[]) => {
+				void commands.executeCommand(
+					'editor.action.showReferences',
+					Uri.parse(uri),
+					toPosition(position),
+					locations.map(location => new Location(Uri.parse(location.uri), toRange(location.range)))
+				);
+			})
+	);
+
+	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
+
 	// Re-resolve on change, so pointing the setting at a different server build
 	// takes effect without reloading the window.
 	context.subscriptions.push(
@@ -72,6 +147,40 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
 export function deactivate(): Thenable<void> | undefined {
 	return stopClient();
+}
+
+async function formatDocument(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	// The message is this half's — it knows what the user pressed — and the
+	// reason is the server's. Where there is no server to ask, or it is too old
+	// to know the request, delegating is the honest answer: the editor's own
+	// Format Document is what the keystroke would have done anyway.
+	switch (await formatState(editor.document.uri.toString())) {
+		case 'disabled':
+			void window.showInformationMessage(
+				'Opmaken is uitgeschakeld. Zet "regelspraak.format.enable" aan om het te gebruiken.');
+			return;
+		case 'syntaxError':
+			void window.showWarningMessage(
+				'Dit bestand bevat een syntaxfout en wordt niet opgemaakt; los de fout eerst op.');
+			return;
+		default:
+			await commands.executeCommand('editor.action.formatDocument');
+	}
+}
+
+async function formatState(uri: string): Promise<FormatState> {
+	if (!client) {
+		return 'unknown';
+	}
+	try {
+		return await client.sendRequest<FormatState>(FORMAT_STATE_REQUEST, { uri });
+	} catch {
+		return 'unknown';
+	}
 }
 
 /**

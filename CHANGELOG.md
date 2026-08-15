@@ -5,6 +5,86 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
+## [0.4.0] — Formatting and editor ergonomics
+
+Layout you no longer have to keep by hand, and four small features that show you
+what the model already knows about the file in front of you.
+
+### Added
+
+- **Format document** (`Shift+Alt+F`, the editor context menu, or the
+  **Document opmaken** command in the palette). Indentation follows the structure
+  of the model rather than a guess at the line: an object type's members, a
+  rule's versions and their sentences, the bullets of a compound condition, the
+  criteria of a distribution. Columns line up
+  per block — attribute name against datatype, unit against abbreviation against
+  conversion, role against object type — and a decision table's pipes line up too.
+  Bullets get one space, trailing whitespace goes, and the end of the file follows
+  your own `files.trimFinalNewlines` and `files.insertFinalNewline`.
+- **Only whitespace ever changes.** A name in RegelSpraak is a run of ordinary
+  words, and a rule's name is free text, so respacing inside one would rename it.
+  The formatter edits the gaps between words and never a word, never joins or
+  splits a line, and never shortens a column separator to a single space, which
+  would erase the boundary the language reads. A file that does not parse is left
+  exactly as it is — and the command tells you so, where the editor's own would
+  quietly do nothing.
+- **Format selection**, with the same rules over the selected lines, and
+  aligned against the whole block so the selected half does not drift out of line.
+- **Format as you type** (when `editor.formatOnType` is on): a `;` settles
+  the member you just finished into its columns, and Enter settles the line above.
+  Never more than that one line.
+- **Counts above a declaration** (CodeLens): how often an object type, a rule
+  or a decision table is named elsewhere, and — above an object type — how many
+  rules derive something it declares. Clicking one opens the list.
+- **Derived types in view** (inlay hints, `regelspraak.inlayHints.enable`):
+  the datatype and unit a rule derives, and the same for every `Daarbij geldt:`
+  variable, which has no written type at all. At `all`, also the object type a
+  `zijn` or `hij` refers to. All three read as `: <type>` against the word they
+  belong to. Where the model is not sure, nothing is shown.
+- **Expand selection** along the structure of the sentence: word, then the
+  whole name, then the subject chain, the expression, the sentence, the version,
+  the rule. Names are several words, so the editor's word-by-word expansion had
+  little to offer here.
+- **Links in comments**: a URL, and the name of another `.rgs` file of the
+  model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
+
+### Settings
+
+- `regelspraak.format.enable` — turn the formatter off.
+- `regelspraak.inlayHints.enable` — `off`, `types` (the default) or `all`.
+
+### Fixed
+
+- **`//#region` … `//#endregion` folding, which never actually worked.** It has
+  been listed as a feature since 0.1.0 and was not one: as soon as an extension
+  provides folding ranges of its own, VS Code stops building the provider that
+  reads those markers out of a language configuration — and that is where they
+  were declared. They are folded by the language server now, alongside
+  everything else it folds.
+
+### Changed
+
+- **A `--- koptekst` now reads as the annotation it is.** It used to be given a
+  scope no standard theme styles, so it came out in the ordinary text colour and
+  sat among an object type's members looking like one of them. It is grouped
+  with comments instead — which also stops word suggestions and the `'`
+  auto-closing pair from interrupting you inside the header's prose.
+- **Two more things fold**: a `Daarbij geldt:` block, and the bullets of a
+  compound condition, which collapse under the `… voldoet:` line that
+  introduces them and nest the way they are written.
+- **Inlay hints are written in the language's own words.** `Numeriek (€)` where
+  a model writes `€`, rather than the internal spelling the diagnostics compare
+  units by. Where an `Eenheidsysteem` declares the unit, its own name is used.
+
+### Notes
+
+- **References to the specification are not linked.** `§13.4.2` in a comment stays
+  text: the RegelSpraak specification is the Belastingdienst's, is not
+  redistributable, and where you have a copy this extension does not know where.
+- A rule that is missing its closing `.` is *not* repaired by the formatter. That
+  would change the words, not the layout — and it is a syntax error, which the
+  file already reports.
+
 ## [0.3.0] — Deep validation and quick fixes
 
 The extension now reads your expressions, not just your names. It works out what
@@ -30,7 +110,7 @@ them may report anything there.
   `elfproef` and the `numeriek met exact … cijfers` check on the wrong sort of
   operand, a day kind applied to something that is not a date, and
   `moet berekend worden als` used for something that is not a calculation.
-- **Unit checking** (`RS301`–`RS306`). Units are compared by *meaning*, not by
+- **Unit checking** (`RS301`–`RS307`). Units are compared by *meaning*, not by
   spelling: `€`, `EUR` and `euro` are one unit, and so are `kg` and a kilogram
   written out. Conversions declared with `= 1000 g` are followed, so `kg` beside
   `g` is reported as convertible-but-unequal (a warning about precision) while
@@ -38,15 +118,17 @@ them may report anything there.
   conversion — a month is not a fixed number of days — and mixing them is its own
   code. `tot de macht` wants plain numbers; `het totaal van` and
   `het tijdsevenredig deel per …` want a value *per* time unit, such as
-  `€/maand`.
+  `€/maand`. A percentage cannot be an operand of `maal` at all (§6.4).
 - **Precision and rounding** (`RS401`–`RS403`): a result with more decimals than
   its target allows, the rounding §6.1.3 makes mandatory after `de wortel van`
   and `tot de macht`, and — as a warning — a result whose precision is not
   determined, which is what a division leaves you with unless you round it.
-- **Empty values** (`RS501`–`RS504`), as warnings: dividing by a value that may
+- **Empty values** (`RS501`–`RS505`), as warnings: dividing by a value that may
   be empty, comparing two possibly-empty values of a non-numeric type, a
   `Startpuntbepaling` that may yield nothing, a distribution criterion that may be
-  empty. "May be empty" is drawn narrowly on purpose — only a value that
+  empty, and an `eerder`/`later` date comparison where both sides may be. An
+  *inequality* between two empty values is not among them: §8.1.1 makes that
+  simply `onwaar`, with no run-time error. "May be empty" is drawn narrowly on purpose — only a value that
   *nothing* fills unconditionally counts, and a rule that checks `gevuld` first is
   left alone — because the alternative is a warning on every division in every
   model.
@@ -54,9 +136,13 @@ them may report anything there.
   day (the finer detail is lost), a timeline with `met variabel startpunt` that no
   rule gives a start point to, and `het totaal van` or `het tijdsevenredig deel`
   left without parentheses or a variable to bound it.
-- **Distributions** (`RS801`–`RS804`): a maximum or a rounding without an
+- **Distributions** (`RS801`–`RS808`): a maximum or a rounding without an
   `Als onverdeelde rest blijft … over`, a maximum combined with `in gelijke
-  delen`, and `naar rato van` a criterion that is not a number.
+  delen`, a criterion that is not a number where the distribution computes with
+  it, and one without an order where it sorts by it. Plus the three checks about
+  *which side* an attribute belongs to: a criterion belongs to the recipient, the
+  undistributed remainder to the distributor, and a distribution runs only
+  between objects that a fact type relates one-to-many.
 - **Decision tables** (`RS901`–`RS903`) now have a model. The table's rows and
   cells are read, its conclusion column is composed into a sentence and checked,
   and a malformed table — a row with a different number of columns, a missing
