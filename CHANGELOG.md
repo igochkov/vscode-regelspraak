@@ -53,6 +53,29 @@ what the model already knows about the file in front of you.
 - `regelspraak.format.enable` — turn the formatter off.
 - `regelspraak.inlayHints.enable` — `off`, `types` (the default) or `all`.
 
+### Fixed
+
+- **`//#region` … `//#endregion` folding, which never actually worked.** It has
+  been listed as a feature since 0.1.0 and was not one: as soon as an extension
+  provides folding ranges of its own, VS Code stops building the provider that
+  reads those markers out of a language configuration — and that is where they
+  were declared. They are folded by the language server now, alongside
+  everything else it folds.
+
+### Changed
+
+- **A `--- koptekst` now reads as the annotation it is.** It used to be given a
+  scope no standard theme styles, so it came out in the ordinary text colour and
+  sat among an object type's members looking like one of them. It is grouped
+  with comments instead — which also stops word suggestions and the `'`
+  auto-closing pair from interrupting you inside the header's prose.
+- **Two more things fold**: a `Daarbij geldt:` block, and the bullets of a
+  compound condition, which collapse under the `… voldoet:` line that
+  introduces them and nest the way they are written.
+- **Inlay hints are written in the language's own words.** `Numeriek (€)` where
+  a model writes `€`, rather than the internal spelling the diagnostics compare
+  units by. Where an `Eenheidsysteem` declares the unit, its own name is used.
+
 ### Notes
 
 - **References to the specification are not linked.** `§13.4.2` in a comment stays

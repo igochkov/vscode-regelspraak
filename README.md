@@ -24,7 +24,7 @@ The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.
 - **Inlay hints** for what the model works out and the text does not say: the datatype and unit a rule derives, the same for each `Daarbij geldt:` variable, and — set to `all` — the object type a `zijn` or `hij` refers to. Where the model is not sure, nothing is shown.
 - **Smart selection expansion** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>→</kbd>) along the sentence: word, whole name, subject chain, expression, sentence, rule version, rule. Names are several words, so the editor's word-by-word expansion had little to offer here.
 - **Links in comments**: a URL, and the name of another `.rgs` file of the model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
-- **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware and honours `//#region` markers.
+- **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware — declarations, rule versions, koptekst sections, `Daarbij geldt:` blocks and compound-condition bullets — and honours `//#region` markers.
 - **Snippets** for every frequent construct, each body validated against the language grammar in CI, plus bracket, quote and guillemet (`«»`) matching, `//` comment toggling, indentation rules and bullet-list continuation.
 - **RegelSpraak in Markdown**: a fenced code block marked `regelspraak` (or `rgs`) is highlighted inside any `.md` file, so a model reads properly in documentation and design notes. Syntax only — a Markdown file is not a model, so a block is coloured but not analysed.
 
