@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
 	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
-	OutputChannel, Position, Uri
+	OutputChannel, Position, Range, Uri
 } from 'vscode';
 
 import {
@@ -25,6 +25,22 @@ const RESTART_COMMAND = 'regelspraak.restartServer';
  * call and has no business in the Command Palette.
  */
 const SHOW_REFERENCES_COMMAND = 'regelspraak.showReferences';
+
+/**
+ * The two protocol shapes that command carries, which are plain JSON on the wire.
+ *
+ * Named, and converted **whole**, because collapsing each location to its start
+ * lost the half of it that does the work: `editor.action.showReferences` takes
+ * `Location[]`, and a location with a real range is what makes the peek highlight
+ * the phrase it found rather than putting a caret in front of the line. The
+ * server already computes both ends and puts both on the wire.
+ */
+interface WirePosition { line: number; character: number }
+interface WireLocation { uri: string; range: { start: WirePosition; end: WirePosition } }
+
+const toPosition = (p: WirePosition): Position => new Position(p.line, p.character);
+const toRange = (r: { start: WirePosition; end: WirePosition }): Range =>
+	new Range(toPosition(r.start), toPosition(r.end));
 
 /**
  * Formats the active RegelSpraak document, and says so when it will not.
@@ -104,16 +120,12 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
 	context.subscriptions.push(
 		commands.registerCommand(SHOW_REFERENCES_COMMAND,
-			(uri: string, position: { line: number; character: number },
-				locations: { uri: string; range: { start: { line: number; character: number };
-					end: { line: number; character: number } } }[]) => {
+			(uri: string, position: WirePosition, locations: WireLocation[]) => {
 				void commands.executeCommand(
 					'editor.action.showReferences',
 					Uri.parse(uri),
-					new Position(position.line, position.character),
-					locations.map(location => new Location(
-						Uri.parse(location.uri),
-						new Position(location.range.start.line, location.range.start.character)))
+					toPosition(position),
+					locations.map(location => new Location(Uri.parse(location.uri), toRange(location.range)))
 				);
 			})
 	);
