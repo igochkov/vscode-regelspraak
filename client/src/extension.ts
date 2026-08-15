@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { commands, window, workspace, ExtensionContext, FileSystemWatcher, OutputChannel } from 'vscode';
+import {
+	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location, OutputChannel,
+	Position, Uri
+} from 'vscode';
 
 import {
 	LanguageClient,
@@ -11,6 +14,17 @@ import {
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
+
+/**
+ * Opens the peek list a CodeLens counted (P13).
+ *
+ * `editor.action.showReferences` is VS Code's own and does exactly this, but it
+ * takes a `Uri` and a `Position` — class instances — while a `Command` reaches
+ * the client as plain JSON, so the server cannot invoke it directly. This one
+ * converts and delegates. Registered but not contributed: it is the server's to
+ * call and has no business in the Command Palette.
+ */
+const SHOW_REFERENCES_COMMAND = 'regelspraak.showReferences';
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
@@ -55,6 +69,22 @@ export async function activate(context: ExtensionContext): Promise<void> {
 				window.setStatusBarMessage('RegelSpraak-taalserver opnieuw gestart.', 3000);
 			}
 		})
+	);
+
+	context.subscriptions.push(
+		commands.registerCommand(SHOW_REFERENCES_COMMAND,
+			(uri: string, position: { line: number; character: number },
+				locations: { uri: string; range: { start: { line: number; character: number };
+					end: { line: number; character: number } } }[]) => {
+				void commands.executeCommand(
+					'editor.action.showReferences',
+					Uri.parse(uri),
+					new Position(position.line, position.character),
+					locations.map(location => new Location(
+						Uri.parse(location.uri),
+						new Position(location.range.start.line, location.range.start.character)))
+				);
+			})
 	);
 
 	// Re-resolve on change, so pointing the setting at a different server build
