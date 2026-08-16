@@ -12,6 +12,9 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 
+import {
+	DECISION_TABLE_VIEW, DecisionTableEditor, OPEN_DECISION_TABLES_COMMAND, openDecisionTables
+} from './decisionTableEditor';
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
@@ -135,15 +138,17 @@ async function restart(context: ExtensionContext): Promise<void> {
 /**
  * What the extension hands back to whoever activated it.
  *
- * Only what the end-to-end suite has no other way to reach: a tree view and a
- * language status item are both drawn by the workbench and neither has a
- * command surface to assert against, so without this the one thing that could
- * check the `regelspraak/model` contract across the repository boundary would
- * be a screenshot.
+ * Only what the end-to-end suite has no other way to reach. A tree view, a
+ * language status item and a webview are all drawn by the workbench and none
+ * has a command surface to assert against — so without this, the only thing
+ * that could check the custom requests across the repository boundary would be
+ * a screenshot. The model source is here for the same reason and is the object
+ * those requests are made through.
  */
 export interface RegelSpraakApi {
 	modelExplorer: ModelExplorer;
 	serverStatus: ServerStatus;
+	modelSource: ModelSource;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -172,6 +177,16 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	context.subscriptions.push(
 		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
 		commands.registerCommand(SHOW_MODEL_COMMAND, showModel));
+
+	context.subscriptions.push(
+		window.registerCustomEditorProvider(
+			DECISION_TABLE_VIEW,
+			new DecisionTableEditor(modelSource),
+			// A `.rgs` file is a model that may *contain* tables, so the grid is
+			// one view of it and never the only one; keeping it alive while it is
+			// hidden is what makes flipping back and forth free.
+			{ webviewOptions: { retainContextWhenHidden: true } }),
+		commands.registerCommand(OPEN_DECISION_TABLES_COMMAND, openDecisionTables));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -209,7 +224,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus };
+	return { modelExplorer, serverStatus, modelSource };
 }
 
 export function deactivate(): Thenable<void> | undefined {

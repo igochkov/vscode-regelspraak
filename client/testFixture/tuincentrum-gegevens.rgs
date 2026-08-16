@@ -16,6 +16,7 @@ Objecttype de Bestelling (mv: Bestellingen)
 	de leverdatum                                   Datum in dagen;
 	het aantal planten                              Numeriek (niet-negatief geheel getal);
 	het orderbedrag                                 Geldbedrag;
+	de bezorgkosten                                 Geldbedrag;
 
 Objecttype de Plant (mv: Planten)
 	de soortnaam                                    Tekst;

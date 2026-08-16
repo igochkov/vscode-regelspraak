@@ -15,6 +15,9 @@ const MODEL_TREE_REQUEST = 'regelspraak/model';
 /** `regelspraak/modelChanged` — sent whenever that answer would differ. */
 export const MODEL_CHANGED_NOTIFICATION = 'regelspraak/modelChanged';
 
+/** `regelspraak/decisionTables` — the beslistabellen of one document (W4). */
+const DECISION_TABLES_REQUEST = 'regelspraak/decisionTables';
+
 export interface WirePosition { line: number; character: number }
 export interface WireRange { start: WirePosition; end: WirePosition }
 
@@ -40,6 +43,33 @@ export interface ModelTree {
 }
 
 export const EMPTY: ModelTree = { groups: [] };
+
+/** One beslistabel as a grid (W4). Mirrors the server's `protocol.ts`. */
+export interface DecisionTable {
+	name: string;
+	nameRange: WireRange;
+	range: WireRange;
+	validity?: string;
+	columns: DecisionColumn[];
+	headerRange?: WireRange;
+	rows: DecisionRow[];
+}
+
+export interface DecisionColumn {
+	header: string;
+	range: WireRange;
+	role: 'conclusie' | 'conditie';
+}
+
+export interface DecisionRow {
+	range: WireRange;
+	cells: DecisionCell[];
+}
+
+export interface DecisionCell {
+	text: string;
+	range: WireRange;
+}
 
 /**
  * Where both views get their model, and the only holder of the client.
@@ -69,6 +99,21 @@ export class ModelSource {
 
 	async document(uri: string): Promise<ModelTree> {
 		return await this.request({ textDocument: { uri } }) ?? EMPTY;
+	}
+
+	/**
+	 * Never cached, unlike the workspace tree: the grid writes through the ranges
+	 * in this answer, so a stale one would put a cell's text on top of whatever
+	 * moved into its place.
+	 */
+	async decisionTables(uri: string): Promise<DecisionTable[]> {
+		try {
+			const answer = await this.client?.sendRequest<{ tables: DecisionTable[] }>(
+				DECISION_TABLES_REQUEST, { textDocument: { uri } });
+			return answer?.tables ?? [];
+		} catch {
+			return [];
+		}
 	}
 
 	/**
