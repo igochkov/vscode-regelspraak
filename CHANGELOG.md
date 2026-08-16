@@ -35,6 +35,16 @@ to see what the language server knows about the model in front of you.
   icon in the editor title bar). A read-only view of what the language server
   sees in *this* file: its declarations in the order the file writes them, with
   their members and their declared datatype. It follows the file.
+- **A visual editor for decision tables** (**Beslistabellen als rooster
+  openen**, or right-click the file → **Reopen Editor With…**). Every
+  `Beslistabel` in the file as a grid: one row per case, one column per
+  condition or conclusion, with the conclusion column marked as such and the
+  server's own errors shown on the cell they are about. Edit a value, add a
+  case, delete one. It is opt-in per file and the text stays the source of
+  truth — every change is an ordinary edit, so undo, save and a text editor open
+  beside it all keep working, and the table is lined up again afterwards.
+  Column titles are read-only: a title is a RegelSpraak sentence, and it is what
+  decides whether the column concludes or conditions.
 - **The language server's status in the status bar**, beside the language mode
   of a `.rgs` file: starting, running, stopped, or failed to start — with the
   path it tried when it could not be found. Click it for the log, also reachable

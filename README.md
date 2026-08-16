@@ -27,6 +27,7 @@ The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.
 - **A Model Explorer** in its own activity-bar container: every declaration in the workspace in one tree, grouped by kind, with members underneath — including the ones an `Extensie van objecttype` block in another file adds. Click a row and the declaration opens; the tree follows what you type.
 - **Call hierarchy over rule dependencies** (**Show Call Hierarchy**): incoming is the rules that read what this rule derives, outgoing is the rules that derive what it reads, and a rule named directly with `regelversie <naam> gevuurd is` counts in both. **Type hierarchy** shows an object type with the `Extensie van objecttype` blocks that re-open it.
 - **A model view of a file** (read-only): the declarations the language server sees in it, in the order the file writes them, with their members and declared datatypes.
+- **A visual editor for decision tables**, opt-in per file: every `Beslistabel` as a grid of cases and columns, with the conclusion column marked and diagnostics shown on the cell they are about. Edits are ordinary text edits, so undo, save and a text editor open beside it keep working; column titles stay read-only, because a title is a RegelSpraak sentence and it is what decides the column's role.
 - **The language server's status** beside the language mode of a `.rgs` file, so a server that failed to start is not mistaken for one with nothing to report; clicking it opens the log.
 - **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware — declarations, rule versions, koptekst sections, `Daarbij geldt:` blocks and compound-condition bullets — and honours `//#region` markers.
 - **Snippets** for every frequent construct, each body validated against the language grammar in CI, plus bracket, quote and guillemet (`«»`) matching, `//` comment toggling, indentation rules and bullet-list continuation.
@@ -83,9 +84,9 @@ Override any of them for yourself in user or workspace settings, and they win ov
 | ✅ | **Navigation** | Go to definition and type definition · Find all references · Highlight occurrences · Workspace symbol search · Safe cross-file rename of multi-word names · "Which rule derives this attribute?" |
 | ✅ | **Validation** | The full diagnostics catalogue — type compatibility, unit convertibility, rounding and precision, empty-value (`leeg`) policy, timeline granularity, distribution and decision-table rules — with quick fixes, plus signature help |
 | ✅ | **Formatting & ergonomics** | Formatting that changes whitespace and nothing else · CodeLens reference and derivation counts · Inlay hints for inferred datatypes and units · Smart selection expansion · Links in comments |
-| ✅ | **Workbench** (current) | A RegelSpraak view container with a Model Explorer tree · Call hierarchy over rule dependencies · Type hierarchy over object types and their extensions · A read-only model view of a file · Language server status in the status bar |
+| ✅ | **Workbench** (current) | A RegelSpraak view container with a Model Explorer tree · Call hierarchy over rule dependencies · Type hierarchy over object types and their extensions · A read-only model view of a file · A visual editor for decision tables · Language server status in the status bar |
 | ⬅ | **Execution** (next) | Run rules and decision tables against scenario data · Results and derivation traces in-editor · Scenarios as tests in the Test Explorer |
-| | **Optional extras** | A visual Beslistabel editor · Scenario notebooks · Task provider, file decorations, index caching — each still to be decided on |
+| | **Optional extras** | Scenario notebooks · Task provider, file decorations, index caching — each still to be decided on |
 
 Interface language is Dutch throughout, matching the language itself; there is no English UI mode.
 
