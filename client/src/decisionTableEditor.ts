@@ -26,6 +26,19 @@
 // diagnostics the server already publishes, matched to cells by range. Both are
 // the server's answers, because a second reading of a table that disagreed with
 // the first would be worse than no grid at all.
+//
+// **One gesture is two undo steps, and that is known rather than overlooked.**
+// The realignment can only be computed once the gesture is in the document — the
+// formatter reads the text, not a plan for it — and `workspace.applyEdit` opens
+// its own undo element every time it is called, with no API to join two. So
+// <kbd>Ctrl</kbd>+<kbd>Z</kbd> after changing a cell takes back the realignment
+// first and the value second. The alternatives are worse: computing the padding
+// here would be a second implementation of the layout engine's column widths
+// (the very thing `format/layout.ts` exists to be the only one of), and skipping
+// the realignment leaves a grid editor writing text it has knocked out of
+// alignment.
+
+import { randomBytes } from 'node:crypto';
 
 import {
 	CancellationToken, CustomTextEditorProvider, Diagnostic, DiagnosticSeverity, Position,
@@ -68,6 +81,21 @@ export interface Refusal {
 }
 
 /**
+ * Characters a cell value may not contain, because they are not values.
+ *
+ * A `|` is the column separator — typed into a cell it does not set that cell to
+ * something containing a pipe, it gives the row an extra column — and a line
+ * break ends the row (`beslistabelRij` ends at the NL, [D-2]). Both are *structural*
+ * edits, and the whole premise of this editor is that it edits cases and never
+ * structure: that is why a column title is read-only, and the same argument
+ * covers the value boxes it took a review to notice. The server does catch the
+ * result (RS903, "deze rij heeft 4 kolommen en de titelrij 3") — but by then the
+ * row is written, and the grid cannot draw what the user just made, because it
+ * lays out `table.columns` and the extra cell falls outside them.
+ */
+const NOT_A_VALUE = /[|\r\n]/u;
+
+/**
  * One gesture as a `WorkspaceEdit`, or a refusal.
  *
  * Separate from the provider, and handed the tables rather than fetching them,
@@ -78,12 +106,20 @@ export interface Refusal {
  * sent is compared against what the server reads *now*. A range that has moved
  * would otherwise put a cell's text on top of whatever took its place — rename
  * takes the same precaution, and this is the other feature that writes.
+ *
+ * `undefined` is for a gesture about a table this document does not have, which
+ * is the webview being a moment behind and nothing worth saying. Everything else
+ * a user could have caused comes back as a `Refusal` carrying its reason: a row
+ * or cell the server no longer reports is the grid and the model disagreeing
+ * about the shape of the table, which is exactly the state a silent no-op leaves
+ * someone guessing about.
  */
 export function gridEdit(
-	uri: Uri,
+	document: TextDocument,
 	tables: readonly DecisionTable[],
 	gesture: CellEdit | RowEdit
 ): WorkspaceEdit | Refusal | undefined {
+	const uri = document.uri;
 	const table = tables[gesture.table];
 	if (!table) {
 		return undefined;
@@ -92,10 +128,15 @@ export function gridEdit(
 	if (gesture.kind === 'cell') {
 		const cell = table.rows[gesture.row]?.cells[gesture.cell];
 		if (!cell) {
-			return undefined;
+			return { reason: 'Deze cel bestaat niet meer in de tabel; het rooster wordt opnieuw geladen.' };
 		}
 		if (cell.text !== gesture.was) {
 			return { reason: 'Deze cel is intussen elders gewijzigd; de bewerking is niet doorgevoerd.' };
+		}
+		if (NOT_A_VALUE.test(gesture.text)) {
+			return {
+				reason: 'Een cel kan geen | of regeleinde bevatten: dat verandert de indeling van de tabel in plaats van deze waarde. Bewerk de tabel als tekst om een kolom toe te voegen.'
+			};
 		}
 		edit.replace(uri, toRange(cell.range), gesture.text);
 		return edit;
@@ -103,22 +144,37 @@ export function gridEdit(
 	if (gesture.kind === 'deleteRow') {
 		const row = table.rows[gesture.row];
 		if (!row) {
-			return undefined;
+			return { reason: 'Deze rij bestaat niet meer in de tabel; het rooster wordt opnieuw geladen.' };
 		}
 		// The whole line, newline included: a row is one line by construction
 		// (`beslistabelRij` ends at the NL), and leaving the newline behind would
 		// leave an empty line where the case was.
-		edit.delete(uri, new Range(
-			new Position(row.range.start.line, 0),
-			new Position(row.range.start.line + 1, 0)));
+		//
+		// Unless there is no newline to take, which is the case where this row is
+		// the last line of a file that does not end in one. `Position(line + 1, 0)`
+		// is then past the end of the document, and VS Code validates a position on
+		// apply and **clamps** it rather than failing — so the delete would stop at
+		// the end of the row and leave exactly the empty line above says it does
+		// not leave. The line break *before* the row does the same job and always
+		// exists: a table's rows are never the first line of a file.
+		const line = row.range.start.line;
+		const lastLine = line >= document.lineCount - 1;
+		edit.delete(uri, lastLine
+			? new Range(document.lineAt(line - 1).range.end, document.lineAt(line).range.end)
+			: new Range(new Position(line, 0), new Position(line + 1, 0)));
 		return edit;
 	}
 	const after = table.rows[table.rows.length - 1]?.range ?? table.headerRange;
-	if (!after) {
-		return undefined;
+	if (!after || table.columns.length === 0) {
+		return { reason: 'Deze tabel heeft nog geen titelrij; voeg die als tekst toe.' };
 	}
-	edit.insert(uri, new Position(after.end.line + 1, 0), `${emptyRow(table)}
-`);
+	// At the **end** of the row above rather than at the start of the line below
+	// it. `Position(after.end.line + 1, 0)` does not exist where that row is the
+	// last line of a file with no final newline — `files.insertFinalNewline`
+	// defaults to off and the formatter honours it, so such a file is ordinary —
+	// and VS Code clamps the position instead of failing, which appended the new
+	// row to the end of the previous one. This end always exists.
+	edit.insert(uri, toPosition(after.end), `\n${emptyRow(table)}`);
 	return edit;
 }
 
@@ -145,6 +201,15 @@ export class DecisionTableEditor implements CustomTextEditorProvider {
 			});
 		};
 
+		// Debounced for everything the *user* drives. Each call is a round trip
+		// that the server answers by refreshing the document from its buffer, so an
+		// undebounced one made every keystroke in a text editor open beside this
+		// grid cost a full reparse, a rebuilt declaration AST and one fragment parse
+		// per candidate conclusion and condition column — on the thread that also
+		// answers completion and hover. 250 ms is the server's own re-index
+		// interval, so this asks no more often than there is a new answer to have.
+		const soon = debounce(push, 250);
+
 		// Three reasons the grid goes stale, and it must follow all three: the
 		// document changed (from here, from a text editor, or from a rename), the
 		// server re-indexed it, and the diagnostics were republished — the last
@@ -153,16 +218,19 @@ export class DecisionTableEditor implements CustomTextEditorProvider {
 		const subscriptions = [
 			workspace.onDidChangeTextDocument(event => {
 				if (event.document.uri.toString() === document.uri.toString()) {
-					void push();
+					soon();
 				}
 			}),
 			languages.onDidChangeDiagnostics(event => {
 				if (event.uris.some(uri => uri.toString() === document.uri.toString())) {
-					void push();
+					soon();
 				}
 			}),
+			// Not debounced: this redraw is the answer to something the user just did
+			// in this grid, and it is what puts the cell back in step with the text.
 			panel.webview.onDidReceiveMessage((message: GridGesture) =>
-				this.apply(document, message).then(push, () => undefined))
+				this.apply(document, message).then(push, () => undefined)),
+			{ dispose: (): void => soon.cancel() }
 		];
 		panel.onDidDispose(() => subscriptions.forEach(one => one.dispose()));
 
@@ -176,7 +244,7 @@ export class DecisionTableEditor implements CustomTextEditorProvider {
 			return;
 		}
 		const tables = await this.source.decisionTables(document.uri.toString());
-		const outcome = gridEdit(document.uri, tables, gesture);
+		const outcome = gridEdit(document, tables, gesture);
 		if (!outcome) {
 			return;
 		}
@@ -204,6 +272,33 @@ export function emptyRow(table: DecisionTable): string {
 	const cells = table.columns.map((_, i) =>
 		i === 0 && numbered ? ` ${Math.max(...numbers) + 1} ` : '  ');
 	return `|${cells.join('|')}|`;
+}
+
+/**
+ * Calls `run` once the caller has stopped asking for `delay` ms.
+ *
+ * Small enough to keep here: the server has a `Debouncer` of its own and this
+ * side has needed none until now, so a shared utility module would be one file
+ * holding one function used in one place.
+ */
+function debounce(run: () => void, delay: number): { (): void; cancel(): void } {
+	let timer: NodeJS.Timeout | undefined;
+	const call = (): void => {
+		if (timer) {
+			clearTimeout(timer);
+		}
+		timer = setTimeout(() => {
+			timer = undefined;
+			run();
+		}, delay);
+	};
+	call.cancel = (): void => {
+		if (timer) {
+			clearTimeout(timer);
+			timer = undefined;
+		}
+	};
+	return call;
 }
 
 /**
@@ -253,7 +348,14 @@ function problems(uri: Uri, tables: DecisionTable[]): Record<string, string> {
 			}
 			let placed = false;
 			table.rows.forEach((row, r) => {
-				row.cells.forEach((cell, c) => {
+				// Only as far as the grid actually draws. A row may hold **more** cells
+				// than the title row has columns — that is RS903's case, and the grid
+				// lays out `table.columns` — so a diagnostic filed against cell 3 of a
+				// three-column table went to a key the view never reads, and marked
+				// itself placed on the way, which took the table-level fallback away
+				// too. It vanished from the one view that could not draw the problem it
+				// was about.
+				row.cells.slice(0, table.columns.length).forEach((cell, c) => {
 					if (overlaps(diagnostic.range, toRange(cell.range))) {
 						note(`${t}:${r}:${c}`, diagnostic);
 						placed = true;
@@ -274,16 +376,23 @@ function overlaps(a: Range, b: Range): boolean {
 	return a.intersection(b) !== undefined || b.contains(a.start) || a.contains(b.start);
 }
 
-const toRange = (r: { start: { line: number; character: number }; end: { line: number; character: number } }): Range =>
-	new Range(new Position(r.start.line, r.start.character), new Position(r.end.line, r.end.character));
+const toPosition = (p: { line: number; character: number }): Position =>
+	new Position(p.line, p.character);
 
+const toRange = (r: { start: { line: number; character: number }; end: { line: number; character: number } }): Range =>
+	new Range(toPosition(r.start), toPosition(r.end));
+
+/**
+ * The CSP nonce for this panel's one inline script.
+ *
+ * From `node:crypto` rather than `Math.random`. Nothing on this page is
+ * attacker-supplied — every value reaches the DOM through `textContent` or
+ * `value`, never as markup — so there is no path to defend today; but a nonce
+ * is a security mechanism, and one spelled with a predictable RNG reads as
+ * sound until somebody adds the `innerHTML` that makes it matter.
+ */
 function nonce(): string {
-	let text = '';
-	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-	}
-	return text;
+	return randomBytes(16).toString('hex');
 }
 
 /** Opens the active RegelSpraak document in this editor. */

@@ -13,6 +13,7 @@ import { DECISION_TABLE_VIEW, emptyRow, gridEdit } from '../decisionTableEditor'
 import { DecisionTable } from '../model';
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
+
 interface SourceLike { decisionTables(uri: string): Promise<DecisionTable[]> }
 
 suite('Beslistabelrooster (W4)', () => {
@@ -52,7 +53,7 @@ suite('Beslistabelrooster (W4)', () => {
 	}
 
 	async function apply(gesture: Parameters<typeof gridEdit>[2]): Promise<void> {
-		const outcome = gridEdit(docUri, await tables(), gesture);
+		const outcome = gridEdit(doc, await tables(), gesture);
 		assert.ok(outcome instanceof vscode.WorkspaceEdit, 'geen bewerking opgeleverd');
 		assert.ok(await vscode.workspace.applyEdit(outcome), 'de bewerking is niet doorgevoerd');
 	}
@@ -94,7 +95,7 @@ suite('Beslistabelrooster (W4)', () => {
 	// zijn; een bereik dat intussen verschoven is, zou over iets anders heen
 	// schrijven.
 	test('weigert een bewerking die van een verouderde cel uitgaat', async () => {
-		const outcome = gridEdit(docUri, await tables(),
+		const outcome = gridEdit(doc, await tables(),
 			{ kind: 'cell', table: 0, row: 0, cell: 1, text: '7 €', was: 'iets anders' });
 		assert.ok(outcome && 'reason' in outcome, 'de verouderde bewerking is niet geweigerd');
 	});
@@ -133,4 +134,86 @@ suite('Beslistabelrooster (W4)', () => {
 		} as unknown as DecisionTable;
 		assert.equal(emptyRow(table), '| 3 |  |');
 	});
+
+	// Een cel is een waarde. Een `|` erin zet die cel niet op iets met een pipe:
+	// het geeft de rij een kolom erbij, en dat is precies de structuurbewerking
+	// waarvoor de kolomtitels alleen-lezen zijn. De server ziet het achteraf
+	// (RS903), maar dan staat de rij er al — en het rooster kan hem niet tekenen,
+	// want het legt `table.columns` neer en de extra cel valt daarbuiten.
+	test('weigert een celwaarde die de indeling van de tabel verandert', async () => {
+		const found = await tables();
+		for (const text of ['5 € | 6 €', '5 €\n6 €']) {
+			const outcome = gridEdit(doc, found, {
+				kind: 'cell', table: 0, row: 0, cell: 1, text, was: found[0].rows[0].cells[1].text
+			});
+			assert.ok(outcome && 'reason' in outcome, `${JSON.stringify(text)} is niet geweigerd`);
+		}
+		assert.equal(doc.getText(), original, 'er is toch geschreven');
+	});
+
+	// Stilte laat iemand raden; dit is het rooster en het model die het oneens
+	// zijn over de vorm van de tabel, en dat is het waard om te zeggen.
+	test('weigert met opgaaf van reden waar de cel niet meer bestaat', async () => {
+		const outcome = gridEdit(doc, await tables(),
+			{ kind: 'cell', table: 0, row: 9, cell: 0, text: 'x', was: '' });
+		assert.ok(outcome && 'reason' in outcome);
+	});
+
+	// De positie `regel + 1, 0` bestaat niet als die rij de laatste regel van een
+	// bestand zonder afsluitende regelovergang is. VS Code knipt zo'n positie bij
+	// in plaats van te weigeren, en dan werd de nieuwe rij achter de vorige
+	// geplakt: `| 1 | 25 ||  |  |`.
+	suite('een bestand zonder afsluitende regelovergang', () => {
+		const source = [
+			'Beslistabel Staffel',
+			'\tgeldig altijd',
+			'| | de contributie van een Lid moet gesteld worden op |',
+			'| 1 | 25 |'
+		].join('\n');
+
+		/** The table as the server reports it for `source`, by hand. */
+		const table = {
+			columns: [{}, {}],
+			headerRange: range(2, 0, 2, 54),
+			rows: [{ range: range(3, 0, 3, 10), cells: [{ text: '1' }, { text: '25' }] }]
+		} as unknown as DecisionTable;
+
+		let scratch: vscode.TextDocument;
+		suiteSetup(async () => {
+			scratch = await vscode.workspace.openTextDocument(
+				{ content: source, language: 'regelspraak' });
+		});
+
+		test('zet een nieuwe rij achter het einde van de vorige, niet op een regel die niet bestaat', () => {
+			const outcome = gridEdit(scratch, [table], { kind: 'addRow', table: 0, row: 1 });
+			assert.ok(outcome instanceof vscode.WorkspaceEdit);
+			const [[, edits]] = outcome.entries();
+			assert.equal(edits.length, 1);
+			assert.deepEqual(edits[0].range.start, new vscode.Position(3, 10));
+			assert.ok(edits[0].newText.startsWith('\n'), `geen regelovergang vooraan: ${edits[0].newText}`);
+			// Doorgeteld, want de bestaande rij nummert (`emptyRow`).
+			assert.equal(applied(source, edits[0]), `${source}\n| 2 |  |`);
+		});
+
+		test('wist de laatste rij zonder een lege regel achter te laten', () => {
+			const outcome = gridEdit(scratch, [table], { kind: 'deleteRow', table: 0, row: 0 });
+			assert.ok(outcome instanceof vscode.WorkspaceEdit);
+			const [[, edits]] = outcome.entries();
+			assert.equal(applied(source, edits[0]),
+				source.split('\n').slice(0, 3).join('\n'));
+		});
+	});
 });
+
+/** Hoisted, because the suite bodies below construct ranges as they are loaded. */
+function range(a: number, b: number, c: number, d: number): vscode.Range {
+	return new vscode.Range(new vscode.Position(a, b), new vscode.Position(c, d));
+}
+
+/** One edit against a string, so an assertion can be about the resulting text. */
+function applied(text: string, edit: vscode.TextEdit): string {
+	const lines = text.split('\n');
+	const offset = (p: vscode.Position): number =>
+		lines.slice(0, p.line).reduce((n, line) => n + line.length + 1, 0) + p.character;
+	return text.slice(0, offset(edit.range.start)) + edit.newText + text.slice(offset(edit.range.end));
+}
