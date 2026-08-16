@@ -7,9 +7,14 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
+import { State as ClientState } from 'vscode-languageclient/node';
+
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
-interface ServerStatusLike { readonly state: string }
+interface ServerStatusLike {
+	readonly state: string;
+	follow(state: ClientState): void;
+}
 
 suite('Taalserverstatus (C7)', () => {
 	const docUri = getDocUri('tuincentrum-gegevens.rgs');
@@ -45,5 +50,20 @@ suite('Taalserverstatus (C7)', () => {
 			return outcome && outcome.length > 0 ? outcome : undefined;
 		});
 		assert.ok(symbols.length > 0);
+	});
+
+	// Een taalserver die ná een goede start omvalt, herstart `LanguageClient`
+	// zelf en geeft het uiteindelijk op — zonder dat `start()` of `stop()` hier
+	// nog langskomt. Zolang alleen die twee de status zetten, bleef er
+	// "taalserver actief" staan terwijl er niets meer werkte, en dat is precies
+	// de toestand waarvoor §C7 bestaat (NFR-5).
+	test('meldt een taalserver die omvalt nadat hij gestart was', () => {
+		assert.equal(status.state, 'ready');
+		status.follow(ClientState.Stopped);
+		assert.equal(status.state, 'error');
+
+		// En weer terug, zodat de volgende suite een draaiende server aantreft.
+		status.follow(ClientState.Running);
+		assert.equal(status.state, 'ready');
 	});
 });

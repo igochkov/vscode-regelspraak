@@ -20,6 +20,7 @@
 import {
 	Disposable, LanguageStatusItem, LanguageStatusSeverity, languages
 } from 'vscode';
+import { State as ClientState } from 'vscode-languageclient/node';
 
 /** Opens the server's own output channel — the click target §C7 asks for. */
 export const SHOW_LOG_COMMAND = 'regelspraak.showServerLog';
@@ -33,8 +34,17 @@ const TEXT: Record<ServerState, string> = {
 	stopped: 'RegelSpraak: taalserver gestopt'
 };
 
+/**
+ * `starting` describes the start and not the indexing that follows it.
+ *
+ * It used to promise "Het model wordt geïndexeerd", which is a fact this side
+ * does not track: the transition to `ready` fires when the connection is up,
+ * and the workspace scan runs on well past it. Saying so made the item claim
+ * knowledge of a moment nothing here observes — and a fifth custom method to
+ * observe it would not clear the bar `protocol.ts` sets for one.
+ */
 const DETAIL: Record<ServerState, string> = {
-	starting: 'Het model wordt geïndexeerd.',
+	starting: 'De taalserver wordt gestart.',
 	ready: 'Diagnostiek, navigatie en aanvulling zijn beschikbaar.',
 	error: 'Zonder taalserver blijven diagnostiek, navigatie en aanvulling leeg.',
 	stopped: 'Er draait geen taalserver voor dit venster.'
@@ -80,6 +90,32 @@ export class ServerStatus implements Disposable {
 		this.item.text = TEXT[state];
 		this.item.detail = reason ?? DETAIL[state];
 		this.item.severity = SEVERITY[state];
+	}
+
+	/**
+	 * Follows the client's own state machine, which is the only thing that knows
+	 * a **running** server has died.
+	 *
+	 * `start()` resolving and `stop()` being called are the two moments the
+	 * extension drives, and they were the only two this item was told about. But
+	 * `LanguageClient` restarts a crashed server by itself and eventually gives
+	 * up, without either call — so a server that fell over after a good start
+	 * left the item reading *taalserver actief*, beside the detail promising that
+	 * diagnostics, navigation and completion were available, while none of them
+	 * were. That is precisely the state §C7 exists to make visible (NFR-5): the
+	 * one thing worse than no language support is language support that looks
+	 * like an opinion.
+	 *
+	 * `Starting` is not mapped back onto `starting`: the client passes through it
+	 * on every automatic restart, and a `.rgs` file whose server is quietly
+	 * cycling should say so once rather than flicker.
+	 */
+	follow(state: ClientState): void {
+		if (state === ClientState.Running) {
+			this.set('ready');
+		} else if (state === ClientState.Stopped && this.current === 'ready') {
+			this.set('error', 'De taalserver is gestopt nadat hij gestart was. Bekijk het logboek voor de oorzaak.');
+		}
 	}
 
 	dispose(): void {

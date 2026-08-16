@@ -46,6 +46,13 @@ suite('Modelweergave (W5)', () => {
 		const opened = await view();
 		assert.equal(opened.uri.scheme, SCHEME);
 		assert.ok(opened.uri.path.endsWith('(model)'), `onverwacht pad: ${opened.uri.path}`);
+
+		// Naast, niet erbovenop: een beschrijving die de plaats inneemt van wat ze
+		// beschrijft, is er geen. De kolom van de bron blijft bezet.
+		const columns = vscode.window.visibleTextEditors
+			.filter(one => one.document.uri.scheme === SCHEME || one.document.uri.fsPath === docUri.fsPath)
+			.map(one => one.viewColumn);
+		assert.equal(new Set(columns).size, 2, `beide staan in kolom ${columns.join(', ')}`);
 	});
 
 	test('noemt het bestand dat beschreven wordt, in de kop', async () => {

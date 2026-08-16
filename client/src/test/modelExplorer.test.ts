@@ -8,6 +8,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
+import { ModelSource } from '../model';
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
 /** Mirrors what `client/src/modelExplorer.ts` exposes, structurally. */
@@ -99,5 +100,53 @@ suite('Modelverkenner (W1, W2)', () => {
 	test('kent het commando dat de verkenner naar voren haalt', async () => {
 		const all = await vscode.commands.getCommands(true);
 		assert.ok(all.includes('regelspraak.showModelExplorer'));
+	});
+});
+
+// De werkmapboom wordt gecachet omdat elke uitklap ernaar vraagt. Het antwoord
+// dat onderweg was toen de cache leeggegooid werd, hoort daar niet meer in
+// terecht te komen: antwoorden komen op één verbinding in volgorde binnen, dus
+// dat is juist het oudste antwoord dat het verse zou verdringen.
+suite('Modelbron — een cache die ongeldig verklaard is (W2)', () => {
+	/** A client that answers when the test says so, in the order the test says. */
+	function stub(): { source: ModelSource; answer(tree: unknown): void; asked: number } {
+		const pending: ((tree: unknown) => void)[] = [];
+		const state = {
+			source: new ModelSource(),
+			answer: (tree: unknown) => pending.shift()?.(tree),
+			asked: 0
+		};
+		state.source.setClient({
+			sendRequest: () => {
+				state.asked++;
+				return new Promise(resolve => pending.push(resolve));
+			}
+		} as never);
+		return state;
+	}
+
+	const tree = (label: string) => ({ groups: [{ kind: 'objecttype', label, nodes: [] }] });
+	const labelOf = (answer: { groups: { label: string }[] }) => answer.groups[0]?.label;
+
+	test('houdt een antwoord dat tijdens de vlucht ongeldig werd niet vast', async () => {
+		const { source, answer } = stub();
+		const first = source.workspace();
+		source.forget();
+		answer(tree('oud'));
+		assert.equal(labelOf(await first), 'oud', 'de vrager krijgt het beste antwoord dat er is');
+
+		// Maar het is niet bewaard: de volgende lezer moet opnieuw vragen.
+		const second = source.workspace();
+		answer(tree('nieuw'));
+		assert.equal(labelOf(await second), 'nieuw');
+	});
+
+	test('vraagt niet opnieuw zolang niets veranderde', async () => {
+		const state = stub();
+		const first = state.source.workspace();
+		state.answer(tree('een'));
+		await first;
+		assert.equal(labelOf(await state.source.workspace()), 'een');
+		assert.equal(state.asked, 1, 'de boom is twee keer opgehaald');
 	});
 });

@@ -162,6 +162,13 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 
 	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
 	context.subscriptions.push(
+		// Withdrawn on the way out, with everything else this function registered:
+		// a context key is global to the window, and one left set by an extension
+		// that is no longer running keeps an activity-bar container on screen whose
+		// view has nothing behind it.
+		{ dispose: () => void commands.executeCommand('setContext', ACTIVE_CONTEXT, false) },
+		modelExplorer,
+		modelDocuments,
 		window.createTreeView(MODEL_EXPLORER_VIEW, {
 			treeDataProvider: modelExplorer,
 			// The declaration a row stands for is what a click opens; selecting
@@ -373,6 +380,14 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		serverOptions,
 		clientOptions
 	);
+
+	// Before `start`, so the item follows the whole life of this client and not
+	// only the two moments this function drives. `LanguageClient` restarts a
+	// crashed server on its own and eventually gives up, and neither happens
+	// through the calls below — see `ServerStatus.follow`. A deliberate stop is
+	// not misreported as a crash because `stopClient` says `stopped` *before* it
+	// calls `stop()`, and `follow` only speaks up about a server that was `ready`.
+	client.onDidChangeState(event => serverStatus?.follow(event.newState));
 
 	// Start the client. This will also launch the server
 	try {

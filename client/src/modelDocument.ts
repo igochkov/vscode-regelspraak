@@ -17,7 +17,7 @@
 // a file declares.
 
 import {
-	Event, EventEmitter, TextDocumentContentProvider, Uri, window, workspace
+	Disposable, Event, EventEmitter, TextDocumentContentProvider, Uri, ViewColumn, window, workspace
 } from 'vscode';
 
 import { ModelGroup, ModelNode, ModelSource } from './model';
@@ -39,11 +39,16 @@ function modelUri(source: Uri): Uri {
 	return Uri.from({ scheme: MODEL_SCHEME, path: `${name} (model)`, query: source.toString() });
 }
 
-export class ModelDocuments implements TextDocumentContentProvider {
+export class ModelDocuments implements TextDocumentContentProvider, Disposable {
 	private readonly changed = new EventEmitter<Uri>();
 	readonly onDidChange: Event<Uri> = this.changed.event;
 
 	constructor(private readonly source: ModelSource) {}
+
+	/** The emitter is this object's own; nothing else can close it. */
+	dispose(): void {
+		this.changed.dispose();
+	}
 
 	/**
 	 * Redraws every model view that is open.
@@ -68,7 +73,16 @@ export class ModelDocuments implements TextDocumentContentProvider {
 	}
 }
 
-/** Opens the model view for the active RegelSpraak document, beside it. */
+/**
+ * Opens the model view for the active RegelSpraak document, beside it.
+ *
+ * `Beside` rather than the source's own column, which is what this said and did
+ * not do: passing `editor.viewColumn` puts the view *over* the file it
+ * describes, and a description read in place of the thing it describes is not
+ * much of a description. W4's grid takes the opposite decision deliberately —
+ * there the grid replaces the text because it is another editor for the same
+ * file, where this is a second window onto it.
+ */
 export async function showModel(): Promise<void> {
 	const editor = window.activeTextEditor;
 	if (!editor || editor.document.languageId !== 'regelspraak') {
@@ -77,7 +91,7 @@ export async function showModel(): Promise<void> {
 		return;
 	}
 	const document = await workspace.openTextDocument(modelUri(editor.document.uri));
-	await window.showTextDocument(document, { viewColumn: editor.viewColumn, preview: true });
+	await window.showTextDocument(document, { viewColumn: ViewColumn.Beside, preview: true });
 }
 
 function render(described: Uri, groups: ModelGroup[]): string {

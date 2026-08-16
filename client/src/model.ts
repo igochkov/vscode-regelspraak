@@ -82,6 +82,20 @@ export class ModelSource {
 	private client: LanguageClient | undefined;
 	private workspaceTree: ModelTree | undefined;
 
+	/**
+	 * Moved by every `forget`, so an answer can be told from a stale one.
+	 *
+	 * `this.workspaceTree ??= await this.request({})` re-tested the field after
+	 * the await, but for *nullishness* rather than for freshness — and nullish is
+	 * exactly what an invalidation leaves behind. Two `modelChanged`
+	 * notifications inside one round trip put two requests in flight; replies
+	 * arrive in order on one connection, so the **older** one landed in an empty
+	 * cache and the fresher one found it filled and was dropped. The tree then
+	 * showed a model one change out of date until the next change happened to
+	 * come along.
+	 */
+	private generation = 0;
+
 	/** Re-pointed on every (re)start, and cleared when the server stops. */
 	setClient(client: LanguageClient | undefined): void {
 		this.client = client;
@@ -90,11 +104,24 @@ export class ModelSource {
 
 	forget(): void {
 		this.workspaceTree = undefined;
+		this.generation++;
 	}
 
 	async workspace(): Promise<ModelTree> {
-		this.workspaceTree ??= await this.request({});
-		return this.workspaceTree ?? EMPTY;
+		if (this.workspaceTree) {
+			return this.workspaceTree;
+		}
+		const asked = this.generation;
+		const answer = await this.request({});
+		// Only where nothing invalidated the cache while this was in flight. A
+		// reply that arrives into a newer generation is still returned to *this*
+		// caller — it is the best answer that exists for the question they asked —
+		// but it is not kept, so the request already on its way behind it is what
+		// the next reader sees.
+		if (answer && asked === this.generation) {
+			this.workspaceTree = answer;
+		}
+		return answer ?? EMPTY;
 	}
 
 	async document(uri: string): Promise<ModelTree> {

@@ -12,7 +12,7 @@
 // the only place a symbol kind is interpreted here.
 
 import {
-	Command, Event, EventEmitter, Position, Range, ThemeIcon, TreeDataProvider,
+	Command, Disposable, Event, EventEmitter, Position, Range, ThemeIcon, TreeDataProvider,
 	TreeItem, TreeItemCollapsibleState, Uri
 } from 'vscode';
 
@@ -61,11 +61,16 @@ const ICONS: Record<string, string> = {
 const toPosition = (p: WirePosition): Position => new Position(p.line, p.character);
 const toRange = (r: WireRange): Range => new Range(toPosition(r.start), toPosition(r.end));
 
-export class ModelExplorer implements TreeDataProvider<ModelEntry> {
+export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
 	private readonly changed = new EventEmitter<void>();
 	readonly onDidChangeTreeData: Event<void> = this.changed.event;
 
 	constructor(private readonly source: ModelSource) {}
+
+	/** The emitter is this object's own; nothing else can close it. */
+	dispose(): void {
+		this.changed.dispose();
+	}
 
 	/** Forgets the model and redraws; the next expansion re-asks the server. */
 	refresh(): void {
