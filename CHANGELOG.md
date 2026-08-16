@@ -2,13 +2,45 @@
 
 All notable changes to the RegelSpraak extension are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions map to delivered capability phases: each phase of the implementation
-plan gets a minor release, through to `1.0.0`.
+and versions map to delivered capability phases, through to `1.0.0`. That mapping
+is no longer *phase N to 0.N.0*: the workbench half of phase 6 needs nothing from
+the execution engine, so it ships here as `0.5.0`, ahead of execution.
 
-## [Unreleased]
+## [0.5.0] — The workbench
+
+A place of its own in the activity bar with the model in it, and three more ways
+to see what the language server knows about the model in front of you.
 
 ### Added
 
+- **Model Explorer** (the RegelSpraak icon in the activity bar, or
+  **Modelverkenner tonen** in the palette). Every declaration in the workspace in
+  one tree, grouped by kind: object types with their attributes and
+  characteristics, fact types with their roles, domains with their enumeration
+  values, and then unit systems, dimensions, day kinds, timelines, parameters,
+  rules and decision tables. Click a row and the declaration opens. Members that
+  an `Extensie van objecttype` block adds appear under the object type itself,
+  including when that block lives in another file. The tree follows what you
+  type.
+- **Call hierarchy over the dependencies between rules** (**Show Call
+  Hierarchy**, `Shift+Alt+H`). Incoming: the rules that read what this rule
+  derives. Outgoing: the rules that derive what this rule reads. A rule that
+  names another one — `regelversie <naam> gevuurd is` — counts in both
+  directions. A derivation chain is something you can now follow rather than
+  reconstruct from memory.
+- **Type hierarchy over object types** (**Show Type Hierarchy**): an object type
+  together with the `Extensie van objecttype` blocks that re-open it, wherever
+  those are written.
+- **A model view of a file** (**Modelweergave van dit bestand tonen**, or the
+  icon in the editor title bar). A read-only view of what the language server
+  sees in *this* file: its declarations in the order the file writes them, with
+  their members and their declared datatype. It follows the file.
+- **The language server's status in the status bar**, beside the language mode
+  of a `.rgs` file: starting, running, stopped, or failed to start — with the
+  path it tried when it could not be found. Click it for the log, also reachable
+  as **Logboek van de taalserver tonen**. Without this, a server that never
+  started is indistinguishable from one whose opinion is that there is nothing
+  to report.
 - **Soft wrapping for `.rgs` files, on by default.** A RegelSpraak sentence
   cannot be broken across lines: the newline is significant (§13.1.8) and carries
   work — it ends a rule's name, and separates versions, bullets and variables —
