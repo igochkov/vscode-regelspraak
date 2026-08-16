@@ -81,6 +81,15 @@ export class ServerStatus implements Disposable {
 	}
 
 	/**
+	 * The explanation beside it. Read by the E2E suite when it gives up on a
+	 * server, because for the state that matters there — one that was never
+	 * found — this is the half that names the path that was tried.
+	 */
+	get detail(): string | undefined {
+		return this.item.detail;
+	}
+
+	/**
 	 * `reason` replaces the standing explanation, for the one state that has
 	 * something specific to say — a server that could not be found names the
 	 * path it looked at, and that is the whole of the fix.
