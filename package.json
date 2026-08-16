@@ -83,6 +83,11 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.showServerLog",
+				"title": "Logboek van de taalserver tonen",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"

@@ -15,6 +15,7 @@ import {
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
+import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -101,6 +102,9 @@ const modelSource = new ModelSource();
 const modelExplorer = new ModelExplorer(modelSource);
 const modelDocuments = new ModelDocuments(modelSource);
 
+/** Created on activation, so it can say "starting" before there is a client. */
+let serverStatus: ServerStatus | undefined;
+
 /**
  * Owned here rather than left to `LanguageClient`, so the resolution report
  * below survives a restart and shares one channel with the server's own log.
@@ -131,18 +135,25 @@ async function restart(context: ExtensionContext): Promise<void> {
 /**
  * What the extension hands back to whoever activated it.
  *
- * Only the tree, and only so that the end-to-end suite can walk it: a tree view
- * is drawn by the workbench and has no command surface to assert against, so
- * without this the one thing that could check the `regelspraak/model` contract
- * across the repository boundary would be a screenshot.
+ * Only what the end-to-end suite has no other way to reach: a tree view and a
+ * language status item are both drawn by the workbench and neither has a
+ * command surface to assert against, so without this the one thing that could
+ * check the `regelspraak/model` contract across the repository boundary would
+ * be a screenshot.
  */
 export interface RegelSpraakApi {
 	modelExplorer: ModelExplorer;
+	serverStatus: ServerStatus;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
 	output = window.createOutputChannel('RegelSpraak Language Server');
 	context.subscriptions.push(output);
+
+	serverStatus = new ServerStatus();
+	context.subscriptions.push(
+		serverStatus,
+		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
 
 	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
 	context.subscriptions.push(
@@ -198,7 +209,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer };
+	return { modelExplorer, serverStatus };
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -288,6 +299,7 @@ function reportServerOrigin(module: string, origin: string): void {
 async function startClient(context: ExtensionContext): Promise<void> {
 	const { module: serverModule, origin } = resolveServerModule(context);
 	reportServerOrigin(serverModule, origin);
+	serverStatus?.set('starting');
 
 	if (!fs.existsSync(serverModule)) {
 		// A released .vsix bundles the server, so reaching this in a release is
@@ -303,6 +315,11 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt). ` +
 			`Zie docs/DEVELOPING.md, "Pointing the extension at a language server".`
 		);
+		// The notification is dismissed and then the window looks like one where
+		// RegelSpraak simply has no opinions. The status item is what is still
+		// there afterwards, and it names the path that was tried.
+		serverStatus?.set('error',
+			`De taalserver is niet gevonden op ${serverModule}, bepaald via ${origin}.`);
 		return;
 	}
 
@@ -343,7 +360,13 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	);
 
 	// Start the client. This will also launch the server
-	await client.start();
+	try {
+		await client.start();
+	} catch (error) {
+		serverStatus?.set('error', `De taalserver kon niet starten: ${String(error)}`);
+		throw error;
+	}
+	serverStatus?.set('ready');
 
 	// The two model views are a third projection beside the colours and the
 	// hints. They are told about more changes than those two, because nothing
@@ -366,6 +389,11 @@ async function stopClient(): Promise<void> {
 	watcher = undefined;
 	modelSource.setClient(undefined);
 	modelExplorer.refresh();
+	// Only where one was running: a failed start already said something more
+	// useful, and `stopClient` runs on the way into every restart.
+	if (running) {
+		serverStatus?.set('stopped');
+	}
 
 	try {
 		await running?.stop();
