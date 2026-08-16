@@ -310,6 +310,13 @@
 					"description": "Registreert de communicatie tussen VS Code en de taalserver."
 				}
 			}
+		},
+		"configurationDefaults": {
+			"[regelspraak]": {
+				"editor.wordWrap": "bounded",
+				"editor.wordWrapColumn": 100,
+				"editor.wrappingIndent": "deepIndent"
+			}
 		}
 	},
 	"scripts": {

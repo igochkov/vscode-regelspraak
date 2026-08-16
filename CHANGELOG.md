@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions map to delivered capability phases: each phase of the implementation
 plan gets a minor release, through to `1.0.0`.
 
+## [Unreleased]
+
+### Added
+
+- **Soft wrapping for `.rgs` files, on by default.** A RegelSpraak sentence
+  cannot be broken across lines: the newline is significant (§13.1.8) and carries
+  work — it ends a rule's name, and separates versions, bullets and variables —
+  so a long result sentence ran off the edge of the editor with no legal way to
+  shorten it. `.rgs` files now wrap at 100 columns or the width of the editor,
+  whichever is narrower, and a continuation is indented two levels so it reads as
+  part of the sentence above rather than a new one. Display only: the file on
+  disk is untouched and stays portable to any other RegelSpraak tool. Your own
+  `[regelspraak]` settings win over these.
+
 ## [0.4.0] — Formatting and editor ergonomics
 
 Layout you no longer have to keep by hand, and four small features that show you

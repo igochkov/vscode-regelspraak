@@ -51,6 +51,26 @@ The language server runs locally as a child process. Nothing is sent to a networ
 
 `strictPrecision` and `emptyValueHazards` quiet whole families rather than filter their output: a family that is off is never run. They exist because `RS4xx` and `RS5xx` report a *judgement* — that a precision is unclear, that a value might be empty — rather than an error of fact.
 
+### Line wrapping
+
+A RegelSpraak sentence cannot be broken across lines. The specification makes the newline significant (§13.1.8) and gives it a job — it ends a rule's name, separates versions, bullets and variables — so a result sentence stays on one line however long it grows. The extension therefore turns **soft** wrapping on for `.rgs` files, which changes the display and never the file:
+
+| Setting | Default here | What it does |
+| --- | --- | --- |
+| `editor.wordWrap` | `bounded` | Wraps at the column below, or the width of the editor, whichever is narrower. |
+| `editor.wordWrapColumn` | `100` | Around a tenth of the lines in a typical model reach it. |
+| `editor.wrappingIndent` | `deepIndent` | Indents a continuation two levels, so it reads as part of the sentence above rather than a new one. |
+
+Override any of them for yourself in user or workspace settings, and they win over these:
+
+```json
+"[regelspraak]": {
+	"editor.wordWrap": "off"
+}
+```
+
+`Alt+Z` toggles wrapping for the current editor without changing any setting. No ruler ships with this: a ruler marks a width you are meant to keep to by breaking the line, which is the one thing you cannot do here.
+
 ## Roadmap
 
 | | Release | What it adds |
