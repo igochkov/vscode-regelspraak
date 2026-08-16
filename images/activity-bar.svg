@@ -1,0 +1,21 @@
+<!--
+  Activity-bar icon for the RegelSpraak view container (W1).
+
+  Original work for this project, like images/icon.svg, and the same idea: in
+  Dutch a *regel* is both a rule and a line of text, so the mark is four lines
+  with a ragged right edge.
+
+  Monochrome, and deliberately so — VS Code renders an activity-bar icon as a
+  **mask**, filling it with the theme's own foreground colour and dropping
+  whatever colours the file declares. The extension icon's purple/green/orange/
+  blue would arrive here as four identical grey bars, so this is that shape at
+  24x24 with the detail that survives at that size: line lengths, nothing else.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+	<g fill="currentColor">
+		<rect x="3" y="4.5"  width="18" height="2.4" rx="1.2"/>
+		<rect x="3" y="9.3"  width="12" height="2.4" rx="1.2"/>
+		<rect x="3" y="14.1" width="15" height="2.4" rx="1.2"/>
+		<rect x="3" y="18.9" width="9"  height="2.4" rx="1.2"/>
+	</g>
+</svg>

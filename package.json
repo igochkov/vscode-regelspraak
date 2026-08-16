@@ -41,10 +41,40 @@
 		"workspaceContains:**/*.rgs"
 	],
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "regelspraak",
+					"title": "RegelSpraak",
+					"icon": "images/activity-bar.svg"
+				}
+			]
+		},
+		"views": {
+			"regelspraak": [
+				{
+					"id": "regelspraak.modelExplorer",
+					"name": "Modelverkenner",
+					"when": "regelspraak.active",
+					"icon": "images/activity-bar.svg"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "regelspraak.modelExplorer",
+				"contents": "Nog geen model gevonden.\n\nDe modelverkenner toont de declaraties van elk .rgs-bestand in deze werkmap, gegroepeerd op soort. Open een RegelSpraak-bestand, of kijk in het uitvoerkanaal \"RegelSpraak Language Server\" of de taalserver draait.\n[Taalserver opnieuw starten](command:regelspraak.restartServer)"
+			}
+		],
 		"commands": [
 			{
 				"command": "regelspraak.formatDocument",
 				"title": "Document opmaken",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.showModelExplorer",
+				"title": "Modelverkenner tonen",
 				"category": "RegelSpraak"
 			},
 			{

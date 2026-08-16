@@ -12,6 +12,8 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 
+import { ModelExplorer, MODEL_CHANGED_NOTIFICATION } from './modelExplorer';
+
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
 
@@ -73,8 +75,25 @@ const FORMAT_STATE_REQUEST = 'regelspraak/formatState';
 
 type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 
+/** Reveals the Model Explorer (W2), which is FSD §C2's `showModelExplorer`. */
+const SHOW_MODEL_EXPLORER_COMMAND = 'regelspraak.showModelExplorer';
+
+/** The view id, and so also the id of the `.focus` command VS Code derives. */
+const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
+
+/**
+ * Gates the view container on this extension being active.
+ *
+ * A contributed container is shown before its extension is activated, and this
+ * one activates on `workspaceContains:**\/*.rgs` — so without the gate a
+ * workspace with no RegelSpraak in it grows an activity-bar icon that opens an
+ * empty panel and never fills.
+ */
+const ACTIVE_CONTEXT = 'regelspraak.active';
+
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
+const modelExplorer = new ModelExplorer();
 
 /**
  * Owned here rather than left to `LanguageClient`, so the resolution report
@@ -103,9 +122,35 @@ async function restart(context: ExtensionContext): Promise<void> {
 	await startClient(context);
 }
 
-export async function activate(context: ExtensionContext): Promise<void> {
+/**
+ * What the extension hands back to whoever activated it.
+ *
+ * Only the tree, and only so that the end-to-end suite can walk it: a tree view
+ * is drawn by the workbench and has no command surface to assert against, so
+ * without this the one thing that could check the `regelspraak/model` contract
+ * across the repository boundary would be a screenshot.
+ */
+export interface RegelSpraakApi {
+	modelExplorer: ModelExplorer;
+}
+
+export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
 	output = window.createOutputChannel('RegelSpraak Language Server');
 	context.subscriptions.push(output);
+
+	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
+	context.subscriptions.push(
+		window.createTreeView(MODEL_EXPLORER_VIEW, {
+			treeDataProvider: modelExplorer,
+			// The declaration a row stands for is what a click opens; selecting
+			// several of them would be a gesture with nothing behind it.
+			canSelectMany: false,
+			showCollapseAll: true
+		}));
+
+	context.subscriptions.push(
+		commands.registerCommand(SHOW_MODEL_EXPLORER_COMMAND,
+			() => commands.executeCommand(`${MODEL_EXPLORER_VIEW}.focus`)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -143,6 +188,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 	);
 
 	await inSuccession(() => startClient(context));
+	return { modelExplorer };
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -288,6 +334,14 @@ async function startClient(context: ExtensionContext): Promise<void> {
 
 	// Start the client. This will also launch the server
 	await client.start();
+
+	// The tree is a third projection of the model beside the colours and the
+	// hints, and the server tells all three the same thing on the same
+	// occasions. Subscribed after `start`, and per client, because a restart
+	// builds a new one — and re-pointed at it, since the old one answers
+	// nothing.
+	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => modelExplorer.refresh());
+	modelExplorer.setClient(client);
 }
 
 async function stopClient(): Promise<void> {
@@ -295,6 +349,7 @@ async function stopClient(): Promise<void> {
 	const toClose = watcher;
 	client = undefined;
 	watcher = undefined;
+	modelExplorer.setClient(undefined);
 
 	try {
 		await running?.stop();
