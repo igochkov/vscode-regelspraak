@@ -78,6 +78,11 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.showAst",
+				"title": "Modelweergave van dit bestand tonen",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"
@@ -88,6 +93,10 @@
 				{
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.showAst",
+					"when": "editorLangId == regelspraak"
 				}
 			],
 			"editor/context": [
@@ -95,6 +104,12 @@
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak",
 					"group": "1_modification"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "regelspraak.showAst",
+					"when": "editorLangId == regelspraak"
 				}
 			]
 		},

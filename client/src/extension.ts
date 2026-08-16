@@ -12,7 +12,9 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 
-import { ModelExplorer, MODEL_CHANGED_NOTIFICATION } from './modelExplorer';
+import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
+import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
+import { ModelExplorer } from './modelExplorer';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -93,7 +95,11 @@ const ACTIVE_CONTEXT = 'regelspraak.active';
 
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
-const modelExplorer = new ModelExplorer();
+
+/** One source for both model views (W2, W5), and the only holder of the client. */
+const modelSource = new ModelSource();
+const modelExplorer = new ModelExplorer(modelSource);
+const modelDocuments = new ModelDocuments(modelSource);
 
 /**
  * Owned here rather than left to `LanguageClient`, so the resolution report
@@ -151,6 +157,10 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	context.subscriptions.push(
 		commands.registerCommand(SHOW_MODEL_EXPLORER_COMMAND,
 			() => commands.executeCommand(`${MODEL_EXPLORER_VIEW}.focus`)));
+
+	context.subscriptions.push(
+		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
+		commands.registerCommand(SHOW_MODEL_COMMAND, showModel));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -335,13 +345,18 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	// Start the client. This will also launch the server
 	await client.start();
 
-	// The tree is a third projection of the model beside the colours and the
-	// hints, and the server tells all three the same thing on the same
-	// occasions. Subscribed after `start`, and per client, because a restart
+	// The two model views are a third projection beside the colours and the
+	// hints. They are told about more changes than those two, because nothing
+	// re-reads a tree or a virtual document on its own — see the server's
+	// `protocol.ts`. Subscribed after `start`, and per client, because a restart
 	// builds a new one — and re-pointed at it, since the old one answers
 	// nothing.
-	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => modelExplorer.refresh());
-	modelExplorer.setClient(client);
+	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => {
+		modelExplorer.refresh();
+		modelDocuments.refresh();
+	});
+	modelSource.setClient(client);
+	modelExplorer.refresh();
 }
 
 async function stopClient(): Promise<void> {
@@ -349,7 +364,8 @@ async function stopClient(): Promise<void> {
 	const toClose = watcher;
 	client = undefined;
 	watcher = undefined;
-	modelExplorer.setClient(undefined);
+	modelSource.setClient(undefined);
+	modelExplorer.refresh();
 
 	try {
 		await running?.stop();

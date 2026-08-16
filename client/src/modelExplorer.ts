@@ -2,50 +2,21 @@
 // container.
 //
 // A tree of the whole model grouped by kind, which the server answers in one
-// `regelspraak/model` request. This side draws it and does not derive it: what
-// a group is called, which declaration is in it and where that declaration
-// lives are all facts about the model, and the language server is the half that
-// holds them.
+// `regelspraak/model` request (`model.ts` holds that half). This side draws it
+// and does not derive it: what a group is called, which declaration is in it
+// and where that declaration lives are all facts about the model, and the
+// language server is the half that holds them.
 //
 // The one question that *is* this side's is the icon. Codicons are a workbench
 // vocabulary the server has no notion of, so the map below is ours, and it is
 // the only place a symbol kind is interpreted here.
 
 import {
-	Command, Event, EventEmitter, ThemeIcon, TreeDataProvider, TreeItem,
-	TreeItemCollapsibleState, Uri, Range, Position
+	Command, Event, EventEmitter, Position, Range, ThemeIcon, TreeDataProvider,
+	TreeItem, TreeItemCollapsibleState, Uri
 } from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
 
-/** `regelspraak/model` — see the server's `protocol.ts`, which defines it. */
-const MODEL_TREE_REQUEST = 'regelspraak/model';
-
-/** `regelspraak/modelChanged` — sent whenever that answer would differ. */
-export const MODEL_CHANGED_NOTIFICATION = 'regelspraak/modelChanged';
-
-interface WirePosition { line: number; character: number }
-interface WireRange { start: WirePosition; end: WirePosition }
-
-export interface ModelNode {
-	name: string;
-	kind: string;
-	label: string;
-	detail?: string;
-	uri: string;
-	range: WireRange;
-	selectionRange: WireRange;
-	children: ModelNode[];
-}
-
-export interface ModelGroup {
-	kind: string;
-	label: string;
-	nodes: ModelNode[];
-}
-
-export interface ModelTree {
-	groups: ModelGroup[];
-}
+import { ModelGroup, ModelNode, ModelSource, WirePosition, WireRange } from './model';
 
 /**
  * A row of the tree: a heading, or a declaration.
@@ -94,26 +65,11 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry> {
 	private readonly changed = new EventEmitter<void>();
 	readonly onDidChangeTreeData: Event<void> = this.changed.event;
 
-	/**
-	 * The last answer, or `undefined` for "not asked yet".
-	 *
-	 * Held because VS Code asks for children one level at a time and the answer
-	 * is one document-wide record; re-requesting it per expansion would ask the
-	 * server the same question once per row the user opens.
-	 */
-	private tree: ModelTree | undefined;
-
-	/** Set by the extension on every (re)start, and cleared when it stops. */
-	private client: LanguageClient | undefined;
-
-	setClient(client: LanguageClient | undefined): void {
-		this.client = client;
-		this.refresh();
-	}
+	constructor(private readonly source: ModelSource) {}
 
 	/** Forgets the model and redraws; the next expansion re-asks the server. */
 	refresh(): void {
-		this.tree = undefined;
+		this.source.forget();
 		this.changed.fire();
 	}
 
@@ -128,24 +84,8 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry> {
 		if (entry?.row === 'declaration') {
 			return entry.node.children.map(node => ({ row: 'declaration', node }));
 		}
-		const tree = await this.model();
+		const tree = await this.source.workspace();
 		return tree.groups.map(group => ({ row: 'group', group }));
-	}
-
-	private async model(): Promise<ModelTree> {
-		if (this.tree) {
-			return this.tree;
-		}
-		// No server, or one too old to know the request: an empty tree, which the
-		// view's welcome content explains. Never a thrown error — a tree view that
-		// rejects shows a bare "Error" where the reason is that nothing is
-		// running yet.
-		try {
-			this.tree = await this.client?.sendRequest<ModelTree>(MODEL_TREE_REQUEST, {});
-		} catch {
-			this.tree = undefined;
-		}
-		return this.tree ?? { groups: [] };
 	}
 }
 
