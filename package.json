@@ -60,18 +60,6 @@
 				}
 			]
 		},
-		"customEditors": [
-			{
-				"viewType": "regelspraak.beslistabel",
-				"displayName": "RegelSpraak-beslistabellen",
-				"selector": [
-					{
-						"filenamePattern": "*.rgs"
-					}
-				],
-				"priority": "option"
-			}
-		],
 		"viewsWelcome": [
 			{
 				"view": "regelspraak.modelExplorer",
@@ -95,8 +83,8 @@
 				"category": "RegelSpraak"
 			},
 			{
-				"command": "regelspraak.openBeslistabelEditor",
-				"title": "Beslistabellen als rooster openen",
+				"command": "regelspraak.previewBeslistabel",
+				"title": "Beslistabelvoorbeeld tonen",
 				"category": "RegelSpraak"
 			},
 			{
@@ -121,7 +109,7 @@
 					"when": "editorLangId == regelspraak"
 				},
 				{
-					"command": "regelspraak.openBeslistabelEditor",
+					"command": "regelspraak.previewBeslistabel",
 					"when": "editorLangId == regelspraak"
 				}
 			],

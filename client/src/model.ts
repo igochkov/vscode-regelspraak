@@ -59,6 +59,11 @@ export interface DecisionColumn {
 	header: string;
 	range: WireRange;
 	role: 'conclusie' | 'conditie';
+	/**
+	 * Whether a case's value finishes this column's sentence, or the title states
+	 * it whole and the value says whether it holds. Conclusion columns only.
+	 */
+	composed?: boolean;
 }
 
 export interface DecisionRow {
@@ -129,9 +134,9 @@ export class ModelSource {
 	}
 
 	/**
-	 * Never cached, unlike the workspace tree: the grid writes through the ranges
-	 * in this answer, so a stale one would put a cell's text on top of whatever
-	 * moved into its place.
+	 * Never cached, unlike the workspace tree: this answer is asked for on every
+	 * change to the document it is about, so a cache of it would be a copy that is
+	 * stale exactly when it is read.
 	 */
 	async decisionTables(uri: string): Promise<DecisionTable[]> {
 		try {

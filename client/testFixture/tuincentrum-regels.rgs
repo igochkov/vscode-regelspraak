@@ -15,7 +15,7 @@ Regel bepaal korting
 	geldig altijd
 		De korting van een Klant moet berekend worden als het basisbedrag maal 2.
 		Daarbij geldt:
-		het basisbedrag is 5 €.
+			het basisbedrag is 5 €.
 
 Regel stel spaartegoed bij
 	geldig altijd
@@ -23,9 +23,9 @@ Regel stel spaartegoed bij
 		indien alle Klanten stamklant zijn.
 
 // Beslistabel (§12): de kolomtitels en de cellen vormen samen één zin. Deze
-// tabel is ook de fixture voor het beslistabelrooster (W4).
+// tabel is ook de fixture voor het beslistabelvoorbeeld (W4).
 Beslistabel Bezorgkosten
 	geldig altijd
-| | de bezorgkosten van een Bestelling moet gesteld worden op | indien zijn orderbedrag kleiner is dan |
-| 1 | 5 €                                                     | 50 €                                   |
-| 2 | 0 €                                                     | n.v.t.                                 |
+	|   | de bezorgkosten van een Bestelling moet gesteld worden op | indien zijn orderbedrag kleiner is dan |
+	| 1 | 5 €                                                       | 50 €                                   |
+	| 2 | 0 €                                                       | n.v.t.                                 |

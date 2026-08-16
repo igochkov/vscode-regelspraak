@@ -13,8 +13,8 @@ import {
 } from 'vscode-languageclient/node';
 
 import {
-	DECISION_TABLE_VIEW, DecisionTableEditor, OPEN_DECISION_TABLES_COMMAND, openDecisionTables
-} from './decisionTableEditor';
+	DecisionTablePreviews, PREVIEW_DECISION_TABLES_COMMAND, previewActiveDocument
+} from './decisionTablePreview';
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
@@ -104,6 +104,7 @@ let watcher: FileSystemWatcher | undefined;
 const modelSource = new ModelSource();
 const modelExplorer = new ModelExplorer(modelSource);
 const modelDocuments = new ModelDocuments(modelSource);
+const decisionTablePreviews = new DecisionTablePreviews(modelSource);
 
 /** Created on activation, so it can say "starting" before there is a client. */
 let serverStatus: ServerStatus | undefined;
@@ -186,14 +187,14 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(SHOW_MODEL_COMMAND, showModel));
 
 	context.subscriptions.push(
-		window.registerCustomEditorProvider(
-			DECISION_TABLE_VIEW,
-			new DecisionTableEditor(modelSource),
-			// A `.rgs` file is a model that may *contain* tables, so the grid is
-			// one view of it and never the only one; keeping it alive while it is
-			// hidden is what makes flipping back and forth free.
-			{ webviewOptions: { retainContextWhenHidden: true } }),
-		commands.registerCommand(OPEN_DECISION_TABLES_COMMAND, openDecisionTables));
+		decisionTablePreviews,
+		// Two callers, one command. The server's CodeLens passes the document and a
+		// position inside the table it is above, as plain JSON; the palette passes
+		// nothing and the active editor is the answer.
+		commands.registerCommand(PREVIEW_DECISION_TABLES_COMMAND,
+			(uri?: string, position?: WirePosition) => uri
+				? decisionTablePreviews.show(Uri.parse(uri), position && toPosition(position))
+				: previewActiveDocument(decisionTablePreviews)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).

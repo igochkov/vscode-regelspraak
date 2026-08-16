@@ -35,19 +35,20 @@ to see what the language server knows about the model in front of you.
   icon in the editor title bar). A read-only view of what the language server
   sees in *this* file: its declarations in the order the file writes them, with
   their members and their declared datatype. It follows the file.
-- **A visual editor for decision tables** (**Beslistabellen als rooster
-  openen**, or right-click the file → **Reopen Editor With…**). Every
-  `Beslistabel` in the file as a grid: one row per case, one column per
-  condition or conclusion, with the conclusion column marked as such and the
-  server's own errors shown on the cell they are about. Edit a value, add a
-  case, delete one. It is opt-in per file and the text stays the source of
-  truth — every change is an ordinary edit, so save and a text editor open
-  beside it keep working, and the table is lined up again afterwards (undo takes
-  the realignment back first and the value second). A value containing a `|` or a
-  line break is refused rather than written: those change the table's shape
-  rather than a case, and that is a job for the text.
-  Column titles are read-only: a title is a RegelSpraak sentence, and it is what
-  decides whether the column concludes or conditions.
+- **A preview for decision tables.** Above every `Beslistabel` there is now a
+  **voorbeeld tonen** link; it opens the table beside the text as a grid, one row
+  per case and one column per condition or conclusion. It shows the three things
+  the source cannot: which columns conclude and which condition — a fact
+  RegelSpraak leaves to what the title *says*, so the text never states it — the
+  server's own errors on the cell each one is about, and, for the case your
+  cursor is in, what that case concludes written out as one sentence, since a
+  conclusion is split between a column title and a cell. It navigates in both
+  directions: click a cell, a column title or the table's name to go there in the
+  text, and moving the cursor through the table highlights the case you are in.
+
+  The preview is **read-only**, and deliberately so: a model is written as text
+  here, and every view this extension adds shows you the text rather than
+  competing with it. Adding or deleting a case is a job for the editor.
 - **Decision-table condition columns now count as uses.** A column such as
   `indien zijn orderbedrag kleiner is dan` names an attribute exactly as a rule
   does, and until now only the conclusion column did: the condition was coloured
