@@ -93,9 +93,18 @@ suite('Navigatie en hernoemen (P5–P9, P11, P20)', () => {
 		const matches = await waitUntil('markeringen', async () => {
 			const found = await vscode.commands.executeCommand<vscode.DocumentHighlight[] | undefined>(
 				'vscode.executeDocumentHighlights', rulesUri, inRules('orderbedrag van een'));
-			return found && found.length > 0 ? found : undefined;
+			return found && found.length > 1 ? found : undefined;
 		});
-		assert.deepStrictEqual(matches.map(t => t.kind), [vscode.DocumentHighlightKind.Write]);
+		// Beide soorten staan in dit bestand: de regel schrijft het orderbedrag, en
+		// de conditiekolom van de Beslistabel leest het. Die tweede telde niet mee
+		// zolang een tabel alleen haar conclusiekolom als voorkomen opleverde —
+		// waardoor die tabel in de afhankelijkheidsgraaf een knoop zonder invoer was.
+		assert.deepStrictEqual([...new Set(matches.map(t => t.kind))].sort(),
+			[vscode.DocumentHighlightKind.Read, vscode.DocumentHighlightKind.Write]);
+		// En de plek onder de cursor is de schrijvende.
+		assert.equal(
+			matches.find(m => m.range.contains(inRules('orderbedrag van een')))?.kind,
+			vscode.DocumentHighlightKind.Write);
 	});
 
 	test('P11 — werkmapzoeken vindt een meerwoordige naam op een middenwoord', async () => {

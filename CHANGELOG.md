@@ -41,10 +41,21 @@ to see what the language server knows about the model in front of you.
   condition or conclusion, with the conclusion column marked as such and the
   server's own errors shown on the cell they are about. Edit a value, add a
   case, delete one. It is opt-in per file and the text stays the source of
-  truth — every change is an ordinary edit, so undo, save and a text editor open
-  beside it all keep working, and the table is lined up again afterwards.
+  truth — every change is an ordinary edit, so save and a text editor open
+  beside it keep working, and the table is lined up again afterwards (undo takes
+  the realignment back first and the value second). A value containing a `|` or a
+  line break is refused rather than written: those change the table's shape
+  rather than a case, and that is a job for the text.
   Column titles are read-only: a title is a RegelSpraak sentence, and it is what
   decides whether the column concludes or conditions.
+- **Decision-table condition columns now count as uses.** A column such as
+  `indien zijn orderbedrag kleiner is dan` names an attribute exactly as a rule
+  does, and until now only the conclusion column did: the condition was coloured
+  as nothing, found by nothing, and left behind by a rename. It now colours,
+  hovers, answers **Find All References** and **Show Call Hierarchy**, and is
+  renamed with the attribute — which also means a table shows what it *reads*
+  and not only what it derives. A table that concludes a characteristic
+  (`een Lid is jeugdlid`) likewise now answers "which rule derives this?".
 - **The language server's status in the status bar**, beside the language mode
   of a `.rgs` file: starting, running, stopped, or failed to start — with the
   path it tried when it could not be found. Click it for the log, also reachable
