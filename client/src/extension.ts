@@ -12,6 +12,14 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 
+import {
+	DecisionTablePreviews, PREVIEW_DECISION_TABLES_COMMAND, previewActiveDocument
+} from './decisionTablePreview';
+import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
+import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
+import { ModelExplorer } from './modelExplorer';
+import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
+
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
 
@@ -73,8 +81,33 @@ const FORMAT_STATE_REQUEST = 'regelspraak/formatState';
 
 type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 
+/** Reveals the Model Explorer (W2), which is FSD §C2's `showModelExplorer`. */
+const SHOW_MODEL_EXPLORER_COMMAND = 'regelspraak.showModelExplorer';
+
+/** The view id, and so also the id of the `.focus` command VS Code derives. */
+const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
+
+/**
+ * Gates the view container on this extension being active.
+ *
+ * A contributed container is shown before its extension is activated, and this
+ * one activates on `workspaceContains:**\/*.rgs` — so without the gate a
+ * workspace with no RegelSpraak in it grows an activity-bar icon that opens an
+ * empty panel and never fills.
+ */
+const ACTIVE_CONTEXT = 'regelspraak.active';
+
 let client: LanguageClient | undefined;
 let watcher: FileSystemWatcher | undefined;
+
+/** One source for both model views (W2, W5), and the only holder of the client. */
+const modelSource = new ModelSource();
+const modelExplorer = new ModelExplorer(modelSource);
+const modelDocuments = new ModelDocuments(modelSource);
+const decisionTablePreviews = new DecisionTablePreviews(modelSource);
+
+/** Created on activation, so it can say "starting" before there is a client. */
+let serverStatus: ServerStatus | undefined;
 
 /**
  * Owned here rather than left to `LanguageClient`, so the resolution report
@@ -103,9 +136,65 @@ async function restart(context: ExtensionContext): Promise<void> {
 	await startClient(context);
 }
 
-export async function activate(context: ExtensionContext): Promise<void> {
+/**
+ * What the extension hands back to whoever activated it.
+ *
+ * Only what the end-to-end suite has no other way to reach. A tree view, a
+ * language status item and a webview are all drawn by the workbench and none
+ * has a command surface to assert against — so without this, the only thing
+ * that could check the custom requests across the repository boundary would be
+ * a screenshot. The model source is here for the same reason and is the object
+ * those requests are made through.
+ */
+export interface RegelSpraakApi {
+	modelExplorer: ModelExplorer;
+	serverStatus: ServerStatus;
+	modelSource: ModelSource;
+}
+
+export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
 	output = window.createOutputChannel('RegelSpraak Language Server');
 	context.subscriptions.push(output);
+
+	serverStatus = new ServerStatus();
+	context.subscriptions.push(
+		serverStatus,
+		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
+
+	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
+	context.subscriptions.push(
+		// Withdrawn on the way out, with everything else this function registered:
+		// a context key is global to the window, and one left set by an extension
+		// that is no longer running keeps an activity-bar container on screen whose
+		// view has nothing behind it.
+		{ dispose: () => void commands.executeCommand('setContext', ACTIVE_CONTEXT, false) },
+		modelExplorer,
+		modelDocuments,
+		window.createTreeView(MODEL_EXPLORER_VIEW, {
+			treeDataProvider: modelExplorer,
+			// The declaration a row stands for is what a click opens; selecting
+			// several of them would be a gesture with nothing behind it.
+			canSelectMany: false,
+			showCollapseAll: true
+		}));
+
+	context.subscriptions.push(
+		commands.registerCommand(SHOW_MODEL_EXPLORER_COMMAND,
+			() => commands.executeCommand(`${MODEL_EXPLORER_VIEW}.focus`)));
+
+	context.subscriptions.push(
+		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
+		commands.registerCommand(SHOW_MODEL_COMMAND, showModel));
+
+	context.subscriptions.push(
+		decisionTablePreviews,
+		// Two callers, one command. The server's CodeLens passes the document and a
+		// position inside the table it is above, as plain JSON; the palette passes
+		// nothing and the active editor is the answer.
+		commands.registerCommand(PREVIEW_DECISION_TABLES_COMMAND,
+			(uri?: string, position?: WirePosition) => uri
+				? decisionTablePreviews.show(Uri.parse(uri), position && toPosition(position))
+				: previewActiveDocument(decisionTablePreviews)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -143,6 +232,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 	);
 
 	await inSuccession(() => startClient(context));
+	return { modelExplorer, serverStatus, modelSource };
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -232,6 +322,7 @@ function reportServerOrigin(module: string, origin: string): void {
 async function startClient(context: ExtensionContext): Promise<void> {
 	const { module: serverModule, origin } = resolveServerModule(context);
 	reportServerOrigin(serverModule, origin);
+	serverStatus?.set('starting');
 
 	if (!fs.existsSync(serverModule)) {
 		// A released .vsix bundles the server, so reaching this in a release is
@@ -247,6 +338,11 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt). ` +
 			`Zie docs/DEVELOPING.md, "Pointing the extension at a language server".`
 		);
+		// The notification is dismissed and then the window looks like one where
+		// RegelSpraak simply has no opinions. The status item is what is still
+		// there afterwards, and it names the path that was tried.
+		serverStatus?.set('error',
+			`De taalserver is niet gevonden op ${serverModule}, bepaald via ${origin}.`);
 		return;
 	}
 
@@ -286,8 +382,35 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		clientOptions
 	);
 
+	// Before `start`, so the item follows the whole life of this client and not
+	// only the two moments this function drives. `LanguageClient` restarts a
+	// crashed server on its own and eventually gives up, and neither happens
+	// through the calls below — see `ServerStatus.follow`. A deliberate stop is
+	// not misreported as a crash because `stopClient` says `stopped` *before* it
+	// calls `stop()`, and `follow` only speaks up about a server that was `ready`.
+	client.onDidChangeState(event => serverStatus?.follow(event.newState));
+
 	// Start the client. This will also launch the server
-	await client.start();
+	try {
+		await client.start();
+	} catch (error) {
+		serverStatus?.set('error', `De taalserver kon niet starten: ${String(error)}`);
+		throw error;
+	}
+	serverStatus?.set('ready');
+
+	// The two model views are a third projection beside the colours and the
+	// hints. They are told about more changes than those two, because nothing
+	// re-reads a tree or a virtual document on its own — see the server's
+	// `protocol.ts`. Subscribed after `start`, and per client, because a restart
+	// builds a new one — and re-pointed at it, since the old one answers
+	// nothing.
+	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => {
+		modelExplorer.refresh();
+		modelDocuments.refresh();
+	});
+	modelSource.setClient(client);
+	modelExplorer.refresh();
 }
 
 async function stopClient(): Promise<void> {
@@ -295,6 +418,13 @@ async function stopClient(): Promise<void> {
 	const toClose = watcher;
 	client = undefined;
 	watcher = undefined;
+	modelSource.setClient(undefined);
+	modelExplorer.refresh();
+	// Only where one was running: a failed start already said something more
+	// useful, and `stopClient` runs on the way into every restart.
+	if (running) {
+		serverStatus?.set('stopped');
+	}
 
 	try {
 		await running?.stop();

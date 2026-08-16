@@ -2,8 +2,76 @@
 
 All notable changes to the RegelSpraak extension are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions map to delivered capability phases: each phase of the implementation
-plan gets a minor release, through to `1.0.0`.
+and versions map to delivered capability phases, through to `1.0.0`. That mapping
+is no longer *phase N to 0.N.0*: the workbench half of phase 6 needs nothing from
+the execution engine, so it ships here as `0.5.0`, ahead of execution.
+
+## [0.5.0] — The workbench
+
+A place of its own in the activity bar with the model in it, and three more ways
+to see what the language server knows about the model in front of you.
+
+### Added
+
+- **Model Explorer** (the RegelSpraak icon in the activity bar, or
+  **Modelverkenner tonen** in the palette). Every declaration in the workspace in
+  one tree, grouped by kind: object types with their attributes and
+  characteristics, fact types with their roles, domains with their enumeration
+  values, and then unit systems, dimensions, day kinds, timelines, parameters,
+  rules and decision tables. Click a row and the declaration opens. Members that
+  an `Extensie van objecttype` block adds appear under the object type itself,
+  including when that block lives in another file. The tree follows what you
+  type.
+- **Call hierarchy over the dependencies between rules** (**Show Call
+  Hierarchy**, `Shift+Alt+H`). Incoming: the rules that read what this rule
+  derives. Outgoing: the rules that derive what this rule reads. A rule that
+  names another one — `regelversie <naam> gevuurd is` — counts in both
+  directions. A derivation chain is something you can now follow rather than
+  reconstruct from memory.
+- **Type hierarchy over object types** (**Show Type Hierarchy**): an object type
+  together with the `Extensie van objecttype` blocks that re-open it, wherever
+  those are written.
+- **A model view of a file** (**Modelweergave van dit bestand tonen**, or the
+  icon in the editor title bar). A read-only view of what the language server
+  sees in *this* file: its declarations in the order the file writes them, with
+  their members and their declared datatype. It follows the file.
+- **A preview for decision tables.** Above every `Beslistabel` there is now a
+  **voorbeeld tonen** link; it opens the table beside the text as a grid, one row
+  per case and one column per condition or conclusion. It shows the three things
+  the source cannot: which columns conclude and which condition — a fact
+  RegelSpraak leaves to what the title *says*, so the text never states it — the
+  server's own errors on the cell each one is about, and, for the case your
+  cursor is in, what that case concludes written out as one sentence, since a
+  conclusion is split between a column title and a cell. It navigates in both
+  directions: click a cell, a column title or the table's name to go there in the
+  text, and moving the cursor through the table highlights the case you are in.
+
+  The preview is **read-only**, and deliberately so: a model is written as text
+  here, and every view this extension adds shows you the text rather than
+  competing with it. Adding or deleting a case is a job for the editor.
+- **Decision-table condition columns now count as uses.** A column such as
+  `indien zijn orderbedrag kleiner is dan` names an attribute exactly as a rule
+  does, and until now only the conclusion column did: the condition was coloured
+  as nothing, found by nothing, and left behind by a rename. It now colours,
+  hovers, answers **Find All References** and **Show Call Hierarchy**, and is
+  renamed with the attribute — which also means a table shows what it *reads*
+  and not only what it derives. A table that concludes a characteristic
+  (`een Lid is jeugdlid`) likewise now answers "which rule derives this?".
+- **The language server's status in the status bar**, beside the language mode
+  of a `.rgs` file: starting, running, stopped, or failed to start — with the
+  path it tried when it could not be found. Click it for the log, also reachable
+  as **Logboek van de taalserver tonen**. Without this, a server that never
+  started is indistinguishable from one whose opinion is that there is nothing
+  to report.
+- **Soft wrapping for `.rgs` files, on by default.** A RegelSpraak sentence
+  cannot be broken across lines: the newline is significant (§13.1.8) and carries
+  work — it ends a rule's name, and separates versions, bullets and variables —
+  so a long result sentence ran off the edge of the editor with no legal way to
+  shorten it. `.rgs` files now wrap at 100 columns or the width of the editor,
+  whichever is narrower, and a continuation is indented two levels so it reads as
+  part of the sentence above rather than a new one. Display only: the file on
+  disk is untouched and stays portable to any other RegelSpraak tool. Your own
+  `[regelspraak]` settings win over these.
 
 ## [0.4.0] — Formatting and editor ergonomics
 

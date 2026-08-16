@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -41,10 +41,55 @@
 		"workspaceContains:**/*.rgs"
 	],
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "regelspraak",
+					"title": "RegelSpraak",
+					"icon": "images/activity-bar.svg"
+				}
+			]
+		},
+		"views": {
+			"regelspraak": [
+				{
+					"id": "regelspraak.modelExplorer",
+					"name": "Modelverkenner",
+					"when": "regelspraak.active",
+					"icon": "images/activity-bar.svg"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "regelspraak.modelExplorer",
+				"contents": "Nog geen model gevonden.\n\nDe modelverkenner toont de declaraties van elk .rgs-bestand in deze werkmap, gegroepeerd op soort. Open een RegelSpraak-bestand, of kijk in het uitvoerkanaal \"RegelSpraak Language Server\" of de taalserver draait.\n[Taalserver opnieuw starten](command:regelspraak.restartServer)"
+			}
+		],
 		"commands": [
 			{
 				"command": "regelspraak.formatDocument",
 				"title": "Document opmaken",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.showModelExplorer",
+				"title": "Modelverkenner tonen",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.showAst",
+				"title": "Modelweergave van dit bestand tonen",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.previewBeslistabel",
+				"title": "Beslistabelvoorbeeld tonen",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.showServerLog",
+				"title": "Logboek van de taalserver tonen",
 				"category": "RegelSpraak"
 			},
 			{
@@ -58,6 +103,14 @@
 				{
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.showAst",
+					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.previewBeslistabel",
+					"when": "editorLangId == regelspraak"
 				}
 			],
 			"editor/context": [
@@ -65,6 +118,12 @@
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak",
 					"group": "1_modification"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "regelspraak.showAst",
+					"when": "editorLangId == regelspraak"
 				}
 			]
 		},
@@ -309,6 +368,13 @@
 					"default": "off",
 					"description": "Registreert de communicatie tussen VS Code en de taalserver."
 				}
+			}
+		},
+		"configurationDefaults": {
+			"[regelspraak]": {
+				"editor.wordWrap": "bounded",
+				"editor.wordWrapColumn": 100,
+				"editor.wrappingIndent": "deepIndent"
 			}
 		}
 	},

@@ -24,6 +24,11 @@ The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.
 - **Inlay hints** for what the model works out and the text does not say: the datatype and unit a rule derives, the same for each `Daarbij geldt:` variable, and — set to `all` — the object type a `zijn` or `hij` refers to. Where the model is not sure, nothing is shown.
 - **Smart selection expansion** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>→</kbd>) along the sentence: word, whole name, subject chain, expression, sentence, rule version, rule. Names are several words, so the editor's word-by-word expansion had little to offer here.
 - **Links in comments**: a URL, and the name of another `.rgs` file of the model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
+- **A Model Explorer** in its own activity-bar container: every declaration in the workspace in one tree, grouped by kind, with members underneath — including the ones an `Extensie van objecttype` block in another file adds. Click a row and the declaration opens; the tree follows what you type.
+- **Call hierarchy over rule dependencies** (**Show Call Hierarchy**): incoming is the rules that read what this rule derives, outgoing is the rules that derive what it reads, and a rule named directly with `regelversie <naam> gevuurd is` counts in both. **Type hierarchy** shows an object type with the `Extensie van objecttype` blocks that re-open it.
+- **A model view of a file** (read-only): the declarations the language server sees in it, in the order the file writes them, with their members and declared datatypes.
+- **A preview for decision tables**, opened from the CodeLens above a `Beslistabel`: the table as a grid of cases and columns, beside the text. It shows what the source cannot — which column concludes and which conditions, the errors on the cell each one is about, and what the case your cursor is in concludes, written out as one sentence. Read-only, and it navigates: click a cell to go to it in the text, and moving the cursor there highlights the case. A model is edited as text — that is the point of this extension — so the preview never writes.
+- **The language server's status** beside the language mode of a `.rgs` file, so a server that failed to start is not mistaken for one with nothing to report; clicking it opens the log.
 - **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware — declarations, rule versions, koptekst sections, `Daarbij geldt:` blocks and compound-condition bullets — and honours `//#region` markers.
 - **Snippets** for every frequent construct, each body validated against the language grammar in CI, plus bracket, quote and guillemet (`«»`) matching, `//` comment toggling, indentation rules and bullet-list continuation.
 - **RegelSpraak in Markdown**: a fenced code block marked `regelspraak` (or `rgs`) is highlighted inside any `.md` file, so a model reads properly in documentation and design notes. Syntax only — a Markdown file is not a model, so a block is coloured but not analysed.
@@ -51,6 +56,26 @@ The language server runs locally as a child process. Nothing is sent to a networ
 
 `strictPrecision` and `emptyValueHazards` quiet whole families rather than filter their output: a family that is off is never run. They exist because `RS4xx` and `RS5xx` report a *judgement* — that a precision is unclear, that a value might be empty — rather than an error of fact.
 
+### Line wrapping
+
+A RegelSpraak sentence cannot be broken across lines. The specification makes the newline significant (§13.1.8) and gives it a job — it ends a rule's name, separates versions, bullets and variables — so a result sentence stays on one line however long it grows. The extension therefore turns **soft** wrapping on for `.rgs` files, which changes the display and never the file:
+
+| Setting | Default here | What it does |
+| --- | --- | --- |
+| `editor.wordWrap` | `bounded` | Wraps at the column below, or the width of the editor, whichever is narrower. |
+| `editor.wordWrapColumn` | `100` | Around a tenth of the lines in a typical model reach it. |
+| `editor.wrappingIndent` | `deepIndent` | Indents a continuation two levels, so it reads as part of the sentence above rather than a new one. |
+
+Override any of them for yourself in user or workspace settings, and they win over these:
+
+```json
+"[regelspraak]": {
+	"editor.wordWrap": "off"
+}
+```
+
+`Alt+Z` toggles wrapping for the current editor without changing any setting. No ruler ships with this: a ruler marks a width you are meant to keep to by breaking the line, which is the one thing you cannot do here.
+
 ## Roadmap
 
 | | Release | What it adds |
@@ -58,9 +83,10 @@ The language server runs locally as a child process. Nothing is sent to a networ
 | ✅ | **Preview** | Semantic colour, live diagnostics, completion, hover, outline, folding, snippets |
 | ✅ | **Navigation** | Go to definition and type definition · Find all references · Highlight occurrences · Workspace symbol search · Safe cross-file rename of multi-word names · "Which rule derives this attribute?" |
 | ✅ | **Validation** | The full diagnostics catalogue — type compatibility, unit convertibility, rounding and precision, empty-value (`leeg`) policy, timeline granularity, distribution and decision-table rules — with quick fixes, plus signature help |
-| ✅ | **Formatting & ergonomics** (current) | Formatting that changes whitespace and nothing else · CodeLens reference and derivation counts · Inlay hints for inferred datatypes and units · Smart selection expansion · Links in comments |
+| ✅ | **Formatting & ergonomics** | Formatting that changes whitespace and nothing else · CodeLens reference and derivation counts · Inlay hints for inferred datatypes and units · Smart selection expansion · Links in comments |
+| ✅ | **Workbench** (current) | A RegelSpraak view container with a Model Explorer tree · Call hierarchy over rule dependencies · Type hierarchy over object types and their extensions · A read-only model view of a file · A preview for decision tables · Language server status in the status bar |
 | ⬅ | **Execution** (next) | Run rules and decision tables against scenario data · Results and derivation traces in-editor · Scenarios as tests in the Test Explorer |
-| | **Workbench** | A RegelSpraak view container with a Model Explorer tree · Task provider · Rule-dependency hierarchy · A visual Beslistabel editor |
+| | **Optional extras** | Scenario notebooks · Task provider, file decorations, index caching — each still to be decided on |
 
 Interface language is Dutch throughout, matching the language itself; there is no English UI mode.
 
