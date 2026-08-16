@@ -8,6 +8,35 @@ import * as path from 'path';
 import { runTests } from '@vscode/test-electron';
 
 /**
+ * Run from a VS Code integrated terminal, this process inherits the host's own
+ * Electron environment, and `runTests` spawns the test host with a copy of it
+ * (`Object.assign({}, process.env, …)`). `ELECTRON_RUN_AS_NODE` in particular
+ * makes the VS Code we launch behave as plain Node, which then tries to execute
+ * the workspace folder as a script and fails with MODULE_NOT_FOUND. None of it
+ * belongs to the child.
+ *
+ * This used to be `unset` in a shell wrapper, which made `npm test` runnable
+ * only from a POSIX shell: npm runs scripts through `ComSpec` on Windows, and
+ * a default Git for Windows install puts `git.exe` on PATH but not `sh.exe`.
+ * Deleting the keys here does the same job in the one place every shell reaches.
+ *
+ * `VSCODE_TEST_VERSION` is exempt because it is this runner's own knob rather
+ * than inherited host state. The wrapper cleared it along with the rest, before
+ * the process that reads it had started, so the override below never worked
+ * from an integrated terminal — the one place the clearing runs at all.
+ */
+const OWN_SETTINGS = new Set(['VSCODE_TEST_VERSION']);
+
+function dropInheritedHostEnvironment(): void {
+	delete process.env.ELECTRON_RUN_AS_NODE;
+	for (const name of Object.keys(process.env)) {
+		if (name.startsWith('VSCODE_') && !OWN_SETTINGS.has(name)) {
+			delete process.env[name];
+		}
+	}
+}
+
+/**
  * The oldest VS Code the manifest claims to support. Testing there rather than
  * on stable is deliberate: newer hosts are the ones most likely to work, and
  * an extension that only ever runs on the newest build has no evidence for the
@@ -22,6 +51,8 @@ function supportedFloor(root: string): string {
 
 async function main() {
 	try {
+		dropInheritedHostEnvironment();
+
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
 		const extensionDevelopmentPath = path.resolve(__dirname, '../../../');

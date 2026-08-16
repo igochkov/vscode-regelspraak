@@ -384,7 +384,7 @@
 		"watch": "tsc -b -w",
 		"lint": "eslint",
 		"postinstall": "node scripts/install-nested.mjs client",
-		"test": "sh ./scripts/e2e.sh",
+		"test": "node ./client/out/test/runTest.js",
 		"build:icon": "node scripts/build-icon.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
 	},
