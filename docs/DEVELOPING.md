@@ -151,11 +151,19 @@ JSON, and the Marketplace icon.
 ## Highlighting: two layers
 
 [syntaxes/regelspraak.tmLanguage.json](../syntaxes/regelspraak.tmLanguage.json)
-is **generated** from the authoritative ANTLR lexer — do not edit it by hand.
+is **generated** from the authoritative ANTLR lexers — do not edit it by hand.
 Generation happens in the language server repository so the highlighter stays in
 sync with the language definition; the generated file is committed here because
 the extension needs it at runtime. It colours what is decidable from the text:
 keywords, literals, comments, operators.
+
+Lexer**s**, plural: `.rgs` and `*.test.rgs` are one language id — the filename
+suffix decides which grammar the server parses a file with — so one TextMate
+grammar highlights both, and the generator reads the test lexer's own keywords
+(`Testset`, `Testgeval`, `Testinitialisatie`, `Gegeven`, `Verwacht`,
+`Parameters`, `feit`) alongside RegelSpraak's. Everything the test lexer
+*imports* was already classified, which is why the second input adds seven names
+and no structure.
 
 [syntaxes/regelspraak.markdown-injection.json](../syntaxes/regelspraak.markdown-injection.json)
 is the third piece and **is** hand-written: it recognises a ```` ```regelspraak ````

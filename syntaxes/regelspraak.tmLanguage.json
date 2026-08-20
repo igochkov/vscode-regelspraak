@@ -199,12 +199,24 @@
 			"name": "keyword.operator.word.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:wordt bepaald door|het is de periode)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:wordt bepaald door)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Testinitialisatie)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:het is de periode)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.control.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:ongelijk zijn aan)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.operator.word.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:testinitialisatie)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:volgende criteria)(?![\\p{L}\\p{N}-])",
@@ -367,7 +379,7 @@
 			"name": "keyword.operator.word.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:Enumeratie|Objecttype)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:Enumeratie|Objecttype|Parameters)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.declaration.regelspraak"
 		},
 		{
@@ -411,6 +423,10 @@
 			"name": "constant.language.regelspraak"
 		},
 		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Testgeval)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:afnemende)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.control.regelspraak"
 		},
@@ -451,7 +467,7 @@
 			"name": "storage.type.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:Tijdlijn)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:Tijdlijn|Verwacht)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.declaration.regelspraak"
 		},
 		{
@@ -471,7 +487,7 @@
 			"name": "storage.type.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:bezield)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:Gegeven|Testset|bezield)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.declaration.regelspraak"
 		},
 		{
@@ -539,7 +555,7 @@
 			"name": "keyword.control.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:alle|geen)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:alle|feit|geen)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.other.regelspraak"
 		},
 		{
