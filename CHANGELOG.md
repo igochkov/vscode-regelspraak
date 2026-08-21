@@ -127,13 +127,17 @@ already given a meaning — and the Test Explorer runs them.
 
   Three things make it a panel rather than a page of text. A passing and a
   failing expectation are **coloured** apart rather than marked apart, in your
-  theme's own colours — this extension ships none of its own. A trace line
-  **clicks through** to the rule that wrote it, wherever that rule lives, and a
-  failing expectation to the `Verwacht` line that made it. And a write's operands
-  — what it was computed out of — sit in a **chain you can fold**, so the one
-  value you are chasing opens and the other forty stay out of the way. There is
-  an **Als tekst openen** button for the times you want to paste a trace into a
-  ticket.
+  theme's own colours — this extension ships none of its own. Every derived value,
+  every characteristic and every trace line **names the rule that wrote it and
+  clicks through to it**, wherever that rule lives; an expectation clicks through
+  to its own `Verwacht` line. And a write's operands — what it was computed out of
+  — sit in a **chain you can fold**, so the one value you are chasing opens and
+  the other forty stay out of the way. **Als tekst openen** at the top gives you
+  the same thing as text, for the times you want to paste a trace into a ticket.
+
+  Where a value was written more than once in a run — an initialisation and then
+  the rule that supersedes it — the rule you are offered is the **last** one,
+  because that is the write the value in front of you came from.
 - **Run a rule against a testgeval.** Above every `Regel` and every
   `Beslistabel` there is now an **uitvoeren** link, which runs the *active
   testgeval* and opens the same view focused on that rule: what it wrote, for

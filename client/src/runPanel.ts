@@ -251,7 +251,7 @@ function page(cspSource: string, scriptNonce: string): string {
 	}
 	h1 { font-size: 1.05rem; margin: 0; font-weight: 600; }
 	.meta { color: var(--vscode-descriptionForeground); font-size: .85rem; margin: .1rem 0 0; }
-	.hint { color: var(--vscode-descriptionForeground); font-size: .8rem; margin: .4rem 0 1.2rem; }
+	.hint { color: var(--vscode-descriptionForeground); font-size: .8rem; margin: .4rem 0 .2rem; }
 	h2 {
 		font-size: .85rem;
 		text-transform: uppercase;
@@ -277,7 +277,10 @@ function page(cspSource: string, scriptNonce: string): string {
 	.note { color: var(--vscode-descriptionForeground); font-size: .9rem; }
 	.fail .note { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
 	.fault .note { color: var(--vscode-editorWarning-foreground); }
-	.note.rule { color: inherit; }
+	/* The rule that wrote the value, after it — an arrow, as in the text form,
+	   because it is attribution and not part of the value. */
+	.rule { font-size: .9rem; }
+	.rule::before { content: "\\2190 "; color: var(--vscode-descriptionForeground); }
 	.plain { color: var(--vscode-descriptionForeground); font-style: italic; }
 	/* Clickable, and it has to look it: a jump nobody discovers is not a feature. */
 	button.link {
@@ -309,7 +312,9 @@ function page(cspSource: string, scriptNonce: string): string {
 	.operands { margin-left: 1.6rem; }
 	.operand .label, .segment .label { color: var(--vscode-descriptionForeground); }
 	.refusal { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
-	.tools { margin: 1rem 0 0; }
+	/* In the header, where a reader looks for what to do with a view — not at the
+	   bottom, which for a long trace is a scroll away from the question. */
+	.tools { margin: .4rem 0 1.4rem; }
 </style>
 </head>
 <body>
@@ -318,9 +323,9 @@ function page(cspSource: string, scriptNonce: string): string {
 	<p class="meta" id="meta"></p>
 	<p class="hint">Alleen-lezen, en de stand van één run. Klik een regelnaam om hem te openen;
 		klap een schrijving open om te zien waaruit hij berekend is.</p>
+	<p class="tools"><button class="link" id="asText">Als tekst openen</button></p>
 </header>
 <main id="body"></main>
-<p class="tools"><button class="link" id="asText">Als tekst openen</button></p>
 <script nonce="${scriptNonce}">
 	const vscode = acquireVsCodeApi();
 	const body = document.getElementById('body');
@@ -364,8 +369,10 @@ function page(cspSource: string, scriptNonce: string): string {
 			line.append(piece('value', row.value));
 		}
 		if (row.note !== undefined) {
-			const gesture = on('note');
-			line.append(piece(gesture ? 'note rule' : 'note', row.note, gesture));
+			line.append(piece('note', row.note));
+		}
+		if (row.ruleAt === 'beside' && row.rule) {
+			line.append(piece('rule', row.rule, on('beside')));
 		}
 		return line;
 	}

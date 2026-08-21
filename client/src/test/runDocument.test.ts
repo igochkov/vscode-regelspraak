@@ -101,15 +101,26 @@ suite('Uitkomst van een run (X4, W3)', () => {
 		assert.ok(trace.rows.some(one => (one.children ?? []).length > 0));
 	});
 
-	test('geeft een verwachting het bereik mee van de regel die haar schreef', async function () {
+	test('geeft elke verwachting het bereik van haar eigen Verwacht-regel', async function () {
 		this.timeout(60000);
 		const view = buildView('lidmaatschap.test.rgs', await run(PASSING));
 		const expectations = view.sections.find(one => one.title === 'Verwachtingen')!;
-		// Two click-through targets, and they answer different questions: the range
-		// is the `Verwacht` line the reader wrote, the rule is what produced the
-		// value it is about.
 		assert.ok(expectations.rows.every(one => one.range !== undefined));
-		assert.ok(expectations.rows.some(one => one.rule !== undefined));
+		assert.ok(expectations.rows.every(one => one.link?.on === 'label'));
+	});
+
+	test('noemt bij elke afgeleide waarde de regel die haar schreef', async function () {
+		this.timeout(60000);
+		const view = buildView('lidmaatschap.test.rgs', await run(PASSING));
+		const derived = view.sections.find(one => one.title === 'Afgeleid')!;
+		// Every derived value has a writer, and the trace is where it comes from —
+		// so a reader checking a surprising number gets there from the number.
+		assert.ok(derived.rows.length > 0);
+		assert.ok(derived.rows.every(one => one.rule !== undefined && one.ruleAt === 'beside'),
+			derived.rows.filter(one => !one.rule).map(one => one.label).join(' | '));
+		// And a given value has none, because nothing derived it.
+		const given = view.sections.find(one => one.title === 'Gegeven')!;
+		assert.ok(given.rows.every(one => one.rule === undefined));
 	});
 
 	test('zegt van een geweigerde run dat hij geweigerd is, en verder niets', () => {
@@ -210,10 +221,11 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				{ label: 'Noor — contributie', passed: false, range, rule: 'bepaal contributie',
 					expected: '30 euro', actual: '25 euro' }
 			])).get('Verwachtingen')!.rows;
-			// The label, and to the line — where the reader changes it. Not to the
-			// rule, even though the row knows which rule produced the value: one row,
-			// one destination.
+			// The label, and to the line — where the reader changes it. Not to the rule,
+			// even though the run names one: an expectation has one obvious
+			// destination, and the rule is a click away on the value in Afgeleid.
 			assert.deepEqual(rows[0].link, { on: 'label', kind: 'reveal', range });
+			assert.equal(rows[0].ruleAt, undefined, 'de regel wordt hier niet getoond');
 		});
 
 		test('een gevuurde regel springt naar de regel, met of zonder aantal', () => {
@@ -238,29 +250,80 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(rows[0].note, undefined, 'de naam staat al in het label');
 		});
 
-		test('een traceregel springt op de regelnaam, want het label is de vouw', () => {
+		test('een traceregel springt op de regelnaam ernaast, met of zonder operanden', () => {
 			const rows = view(ran({
-				trace: [{
-					instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
-					value: '25 euro', operands: [{ label: 'kortingsfactor', value: '2,5 %' }]
-				}]
+				trace: [
+					{
+						instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+						value: '25 euro', operands: [{ label: 'kortingsfactor', value: '2,5 %' }]
+					},
+					// No operands, so this row does not fold. Whether a write happens to
+					// have any is nothing to a reader, and an earlier version tested it
+					// first — which put this row's link on the attribute and the row
+					// above's on the rule, in one column of one section.
+					{
+						instance: 'Sam', target: 'aantal zware zendingen',
+						rule: 'Aantal zware zendingen', value: '0', operands: []
+					}
+				]
 			})).get('Trace, in de volgorde waarin geschreven werd')!.rows;
-			// Clicking the label there would both fold and navigate, so the rule beside
-			// the value is the link instead.
 			assert.deepEqual(rows[0].link,
-				{ on: 'note', kind: 'revealRule', rule: 'bepaal contributie' });
+				{ on: 'beside', kind: 'revealRule', rule: 'bepaal contributie' });
+			assert.deepEqual(rows[1].link,
+				{ on: 'beside', kind: 'revealRule', rule: 'Aantal zware zendingen' });
 			assert.equal(rows[0].children?.[0].link, undefined, 'een operand gaat nergens heen');
 		});
 
-		test('een waarde met periodes vouwt open en springt nergens heen', () => {
+		test('een afgeleide waarde noemt de regel die haar het laatst schreef', () => {
+			const wrote = (rule: string) => ({
+				instance: 'Noor', target: 'contributie', rule, value: '50 euro', operands: []
+			});
+			const rows = view(ran({
+				values: [
+					{ instance: 'Noor', attribute: 'contributie', derived: true, value: '50 euro' },
+					{ instance: 'Noor', attribute: 'inschrijfdatum', derived: false, value: '12-03-2010' }
+				],
+				// Written twice, which is ordinary: an initialisation and then the rule
+				// that supersedes it. The value standing in the state is the last one's.
+				trace: [wrote('Initialiseer contributie'), wrote('Contributie nieuwe stijl')]
+			}));
+			assert.deepEqual(rows.get('Afgeleid')!.rows[0].link,
+				{ on: 'beside', kind: 'revealRule', rule: 'Contributie nieuwe stijl' });
+			// A given value has no writer, so it names none and goes nowhere.
+			const given = rows.get('Gegeven')!.rows[0];
+			assert.equal(given.rule, undefined);
+			assert.equal(given.link, undefined);
+		});
+
+		test('een afgeleid kenmerk noemt de regel die het toekende', () => {
+			const rows = view(ran({
+				kenmerken: [
+					{ instance: 'Noor', kenmerk: 'jeugdlid', present: true, derived: true },
+					{ instance: 'Sam', kenmerk: 'proeflid', present: true, derived: false }
+				],
+				trace: [{
+					instance: 'Noor', target: 'jeugdlid', rule: 'Jeugdlid', value: 'waar', operands: []
+				}]
+			})).get('Kenmerken')!.rows;
+			// A kenmerktoekenning is a write like any other, so it is in the trace.
+			assert.deepEqual(rows[0].link, { on: 'beside', kind: 'revealRule', rule: 'Jeugdlid' });
+			assert.equal(rows[1].link, undefined, 'een gegeven kenmerk is door niets afgeleid');
+		});
+
+		test('een waarde met periodes vouwt open en noemt haar regel ernaast', () => {
 			const rows = view(ran({
 				values: [{
 					instance: 'Sam', attribute: 'proefcontributie', derived: true,
 					segments: [{ from: '01-01-2027', value: '10 euro' }]
+				}],
+				trace: [{
+					instance: 'Sam', target: 'proefcontributie', rule: 'Proefcontributie tot de omslag',
+					value: '10 euro', operands: []
 				}]
 			})).get('Afgeleid')!.rows;
 			assert.ok((rows[0].children ?? []).length > 0, 'een tijdlijnwaarde is vouwbaar');
-			assert.equal(rows[0].link, undefined, 'er is geen regel en geen bereik om heen te gaan');
+			// Beside, never on the label: the label is the fold.
+			assert.equal(rows[0].link?.on, 'beside');
 		});
 	});
 

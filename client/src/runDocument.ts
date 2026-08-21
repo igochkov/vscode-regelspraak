@@ -137,7 +137,7 @@ function sectionLines(section: RunSection): string[] {
 		`${glyph(row)}${row.label}`, row.note ?? ''
 	]));
 	return section.rows.flatMap((row, at) => [
-		padded[at],
+		`${padded[at]}${beside(row)}`,
 		...(row.children ?? []).flatMap(child => childLines(child, 2))
 	]);
 }
@@ -145,13 +145,21 @@ function sectionLines(section: RunSection): string[] {
 function rowLines(row: RunRow, depth: number): string[] {
 	const indent = '\t'.repeat(depth);
 	const value = row.value === undefined ? '' : ` = ${row.value}`;
-	// The rule is an arrow rather than a word: it reads as attribution beside a
-	// value, where "door" would read as part of the sentence the value is in.
-	const note = row.note === undefined ? '' : `   ← ${row.note}`;
+	const note = row.note === undefined ? '' : `  ${row.note}`;
 	return [
-		`${indent}${glyph(row)}${row.label}${value}${note}`,
+		`${indent}${glyph(row)}${row.label}${value}${note}${beside(row)}`,
 		...(row.children ?? []).flatMap(child => childLines(child, depth + 1))
 	];
+}
+
+/**
+ * The rule that wrote this, where the row shows it beside the value.
+ *
+ * An arrow rather than a word: it reads as attribution after a value, where
+ * "door" would read as part of the sentence the value is in.
+ */
+function beside(row: RunRow): string {
+	return row.ruleAt === 'beside' && row.rule ? `   ← ${row.rule}` : '';
 }
 
 /**
