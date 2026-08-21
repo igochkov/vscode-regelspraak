@@ -19,7 +19,9 @@ import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
 import { TestExplorer } from './testExplorer';
-import { RunDocuments, SHOW_RUN_COMMAND, caseAtCursor } from './runDocument';
+import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocument';
+import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
+import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
@@ -128,6 +130,8 @@ const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
 const testExplorer = new TestExplorer();
 const runDocuments = new RunDocuments();
+/** W3. The panel is what a run opens; the text form is one click away in it. */
+const runPanels = new RunPanels();
 
 /** X2b's, and the only one of these that needs the extension context. */
 let activeScenario: ActiveScenario | undefined;
@@ -200,6 +204,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		modelDocuments,
 		testExplorer,
 		runDocuments,
+		runPanels,
 		window.createTreeView(MODEL_EXPLORER_VIEW, {
 			treeDataProvider: modelExplorer,
 			// The declaration a row stands for is what a click opens; selecting
@@ -231,7 +236,12 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 			(uri: string, caseName?: string) => testExplorer.runFromLens(uri, caseName)),
 		// X4. From the palette, on the testgeval the cursor is in: a second lens
 		// per case would double the noise above every one of them.
-		commands.registerCommand(SHOW_RUN_COMMAND, showRunOutcome));
+		commands.registerCommand(SHOW_RUN_COMMAND, showRunOutcome),
+		// The panel's own **Als tekst openen**, and its only caller: a trace is
+		// something people paste, and a webview cannot be copied out of.
+		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
+			(uri: string, run: TestRun, focus?: string) =>
+				runDocuments.show(Uri.parse(uri), run, focus)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -316,7 +326,7 @@ async function showRunOutcome(): Promise<void> {
 	}
 	const run = await testExplorer.runForDetail(uri, caseName);
 	if (run) {
-		await runDocuments.show(editor.document.uri, run);
+		await runPanels.show(editor.document.uri, run);
 	}
 }
 
@@ -338,7 +348,7 @@ async function runRule(uri: string, ruleName: string): Promise<void> {
 	const run = await testExplorer.runForDetail(scenario.uri, scenario.case);
 	if (run) {
 		// Beside the *rule*, not beside the testset: the question was asked here.
-		await runDocuments.show(Uri.parse(uri), run, ruleName);
+		await runPanels.show(Uri.parse(uri), run, ruleName);
 	}
 }
 

@@ -1,26 +1,18 @@
 // C7 — server status in the status bar (FSD §C7, the server half).
 //
-// The other half of §C7 is the active scenario, which arrives with execution
-// (Phase 6b); nothing here is shaped around it beyond leaving room.
+// **Visible, and only beside a `.rgs` file.** See `statusItem.ts` for why this is
+// a `StatusBarItem` gated on the language rather than a language status item: the
+// language-status widget folds into a `{}` icon, and the state this reports is
+// one a reader has to be *told* rather than one they will go looking for.
 //
-// **A language status item rather than a plain status-bar item**, which is a
-// deliberate reading of "status bar item". `window.createStatusBarItem` puts a
-// permanent entry in every window, including the ones with no RegelSpraak in
-// them, and the one thing it would say most of the time is that everything is
-// fine. `languages.createLanguageStatusItem` is the API VS Code added for
-// exactly this fact — how the language support for *this* document is doing —
-// and it appears only while a `.rgs` file is in front of the user, folds into
-// the language-status widget when there is nothing wrong, and pushes itself
-// forward when there is.
-//
-// Which is also why the state is worth showing at all: a language server that
-// failed to start is otherwise indistinguishable from one that has an opinion
-// of "no errors, no symbols, no completions" (NFR-5).
+// Which is why the state is worth showing at all: a language server that failed
+// to start is otherwise indistinguishable from one that has an opinion of "no
+// errors, no symbols, no completions" (NFR-5).
 
-import {
-	Disposable, LanguageStatusItem, LanguageStatusSeverity, languages
-} from 'vscode';
+import { Disposable, StatusBarItem, ThemeColor } from 'vscode';
 import { State as ClientState } from 'vscode-languageclient/node';
+
+import { regelSpraakStatusItem } from './statusItem';
 
 /** Opens the server's own output channel — the click target §C7 asks for. */
 export const SHOW_LOG_COMMAND = 'regelspraak.showServerLog';
@@ -35,13 +27,27 @@ const TEXT: Record<ServerState, string> = {
 };
 
 /**
+ * The status bar has room for a word and an icon, not for a sentence.
+ *
+ * The icon carries the state and the label carries which extension is speaking —
+ * a bare `$(check)` in a row of other extensions' items says nothing. `TEXT`
+ * above stays as the tooltip's first line and as what the E2E suite reads.
+ */
+const LABEL: Record<ServerState, string> = {
+	starting: '$(sync~spin) RegelSpraak',
+	ready: '$(check) RegelSpraak',
+	error: '$(error) RegelSpraak',
+	stopped: '$(debug-disconnect) RegelSpraak'
+};
+
+/**
  * `starting` describes the start and not the indexing that follows it.
  *
  * It used to promise "Het model wordt geïndexeerd", which is a fact this side
  * does not track: the transition to `ready` fires when the connection is up,
  * and the workspace scan runs on well past it. Saying so made the item claim
- * knowledge of a moment nothing here observes — and a fifth custom method to
- * observe it would not clear the bar `protocol.ts` sets for one.
+ * knowledge of a moment nothing here observes — and a custom method to observe
+ * it would not clear the bar `protocol.ts` sets for one.
  */
 const DETAIL: Record<ServerState, string> = {
 	starting: 'De taalserver wordt gestart.',
@@ -52,26 +58,31 @@ const DETAIL: Record<ServerState, string> = {
 
 /**
  * A stopped server is not an error and a starting one is not a problem, but
- * neither is the state anyone wants to be left in silently — so both sit above
- * `Information`, which folds the item away.
+ * neither is a state anyone wants to be left in silently — so both colour the
+ * item rather than only wording it. `ready` and `starting` leave it plain: an
+ * item that is always coloured has stopped saying anything.
  */
-const SEVERITY: Record<ServerState, LanguageStatusSeverity> = {
-	starting: LanguageStatusSeverity.Information,
-	ready: LanguageStatusSeverity.Information,
-	error: LanguageStatusSeverity.Error,
-	stopped: LanguageStatusSeverity.Warning
+const BACKGROUND: Record<ServerState, string | undefined> = {
+	starting: undefined,
+	ready: undefined,
+	error: 'statusBarItem.errorBackground',
+	stopped: 'statusBarItem.warningBackground'
 };
 
 export class ServerStatus implements Disposable {
-	private readonly item: LanguageStatusItem;
+	private readonly item: StatusBarItem;
+	private readonly release: () => void;
 	private current: ServerState = 'starting';
+	private explanation: string | undefined;
 
 	constructor() {
-		this.item = languages.createLanguageStatusItem(
-			'regelspraak.serverStatus',
-			{ language: 'regelspraak' });
+		// Behind the scenario item: which testgeval a run uses is checked before
+		// every run, and this is read once and then forgotten.
+		const { item, dispose } = regelSpraakStatusItem('regelspraak.serverStatus', 99);
+		this.item = item;
+		this.release = dispose;
 		this.item.name = 'RegelSpraak-taalserver';
-		this.item.command = { command: SHOW_LOG_COMMAND, title: 'Logboek tonen' };
+		this.item.command = SHOW_LOG_COMMAND;
 		this.set('starting');
 	}
 
@@ -86,7 +97,7 @@ export class ServerStatus implements Disposable {
 	 * found — this is the half that names the path that was tried.
 	 */
 	get detail(): string | undefined {
-		return this.item.detail;
+		return this.explanation;
 	}
 
 	/**
@@ -96,9 +107,11 @@ export class ServerStatus implements Disposable {
 	 */
 	set(state: ServerState, reason?: string): void {
 		this.current = state;
-		this.item.text = TEXT[state];
-		this.item.detail = reason ?? DETAIL[state];
-		this.item.severity = SEVERITY[state];
+		this.explanation = reason ?? DETAIL[state];
+		this.item.text = LABEL[state];
+		this.item.tooltip = `${TEXT[state]}\n\n${this.explanation}`;
+		const background = BACKGROUND[state];
+		this.item.backgroundColor = background ? new ThemeColor(background) : undefined;
 	}
 
 	/**
@@ -128,6 +141,6 @@ export class ServerStatus implements Disposable {
 	}
 
 	dispose(): void {
-		this.item.dispose();
+		this.release();
 	}
 }

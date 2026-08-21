@@ -1,45 +1,50 @@
-// X4 — what a run computed, as a read-only document.
+// X4 — what a run computed, as text.
 //
-// A virtual document under the `regelspraak-uitkomst:` scheme, following W5's
-// pattern rather than W3's webview, and that is a sequencing decision rather
-// than a final one. What a trace is, is tabular text: one line per write, the
-// rule that made it, the operands it read. The hard part of X4 is deciding
-// *what* to show, and a text view answers that in a form a test can read;
-// W3's webview would then be a re-skin of a solved problem rather than the
-// place the problem gets solved. Click-through and a collapsible chain are what
-// the webview would add, and they are worth having — later, on this content.
+// One of two renderers over `runView.ts`; the other is W3's panel, which is what
+// the run commands open. This one stays, and is not a leftover:
 //
-// Read-only, like every other view this extension adds: the run is a fact about
-// a testset, and the testset is the text (BRD OBJ-8). Re-running is how it
-// changes.
+//   - **A trace is something people paste.** Into a ticket, a commit message, a
+//     message to whoever wrote the rule. A panel cannot be copied out of, and
+//     that is the one thing a reader of a surprising number wants to do with it.
+//   - **A webview cannot be driven from a test.** The panel's content is checked
+//     through `buildView`, which is pure; that the *content decisions* come out
+//     as expected end to end, against a real server and a real run, is checked
+//     here. Keeping it is what keeps that check possible.
+//
+// Read-only, like every view this extension adds: the run is a fact about a
+// testset, and the testset is the text (BRD OBJ-8). Re-running is how it changes.
 
 import {
 	Disposable, Event, EventEmitter, Position, TextDocumentContentProvider,
 	Uri, ViewColumn, window, workspace
 } from 'vscode';
 
-import { RunDetail, TestRun } from './testExplorer';
+import { RunRow, RunSection, RunView, buildView } from './runView';
+import { TestRun } from './testExplorer';
 
 export const RUN_SCHEME = 'regelspraak-uitkomst';
 
-/** The palette command; the lens runs, this shows what the run computed. */
-export const SHOW_RUN_COMMAND = 'regelspraak.showUitkomst';
+/**
+ * Opens the outcome of a finished run as text.
+ *
+ * Registered and contributed to nothing: it takes a document, a case and a
+ * focus, and a palette entry invokes a command with none of them. The way in is
+ * the panel's own **Als tekst openen** button, which has all three.
+ */
+export const SHOW_RUN_AS_TEXT_COMMAND = 'regelspraak.showUitkomstAlsTekst';
 
 /**
  * The testgeval a view is of, carried in the virtual URI.
  *
- * The case's name is in the path because that is what the editor puts on the
- * tab, and the document it came from is in the query — W5's split, for W5's
- * reason: a percent-encoded absolute path is unreadable on a tab.
+ * The name is in the path because that is what the editor puts on the tab, and
+ * the document it came from is in the query — W5's split, for W5's reason: a
+ * percent-encoded absolute path is unreadable on a tab.
  */
-function runUri(source: Uri, caseName: string, focus?: string): Uri {
+function runUri(source: Uri, view: RunView): Uri {
 	return Uri.from({
 		scheme: RUN_SCHEME,
-		// The rule on the tab where there is one: pressing `uitvoeren` above a
-		// rule is a question about that rule, and the answer's tab should say so
-		// rather than naming the scenario it happened to be asked against.
-		path: focus ? `${focus} (uitkomst)` : `${caseName} (uitkomst)`,
-		query: `${source.toString()}#${encodeURIComponent(focus ?? caseName)}`
+		path: `${view.name} (uitkomst)`,
+		query: `${source.toString()}#${encodeURIComponent(view.name)}`
 	});
 }
 
@@ -66,17 +71,11 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 			?? '// Deze uitkomst is er niet meer. Voer het testgeval opnieuw uit.\n';
 	}
 
-	/**
-	 * Shows what a finished run computed, beside the document it was asked from.
-	 *
-	 * `focus` is X2b: the same run, read as an answer about one rule. Same request
-	 * and same renderer, because "what did this rule do" is a question about a run
-	 * and not a different kind of run — the engine has no way to evaluate one rule
-	 * alone, and pretending otherwise would be a second execution model.
-	 */
+	/** Shows what a finished run computed, beside the document it was asked from. */
 	async show(source: Uri, run: TestRun, focus?: string): Promise<void> {
-		const uri = runUri(source, run.case, focus);
-		this.rendered.set(uri.toString(), render(source, run, focus));
+		const view = buildView(source.path.split('/').pop() ?? '', run, focus);
+		const uri = runUri(source, view);
+		this.rendered.set(uri.toString(), renderText(view));
 		this.changed.fire(uri);
 		const document = await workspace.openTextDocument(uri);
 		await window.showTextDocument(document, {
@@ -92,137 +91,84 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 	}
 }
 
-function render(source: Uri, run: TestRun, focus?: string): string {
-	const name = source.path.split('/').pop() ?? '';
+/**
+ * The view as plain text.
+ *
+ * Exported so a test can read what a run shows without a running editor — and
+ * so the panel and this cannot be checked against different expectations.
+ */
+export function renderText(view: RunView): string {
 	const lines: string[] = [
-		focus
-			? `// Wat '${focus}' deed, in testgeval '${run.case}'`
-			: `// Uitkomst van '${run.case}'`,
-		`// ${name}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`,
+		`// ${view.heading}`,
+		`// ${view.meta}`,
 		'//',
 		'// Alleen-lezen, en de stand van één run. Pas de testset aan en voer',
 		'// opnieuw uit; deze weergave rekent niets zelf uit.',
 		''
 	];
 
-	if (run.outcome === 'geweigerd') {
-		lines.push('Geweigerd', `\t${run.reason ?? 'zonder opgegeven reden'}`);
-		for (const one of run.details ?? []) {
+	if (view.refusal) {
+		lines.push('Geweigerd', `\t${view.refusal.reason}`);
+		for (const one of view.refusal.details) {
 			lines.push(`\t${one}`);
 		}
 		return `${lines.join('\n')}\n`;
 	}
 
-	// A rule-focused view leads with that rule and leaves the rest below: the
-	// question was about one rule, and the whole run is context for it.
-	if (focus && run.detail) {
-		const wrote = run.detail.trace.filter(one => one.rule === focus);
-		lines.push(...section(`Geschreven door '${focus}'`, wrote.length === 0
-			? [`\t(niets — deze regel vuurde niet in dit testgeval)`]
-			: wrote.flatMap(one => [
-				`\t${one.instance ? `${one.instance} · ` : ''}${target(one.target, one.coordinates)}`
-					+ ` = ${one.value}`,
-				...one.operands.map(operand =>
-					`\t\t${operand.instance ? `${operand.instance} · ` : ''}${operand.label}`
-						+ ` = ${operand.value}`)
-			])));
-		const fired = run.detail.firedRules.find(one => one.rule === focus);
-		lines.push(...section('Vuurde', [fired
-			? `\tvoor ${fired.count} instantie${fired.count === 1 ? '' : 's'}`
-			: '\tniet in dit testgeval']));
+	for (const section of view.sections) {
+		lines.push(section.title, ...sectionLines(section), '');
 	}
-
-	lines.push(...section('Verwachtingen', run.assertions.length === 0
-		? ['\t(geen — dit testgeval voert alleen uit)']
-		: table(run.assertions.map((one): [string, string] => [
-			`${one.passed ? '✓' : '✗'} ${one.label}`,
-			one.passed
-				? one.actual ?? ''
-				: `verwacht ${one.expected ?? 'leeg'}, werkelijk ${one.actual ?? 'leeg'}`
-					+ (one.rule ? `   (${one.rule})` : '')
-		]))));
-
-	if (run.faults.length > 0) {
-		lines.push(...section('Fouten tijdens de uitvoering', table(
-			run.faults.map((one): [string, string] => [
-				`${one.rule}${one.instance ? ` · ${one.instance}` : ''}`, one.message
-			]))));
-	}
-
-	const detail = run.detail;
-	if (!detail) {
-		return `${lines.join('\n')}\n`;
-	}
-
-	if (detail.inconsistencies.length > 0) {
-		lines.push(...section('Inconsistent bevonden', detail.inconsistencies.map(one =>
-			`\t${one.rule}${one.instance ? ` · ${one.instance}` : ''}`)));
-	}
-
-	// Input before derived, because a reader checking a surprising number starts
-	// from what was given rather than from what was worked out.
-	for (const [heading, derived] of [
-		['Gegeven', false], ['Afgeleid', true]
-	] as [string, boolean][]) {
-		const rows = detail.values.filter(one => one.derived === derived);
-		if (rows.length > 0) {
-			lines.push(...section(heading, rows.flatMap(valueLines)));
-		}
-	}
-
-	const kenmerken = detail.kenmerken.filter(one => one.present);
-	if (kenmerken.length > 0) {
-		lines.push(...section('Kenmerken', table(kenmerken.map((one): [string, string] => [
-			`${one.instance} · ${one.kenmerk}`, one.derived ? 'afgeleid' : 'gegeven'
-		]))));
-	}
-
-	if (detail.trace.length > 0) {
-		lines.push(...section('Trace, in de volgorde waarin geschreven werd',
-			detail.trace.flatMap(one => [
-				`\t${one.instance ? `${one.instance} · ` : ''}${target(one.target, one.coordinates)}`
-					+ ` = ${one.value}   ← ${one.rule}`,
-				...one.operands.map(operand =>
-					`\t\t${operand.instance ? `${operand.instance} · ` : ''}${operand.label}`
-						+ ` = ${operand.value}`)
-			])));
-	}
-
-	lines.push(...section('Gevuurde regels', table(detail.firedRules.map((one): [string, string] => [
-		one.rule, one.count === 1 ? '' : `${one.count}×`
-	]))));
-
 	return `${lines.join('\n')}\n`;
 }
 
-function section(heading: string, body: string[]): string[] {
-	return [heading, ...body, ''];
-}
-
-function target(name: string, coordinates?: string[]): string {
-	return coordinates?.length ? `${name} [${coordinates.join(', ')}]` : name;
-}
-
-/** One value, or one line per period where the write was time-dependent. */
-function valueLines(one: RunDetail['values'][number]): string[] {
-	const label = `${one.instance} · ${target(one.attribute, one.coordinates)}`;
-	if (!one.segments) {
-		return table([[label, one.value ?? 'leeg']]);
+function sectionLines(section: RunSection): string[] {
+	if (!section.aligned) {
+		return section.rows.flatMap(row => rowLines(row, 1));
 	}
+	// Padded against the whole section, then each row's children under it — a
+	// time-dependent value is one label with a period per line, and it sits in an
+	// aligned section beside the values that fit on one.
+	const padded = table(section.rows.map((row): [string, string] => [
+		`${glyph(row)}${row.label}`, row.note ?? ''
+	]));
+	return section.rows.flatMap((row, at) => [
+		padded[at],
+		...(row.children ?? []).flatMap(child => childLines(child, 2))
+	]);
+}
+
+function rowLines(row: RunRow, depth: number): string[] {
+	const indent = '\t'.repeat(depth);
+	const value = row.value === undefined ? '' : ` = ${row.value}`;
+	// The rule is an arrow rather than a word: it reads as attribution beside a
+	// value, where "door" would read as part of the sentence the value is in.
+	const note = row.note === undefined ? '' : `   ← ${row.note}`;
 	return [
-		`\t${label}`,
-		...one.segments.map(segment => `\t\t${period(segment.from, segment.to)}  ${segment.value}`)
+		`${indent}${glyph(row)}${row.label}${value}${note}`,
+		...(row.children ?? []).flatMap(child => childLines(child, depth + 1))
 	];
 }
 
-function period(from?: string, to?: string): string {
-	if (from && to) {
-		return `van ${from} tot ${to}`;
+/**
+ * A period reads as two columns and an operand as `name = value`.
+ *
+ * The difference is the row's kind and not its depth, which is why this is not
+ * `rowLines` again: a segment states what held *when*, so the period is a label
+ * and the value belongs beside it.
+ */
+function childLines(row: RunRow, depth: number): string[] {
+	const indent = '\t'.repeat(depth);
+	return row.kind === 'segment'
+		? [`${indent}${row.label}  ${row.value ?? ''}`]
+		: rowLines(row, depth);
+}
+
+/** The one mark a text view has for a fact a panel states with colour. */
+function glyph(row: RunRow): string {
+	if (row.kind === 'pass') {
+		return '✓ ';
 	}
-	if (from) {
-		return `vanaf ${from}`;
-	}
-	return to ? `tot ${to}` : 'altijd';
+	return row.kind === 'fail' ? '✗ ' : '';
 }
 
 /**
@@ -233,8 +179,8 @@ function period(from?: string, to?: string): string {
  * second reading of the text on this side, which has no parser for it.
  */
 export function caseAtCursor(
-    items: { name: string; startLine: number; endLine: number }[],
-    at: Position
+	items: { name: string; startLine: number; endLine: number }[],
+	at: Position
 ): string | undefined {
 	return items.find(one => at.line >= one.startLine && at.line <= one.endLine)?.name;
 }

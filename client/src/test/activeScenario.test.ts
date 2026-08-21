@@ -3,21 +3,25 @@
 // The feature is two halves that meet in a command. The server draws a lens
 // above every rule and decision table and says only which rule it is about; this
 // side decides *against what* — the setting, or a choice made in this window —
-// and renders the run focused on that rule.
+// and shows the run focused on that rule.
 //
 // So what is checked here is the seam: that the lens is there, that the scenario
-// resolves out of the setting, and that pressing the lens produces the focused
-// view rather than the whole-run one. The wording of the status item is checked
-// as a function, because a language status item is drawn by the workbench and has
-// no surface a test can read.
+// resolves out of the setting, and that pressing the lens opens a panel named
+// after the rule. What is *in* that panel is checked through the view it is drawn
+// from, because a webview cannot be read from a test — and the wording of the
+// status item likewise, since a status-bar item is drawn by the workbench and
+// cannot be read back either.
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { Scenario, statusFor } from '../activeScenario';
+import { renderText } from '../runDocument';
+import { buildView } from '../runView';
+import { fitted } from '../statusItem';
+import { TestRun } from '../testExplorer';
 import { activate, getDocUri, positionOf, waitUntil } from './helper';
 
-const RUN_SCHEME = 'regelspraak-uitkomst';
 const SETTING = 'regelspraak.execution.defaultScenario';
 
 const SCENARIO = 'tests/lidmaatschap.test.rgs'
@@ -25,7 +29,14 @@ const SCENARIO = 'tests/lidmaatschap.test.rgs'
 
 interface Api {
 	activeScenario: { current: Scenario | undefined };
+	testExplorer: { runForDetail(uri: string, caseName: string): Promise<TestRun | undefined> };
 }
+
+/** The panel tabs this feature opens, which is what a run is asserted through. */
+const outcomeTabs = (): vscode.Tab[] =>
+	vscode.window.tabGroups.all.flatMap(group => group.tabs).filter(one =>
+		one.input instanceof vscode.TabInputWebview
+		&& one.input.viewType.includes('uitkomst'));
 
 suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 	const rulesUri = getDocUri('regels/lidmaatschap.rgs');
@@ -47,6 +58,15 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 		await vscode.workspace.getConfiguration().update(
 			SETTING, undefined, vscode.ConfigurationTarget.Workspace);
 	});
+
+	/** The active scenario, run for its detail — the command's own second step. */
+	async function runActive(): Promise<TestRun> {
+		const scenario = api.activeScenario.current;
+		assert.ok(scenario, 'er hoort een actief testgeval te zijn');
+		const run = await api.testExplorer.runForDetail(scenario.uri, scenario.case);
+		assert.ok(run, 'het actieve testgeval leverde geen uitkomst op');
+		return run;
+	}
 
 	test('hangt boven elke regel een uitvoerlens', async function () {
 		this.timeout(60000);
@@ -73,29 +93,32 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 		assert.ok(current.uri.endsWith('tests/lidmaatschap.test.rgs'), current.uri);
 	});
 
-	test('voert de regel uit tegen dat testgeval en toont wat hij deed', async function () {
+	test('voert de regel uit en opent een paneel dat naar de regel heet', async function () {
 		this.timeout(60000);
 		await vscode.commands.executeCommand(
 			'regelspraak.runRegel', rulesUri.toString(), 'bepaal lidmaatschapsduur');
-		const opened = await waitUntil('een uitkomstweergave voor de regel', () => {
-			const found = vscode.workspace.textDocuments.find(one =>
-				one.uri.scheme === RUN_SCHEME
-				&& one.getText().includes("Wat 'bepaal lidmaatschapsduur' deed"));
-			return found && found.getText().length > 0 ? found : undefined;
-		});
-		const text = opened.getText();
-		// The rule leads, and the testgeval it ran in is named beside it: the answer
-		// is about the rule, but it is only true of that one scenario.
-		assert.match(text, /^\/\/ Wat 'bepaal lidmaatschapsduur' deed, in testgeval 'Een kort/);
+		const tab = await waitUntil('een uitkomstpaneel voor de regel',
+			() => outcomeTabs().find(one => one.label.startsWith('bepaal lidmaatschapsduur')));
+		// The tab names the rule and not the scenario: the question was asked about
+		// the rule, and the scenario is only which situation it was asked in.
+		assert.ok(tab.label.includes('uitkomst'), tab.label);
+		// Closed again, so a following suite finds an ordinary layout.
+		await vscode.window.tabGroups.close(tab);
+	});
+
+	test('en die uitkomst is die van het actieve testgeval, gericht op de regel', async function () {
+		this.timeout(60000);
+		const text = renderText(
+			buildView('lidmaatschap.test.rgs', await runActive(), 'bepaal lidmaatschapsduur'));
+		assert.ok(text.startsWith("// Wat 'bepaal lidmaatschapsduur' deed, in testgeval 'Een kort"),
+			text.slice(0, 120));
 		assert.match(text, /Geschreven door 'bepaal lidmaatschapsduur'/);
-		assert.match(text, /Vuurde/);
 		assert.match(text, /lidmaatschapsduur = /);
-		// And the whole run is still below it, as context.
+		// And the whole run is still below it, as context: a rule's inputs are
+		// whatever the rules before it derived.
 		for (const heading of ['Verwachtingen', 'Gegeven', 'Afgeleid', 'Gevuurde regels']) {
-			assert.ok(text.includes(heading), `kop '${heading}' ontbreekt:\n${text}`);
+			assert.ok(text.includes(heading), `kop '${heading}' ontbreekt`);
 		}
-		// The tab names the rule, not the scenario: the question was asked about it.
-		assert.ok(opened.uri.path.startsWith('bepaal lidmaatschapsduur'), opened.uri.path);
 	});
 
 	test('zegt van een regel die niet vuurde dat hij niet vuurde', async function () {
@@ -103,16 +126,8 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 		// `Slapende inschrijving` needs a long-inactive member, which the chosen
 		// testgeval does not have — so the honest answer is that it did nothing,
 		// and a view that showed nothing at all would look like a failed run.
-		await vscode.commands.executeCommand(
-			'regelspraak.runRegel', rulesUri.toString(), 'Slapende inschrijving');
-		const text = (await waitUntil('de uitkomst van een regel die niet vuurde', () => {
-			const found = vscode.workspace.textDocuments.find(one =>
-				one.uri.scheme === RUN_SCHEME
-				&& one.getText().includes("Wat 'Slapende inschrijving' deed"));
-			return found && found.getText().length > 0 ? found : undefined;
-		})).getText();
-		// Both halves say so, and neither is redundant: the first is that it wrote
-		// nothing, the second that it was not applied to a single instance.
+		const text = renderText(
+			buildView('lidmaatschap.test.rgs', await runActive(), 'Slapende inschrijving'));
 		assert.match(text, /\(niets — deze regel vuurde niet in dit testgeval\)/);
 		assert.match(text, /Vuurde\r?\n\tniet in dit testgeval/);
 	});
@@ -122,7 +137,21 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 		assert.ok(all.includes('regelspraak.kiesTestgeval'), 'het kiescommando is niet geregistreerd');
 	});
 
-	test('zegt bij de taalstatus welke van de twee lagen geldt', () => {
+	test('kort een lange testgevalnaam af op een woordgrens', () => {
+		// A testgeval's label is free text to the line break, so names this long are
+		// normal and would push every other status-bar entry off the screen.
+		const long = 'Een kort lidmaatschap geeft een jeugdlid met korting';
+		const short = fitted(long);
+		assert.ok(short.length < long.length, short);
+		assert.ok(short.endsWith('…'), short);
+		// Cut at a word: a truncation inside one reads as a different name.
+		assert.ok(!/\s…$/.test(short), short);
+		assert.ok(long.startsWith(short.slice(0, -1)), short);
+		// And a name that fits is left exactly as it is.
+		assert.equal(fitted('Een boete'), 'Een boete');
+	});
+
+	test('zegt bij de statusbalk welke van de twee lagen geldt', () => {
 		const scenario = { uri: 'file:///w/tests/lidmaatschap.test.rgs', case: 'Een kort lidmaatschap' };
 		assert.match(statusFor(scenario, true).detail, /^Gekozen in dit venster/);
 		assert.match(statusFor(scenario, false).detail, /^Uit de instelling/);

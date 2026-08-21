@@ -12,15 +12,15 @@
 //
 // **The status item is load-bearing, not decoration.** The risk this design
 // carries is a run silently using a scenario chosen days ago, and the mitigation
-// is that it is never invisible. A language status item for C7's reason: it
-// appears beside a `.rgs` file rather than in every window, and the active
-// scenario is meaningless anywhere else.
+// is that it is never invisible — which is why it is a plain status-bar item
+// gated on the language rather than a language status item; see `statusItem.ts`.
 
 import {
-	Disposable, ExtensionContext, LanguageStatusItem, QuickPickItem, Uri,
-	languages, window, workspace
+	Disposable, ExtensionContext, QuickPickItem, QuickPickItemKind, StatusBarItem,
+	ThemeColor, Uri, window, workspace
 } from 'vscode';
 
+import { fitted, regelSpraakStatusItem } from './statusItem';
 import { TestExplorer } from './testExplorer';
 
 export const CHOOSE_SCENARIO_COMMAND = 'regelspraak.kiesTestgeval';
@@ -65,7 +65,8 @@ function unparse(scenario: Scenario): string {
 }
 
 export class ActiveScenario implements Disposable {
-	private readonly item: LanguageStatusItem;
+	private readonly item: StatusBarItem;
+	private readonly release: () => void;
 	private chosen: Scenario | undefined;
 
 	constructor(
@@ -73,12 +74,13 @@ export class ActiveScenario implements Disposable {
 		private readonly explorer: TestExplorer
 	) {
 		this.chosen = context.workspaceState.get<Scenario>(MEMORY_KEY);
-		this.item = languages.createLanguageStatusItem(
-			'regelspraak.activeScenario', { language: 'regelspraak' });
-		this.item.command = {
-			command: CHOOSE_SCENARIO_COMMAND,
-			title: 'Kiezen…'
-		};
+		// In front of the server state: this is the input to every run and is
+		// checked before pressing one, where the server state is read once.
+		const { item, dispose } = regelSpraakStatusItem('regelspraak.activeScenario', 100);
+		this.item = item;
+		this.release = dispose;
+		this.item.name = 'RegelSpraak-testgeval';
+		this.item.command = CHOOSE_SCENARIO_COMMAND;
 		this.refresh();
 	}
 
@@ -101,19 +103,44 @@ export class ActiveScenario implements Disposable {
 		return this.current ?? await this.choose();
 	}
 
-	/** The Quick Pick (C5), over the testgevallen the server has discovered. */
+	/**
+	 * The Quick Pick (C5), over the testgevallen the server has discovered.
+	 *
+	 * It also offers to **clear** a choice made in this window, which is the way
+	 * back to "nothing active" and so to being asked again on the next run. What
+	 * clearing leaves behind is the setting, where there is one, and the entry says
+	 * so rather than leaving it to be discovered — the two layers are the whole
+	 * design, and a clear that silently fell back to a committed default would look
+	 * like a clear that did not work.
+	 */
 	async choose(): Promise<Scenario | undefined> {
 		await this.explorer.refresh();
-		interface Pick extends QuickPickItem { scenario: Scenario }
-		const items: Pick[] = this.explorer.allCases().map(one => ({
+		interface Pick extends QuickPickItem { scenario?: Scenario; clear?: true }
+		const found = this.explorer.allCases();
+		if (found.length === 0) {
+			void window.showInformationMessage(
+				'Er zijn geen testgevallen gevonden. Schrijf er een in een *.test.rgs-bestand.');
+			return undefined;
+		}
+		const items: Pick[] = found.map(one => ({
 			label: one.case,
 			description: shortName(one.uri),
 			scenario: one
 		}));
-		if (items.length === 0) {
-			void window.showInformationMessage(
-				'Er zijn geen testgevallen gevonden. Schrijf er een in een *.test.rgs-bestand.');
-			return undefined;
+		// Only where there is a window choice to clear: an entry that does nothing
+		// is worse than no entry, and clearing the *setting* is an edit to a file
+		// under review, which this command has no business making.
+		if (this.chosen) {
+			const configured = workspace.getConfiguration().get<string>(SCENARIO_SETTING)?.trim();
+			items.unshift(
+				{
+					label: '$(clear-all) Keuze wissen',
+					description: configured
+						? `terug naar de instelling · ${configured}`
+						: 'bij uitvoeren wordt opnieuw gevraagd',
+					clear: true
+				},
+				{ label: '', kind: QuickPickItemKind.Separator });
 		}
 		const picked = await window.showQuickPick(items, {
 			title: 'Actief testgeval',
@@ -122,27 +149,39 @@ export class ActiveScenario implements Disposable {
 		if (!picked) {
 			return undefined;
 		}
-		this.chosen = picked.scenario;
-		await this.context.workspaceState.update(MEMORY_KEY, picked.scenario);
+		this.chosen = picked.clear ? undefined : picked.scenario;
+		await this.context.workspaceState.update(MEMORY_KEY, this.chosen);
 		this.refresh();
-		return picked.scenario;
+		// Clearing answers with nothing rather than falling through to another
+		// pick: it is an answer, and asking again straight away would deny it.
+		return picked.clear ? undefined : picked.scenario;
 	}
 
 	/**
 	 * Redraws the item, and is called on every change to the setting as well.
 	 *
-	 * Both layers show the same way but not the same words: which one is in force
-	 * is the fact a reader is missing, and "from the setting" versus "chosen here"
-	 * is the difference between a shared default and something they did.
+	 * Both layers show the same way but not in the same words: which one is in
+	 * force is the fact a reader is missing, and "chosen here" versus "from the
+	 * setting" is the difference between something a colleague committed and
+	 * something they did themselves five minutes ago.
 	 */
 	refresh(): void {
-		const { text, detail } = statusFor(this.current, this.chosen !== undefined);
-		this.item.text = text;
-		this.item.detail = detail;
+		const scenario = this.current;
+		const { text, detail } = statusFor(scenario, this.chosen !== undefined);
+		this.item.text = scenario
+			? `$(beaker) ${fitted(scenario.case)}`
+			: '$(beaker) geen testgeval';
+		this.item.tooltip = `${text}\n\n${detail}\n\nKlik om te kiezen.`;
+		// Nothing chosen is not an error — plenty of work needs no run at all — but
+		// it is the one state in which **uitvoeren** cannot answer without asking
+		// first, so the item leans on the reader instead of blending in.
+		this.item.backgroundColor = scenario
+			? undefined
+			: new ThemeColor('statusBarItem.warningBackground');
 	}
 
 	dispose(): void {
-		this.item.dispose();
+		this.release();
 	}
 }
 
