@@ -37,6 +37,17 @@ export type ModelEntry =
  * own icons for the `SymbolKind`s the server already maps these kinds to
  * (FSD §4.1). A different picture for the same thing in two lists reads as two
  * different things.
+ *
+ * **One deliberate exception: a beslistabel is a `table`.** It shares its
+ * `SymbolKind` with a regel, because LSP has no kind that means "table" and
+ * `Function` is the honest answer for both — they derive values. That was
+ * invisible while decision tables had a group of their own; once a Regelgroep
+ * adopted its file's tables ([D-52]), rules and tables landed in one list and
+ * the icon became the only thing telling them apart. So this one leaves the
+ * family, because nothing inside it says "table" and the distinction is worth
+ * more here than the consistency is. The outline keeps `Function` for both: it
+ * is per-file and short, and inventing a symbol kind to match a picture would
+ * be the tail wagging the dog.
  */
 const ICONS: Record<string, string> = {
 	objecttype: 'symbol-class',
@@ -54,7 +65,7 @@ const ICONS: Record<string, string> = {
 	feittype: 'symbol-interface',
 	rol: 'symbol-field',
 	regel: 'symbol-function',
-	beslistabel: 'symbol-function',
+	beslistabel: 'table',
 	variabele: 'symbol-variable'
 };
 
