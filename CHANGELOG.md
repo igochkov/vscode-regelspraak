@@ -2,9 +2,106 @@
 
 All notable changes to the RegelSpraak extension are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions map to delivered capability phases, through to `1.0.0`. That mapping
-is no longer *phase N to 0.N.0*: the workbench half of phase 6 needs nothing from
-the execution engine, so it ships here as `0.5.0`, ahead of execution.
+and versions run through to `1.0.0`, which is bound to the whole plan rather than
+to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
+of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
+ahead of execution, and each version since is named for what it delivers.
+
+## [0.6.0] — The test language
+
+A second kind of file: `*.test.rgs`, where you write what a model is supposed to
+produce. A **testset** states the instances, the parameters and the rekendatum a
+run starts from; a **testgeval** says what it expects to come out of them. The
+editor treats it as part of the language rather than as a data file lying beside
+it, because every name in it is a name your GegevensSpraak declarations have
+already given a meaning.
+
+### Added
+
+- **Testsets are written in the model's own vocabulary, and checked against it.**
+  A `Gegeven` line names an object type and gives its attributes values; a
+  `Verwacht` line names those same attributes, or a kenmerk, or a rule whose
+  firing it expects. All of it resolves against the declarations in your `.rgs`
+  files, so a name you get wrong is reported where you wrote it rather than when
+  something eventually runs.
+- **Colour, outline, breadcrumbs and folding**, as for a model. Every name is
+  coloured by what your declarations say it is; an instance id and a
+  testinitialisatie name are local to their file and coloured as such. The
+  outline gives you the testset with each testgeval and each block beneath it,
+  and folding follows the same shape.
+- **Formatting** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>) that lines up the
+  value column of every `Gegeven`, `Verwacht` and `Parameters` block — on the
+  same terms as everywhere else, which is that only whitespace ever changes.
+- **Completion that knows which position you are in**: attribute names and
+  kenmerk forms inside a `met` block, instance ids after `Verwacht` and in the
+  role list of a `Gegeven het feit` line, parameter names in a `Parameters`
+  block, and testinitialisatie names after `Gegeven testinitialisatie`. A kenmerk
+  completes in the form its own declaration prescribes — `is jeugdlid` where it
+  is bijvoeglijk, `heeft het recht op verlenging` where it is bezittelijk.
+- **Hover**: an instance id hovers as the object type it stands for, and a name
+  from the model hovers in a test file exactly as it does in the model.
+- **Navigation and rename cross between a testset and the model it tests.**
+  <kbd>F12</kbd> on a name in a testset goes to its declaration. Renaming an
+  attribute (<kbd>F2</kbd>) in the model rewrites the `Verwacht` lines that name
+  it, in every testset — a rename that stopped at the model's own files would
+  leave a testgeval expecting something nobody declares any more. An instance id
+  renames within its own file, which is the only place it means anything.
+
+  A testset **reads** the model and never derives anything in it. So a testgeval
+  is never an answer to *"which rule derives this?"*, and expecting a value does
+  not make a testset the thing that produces it.
+- **Eight checks of its own**, in Dutch and with stable codes, beside the
+  reference codes `RS101`, `RS102`, `RS106` and `RS107`, which keep their
+  meanings here:
+
+  | Code | | What it reports |
+  | --- | --- | --- |
+  | `RS951` | Error | The same instance id twice in one testgeval. |
+  | `RS952` | Error | An id nothing declares — in a role, a `Verwacht` block or an include. |
+  | `RS953` | Error | A value the attribute's declaration cannot hold: another datatype, another unit, or a period on an attribute that has no timeline. |
+  | `RS954` | Warning | A `Verwacht` on something no rule derives — the expectation is testing your input against itself. |
+  | `RS955` | Error | A `Gegeven` value on something a rule derives, which a run would overwrite. |
+  | `RS956` | Error | An unknown or duplicated testinitialisatie, two testgevallen with one name, or an include cycle. |
+  | `RS957` | Error | No rekendatum, in neither the testset nor the testgeval — and no run is defined without one. |
+  | `RS958` | Error | `leeg` or an `is geen …` under `Gegeven` instead of under `Verwacht`. Both are assertions; there is no such thing as handing an attribute the value “empty”. |
+
+  Units are compared by meaning rather than by spelling here too, so `1,00 EUR`,
+  `1 EUR` and `1,000 euro` are one value and none of them is an `RS953`. And the
+  same restraint holds as everywhere else: where the model cannot work out what
+  something is, nothing is reported.
+- **Five snippets** — `testset`, `testgeval`, `testinitialisatie`,
+  `gegeven-feit` and `verwacht-regelversie` — each body validated against the
+  test grammar on every build, as the model snippets are against the model
+  grammar.
+
+### Fixed
+
+- **The plural form the `RS613` quick fix offers.** It guessed with “ends in a
+  vowel takes `'s`, anything else takes `en`”, which is wrong for most of the
+  Dutch nouns a model actually declares: it proposed *Werkgeveren*, *Bonuspoten*
+  and *Kluisen* where the forms are *Werkgevers*, *Bonuspotten* and *Kluizen*. It
+  now applies the regularities that cover them — `-heid` becoming `-heden`, an
+  unstressed `-el`/`-em`/`-en`/`-er` taking `s`, and a stem that changes as the
+  syllable opens, so *Kluis* gives *Kluizen* and *Bonuspot* gives *Bonuspotten*.
+
+### Notes
+
+- **This release does not run anything yet.** The execution engine that will run
+  a testgeval is in this build, and the language server's own suites run every
+  testset in its conformance corpus through it — but nothing in the editor
+  invokes it. There is no run command, no Test Explorer and no results view;
+  those are the next release, and they are what the roadmap's **Execution** row
+  means. A testset you write today is checked, navigable and renameable, and it
+  will become runnable without your changing a line of it.
+- **A test file gets what is about names, not what is about rules.** Quick fixes,
+  signature help, the CodeLens counts, links in comments, inlay hints and the
+  decision-table preview each answer a question about declarations and rules, and
+  a testset has neither — so in a test file they are absent rather than empty.
+- **`*.test.rgs` is the same language as `.rgs`**, and is recognised as such
+  because it ends in it.
+  Your `[regelspraak]` editor settings, the soft wrapping, `//` comment toggling
+  and bracket matching all apply unchanged, and so does every
+  `regelspraak.validation.*` setting.
 
 ## [0.5.0] — The workbench
 
