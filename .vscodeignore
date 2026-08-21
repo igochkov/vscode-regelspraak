@@ -17,7 +17,7 @@
 eslint.config.mjs
 scripts/**
 docs/**
-client/testFixture/**
+samples/**
 images/icon.svg
 
 # --- Dependencies -----------------------------------------------------------

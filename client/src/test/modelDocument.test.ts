@@ -8,7 +8,7 @@ import { activate, doc, getDocUri, waitUntil } from './helper';
 const SCHEME = 'regelspraak-model';
 
 suite('Modelweergave (W5)', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens.rgs');
 	let original: string;
 
 	suiteSetup(async () => {
@@ -56,13 +56,13 @@ suite('Modelweergave (W5)', () => {
 	});
 
 	test('noemt het bestand dat beschreven wordt, in de kop', async () => {
-		assert.ok((await view()).getText().startsWith('// Modelweergave van tuincentrum-gegevens.rgs'));
+		assert.ok((await view()).getText().startsWith('// Modelweergave van gegevens.rgs'));
 	});
 
 	test('toont de declaraties met hun leden en hun gedeclareerde datatype', async () => {
 		const text = (await view()).getText();
-		assert.ok(text.includes('\tKlant'), 'het objecttype Klant ontbreekt');
-		assert.ok(text.includes('klantnummer — Attribuut · Tekst'),
+		assert.ok(text.includes('\tLid'), 'het objecttype Lid ontbreekt');
+		assert.ok(text.includes('pasnummer — Attribuut · Tekst'),
 			`geen lid met datatype in:\n${text}`);
 	});
 
@@ -76,10 +76,10 @@ suite('Modelweergave (W5)', () => {
 	// otherwise keep showing the model as it was when it was opened.
 	test('werkt bij zodra het model verandert', async () => {
 		const opened = await view();
-		assert.equal(opened.getText().includes('Tuinkabouter'), false);
+		assert.equal(opened.getText().includes('Boekenkabouter'), false);
 
-		await replaceFixture(`${original}\nObjecttype de Tuinkabouter\n\tde hoogte\tTekst;\n`);
+		await replaceFixture(`${original}\nObjecttype de Boekenkabouter\n\tde hoogte\tTekst;\n`);
 		await waitUntil('een bijgewerkte modelweergave', () =>
-			opened.getText().includes('Tuinkabouter') ? true : undefined);
+			opened.getText().includes('Boekenkabouter') ? true : undefined);
 	});
 });

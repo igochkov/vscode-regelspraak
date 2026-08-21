@@ -9,13 +9,15 @@ taalconfiguratie van RegelSpraak te gelden — `//` als commentaarteken, niet
 Gewone markdown-tekst; hier geldt dat allemaal niet.
 
 ```regelspraak
-Objecttype de Kruidentuin (mv: Kruidentuinen)
-	de oppervlakte                       Numeriek (geheel getal) met eenheid m2;
-	is openbaar                          kenmerk (bijvoeglijk);
+Objecttype het Lid (mv: Leden) (bezield)
+	--- identificatie
+	het pasnummer                   Tekst;
+	de inschrijfdatum               Datum in dagen;
 
-Regel bepaal oppervlakte
+Regel Jeugdlid
 	geldig altijd
-		De oppervlakte van een Kruidentuin moet gesteld worden op 100 m2.
+		Een Lid is jeugdlid
+		indien zijn lidmaatschapsduur kleiner is dan 3 jaar.
 ```
 
 Een blok in een andere taal blijft ongemoeid:

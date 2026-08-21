@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, getDocUri, EXTENSION_ID } from './helper';
 
 suite('Activatie', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);

@@ -21,7 +21,7 @@ test file the sanctioned Dutch is the suite prose, not the helpers and variables
 around it — and a helper must not be named after a Mocha global, since it shadows
 it for the rest of the scope.
 
-**In doubt, English.** The `.rgs` fixtures under `client/testFixture` are the
+**In doubt, English.** The `.rgs` fixtures under `samples` are the
 exception that proves the rule: they are RegelSpraak documents, so both their
 contents and their names stay Dutch.
 
@@ -83,10 +83,10 @@ the warning below — and it points anywhere:
 
 ⚠️ The setting is read by the window **running** the extension. When debugging
 that is the Extension Development Host — so it belongs in your User settings, or
-in `client/testFixture/.vscode/settings.json` (the folder the host opens),
+in `samples/.vscode/settings.json` (the folder the host opens),
 **not** in the settings of the window you press <kbd>F5</kbd> in. Because a
 relative path resolves against the first workspace folder, the fixture-folder
-form can be written as a path relative to `client/testFixture`. That file is
+form can be written as a path relative to `samples`. That file is
 gitignored: it names a path on one machine.
 
 Changing the setting restarts the server; no window reload needed.
@@ -127,13 +127,13 @@ developable — you simply cannot exercise the language features.
   [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension)
   window.
 
-The host opens [client/testFixture](../client/testFixture) as its workspace — a
-small, deliberately error-free two-file RegelSpraak model in an invented domain.
-That gives the extension something to activate on (`workspaceContains:**/*.rgs`)
-and something to exercise cross-file resolution against: hovering `Bestelling`
-in `tuincentrum-regels.rgs` resolves to its declaration in
-`tuincentrum-gegevens.rgs`. Delete a declaration there and the matching `RS1xx`
-diagnostic should appear in the rules file.
+The host opens [samples/](../samples) as its workspace — a small, deliberately
+error-free RegelSpraak model in an invented domain (the Boekerij), beside a test
+set and a Markdown file for the injection grammar. That gives the extension
+something to activate on (`workspaceContains:**/*.rgs`) and something to
+exercise cross-file resolution against: hovering `Lid` in `regels.rgs` resolves
+to its declaration in `gegevens.rgs`. Delete a declaration there and the
+matching `RS1xx` diagnostic should appear in the rules file.
 
 Check the "RegelSpraak Language Server" output channel to confirm the server
 started.

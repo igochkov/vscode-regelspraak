@@ -19,7 +19,7 @@ const PREVIEW_COMMAND = 'regelspraak.previewBeslistabel';
 interface SourceLike { decisionTables(uri: string): Promise<DecisionTable[]> }
 
 suite('Beslistabelvoorbeeld (W4)', () => {
-	const docUri = getDocUri('tuincentrum-regels.rgs');
+	const docUri = getDocUri('regels.rgs');
 	let source: SourceLike;
 
 	suiteSetup(async () => {
@@ -70,12 +70,12 @@ suite('Beslistabelvoorbeeld (W4)', () => {
 
 	test('leest de tabel van de fixture, met de rol van elke kolom', async () => {
 		const [table] = await tables();
-		assert.equal(table.name, 'Bezorgkosten');
-		assert.equal(table.validity, 'geldig altijd');
+		assert.equal(table.name, 'Contributiestaffel');
+		assert.equal(table.validity, 'geldig vanaf 2027');
 		assert.deepEqual(table.columns.map(column => column.role),
 			['conditie', 'conclusie', 'conditie']);
 		assert.deepEqual(table.rows.map(row => row.cells.map(cell => cell.text)),
-			[['1', '5 €', '50 €'], ['2', '0 €', 'n.v.t.']]);
+			[['1', '25 €', '3 jaar'], ['2', '40 €', 'n.v.t.']]);
 	});
 
 	// De zin van een geval staat nergens in de tekst: §12 verdeelt hem over de

@@ -1,0 +1,49 @@
+// Voorbeeldregels (RegelSpraak) — verzonnen domein: de Boekerij.
+
+Regel bepaal lidmaatschapsduur
+	geldig altijd
+		De lidmaatschapsduur van een Lid moet berekend worden als de tijdsduur van zijn inschrijfdatum tot de Rekendatum in hele jaren.
+
+Regel bepaal boete
+	geldig vanaf 01-01-2027 t/m 31-12-2027
+		De boete van een Uitlening moet berekend worden als de dagen te laat van de Uitlening maal het boetetarief, met een minimum van 0 € en een maximum van 25 € naar beneden afgerond op 0 decimalen.
+	Geldig vanaf 2028
+		De boete van een Uitlening moet berekend worden als de dagen te laat van de Uitlening maal het boetetarief.
+
+Regel Jeugdlid
+	geldig altijd
+		Een Lid is jeugdlid
+		indien zijn lidmaatschapsduur kleiner is dan 3 jaar.
+
+Regel Recht op verlenging
+	geldig altijd
+		Een Lid heeft het recht op verlenging
+		indien hij aan alle volgende voorwaarden voldoet:
+			• actief lidmaatschap van het Lid is gelijk aan waar
+			• hij voldoet aan geen van de volgende voorwaarden:
+				•• hij is jeugdlid
+				•• zijn leestegoed is leeg.
+
+Regel Controleer inschrijfdatum
+	geldig altijd
+		De inschrijfdatum van een Lid moet gevuld zijn.
+
+Regel Puntentotaal alle periodes
+	geldig altijd
+		Het puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over alle spaarperiodes.
+
+Regel bepaal pasopschrift
+	geldig altijd
+		Het pasopschrift van een Lid moet gesteld worden op "pas van «het pasnummer van het Lid»".
+
+Beslistabel Contributiestaffel
+	geldig vanaf 2027
+	|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |
+	| 1 | 25 €                                              | 3 jaar                                       |
+	| 2 | 40 €                                              | n.v.t.                                       |
+
+// §9.9 — een tijdlijn met een variabel startpunt heeft een regel nodig die dat
+// startpunt bepaalt; zonder die regel heeft de tijdlijn geen tijdvakken (RS702).
+Regel Startpunt spaartermijn
+	geldig altijd
+		Het startpunt van een spaartermijn voor een Lid wordt bepaald door zijn inschrijfdatum.

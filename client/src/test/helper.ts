@@ -13,7 +13,7 @@ export let doc: vscode.TextDocument;
 export let editor: vscode.TextEditor;
 
 export const getDocPath = (p: string) => {
-	return path.resolve(__dirname, '../../testFixture', p);
+	return path.resolve(__dirname, '../../../samples', p);
 };
 export const getDocUri = (p: string) => {
 	return vscode.Uri.file(getDocPath(p));

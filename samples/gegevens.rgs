@@ -1,0 +1,60 @@
+// Voorbeeldmodel (GegevensSpraak) — verzonnen domein: de Boekerij.
+
+Objecttype het Lid (mv: Leden) (bezield)
+	--- identificatie
+	het pasnummer                   Tekst;
+	de inschrijfdatum               Datum in dagen;
+	--- lidmaatschap
+	is jeugdlid                     kenmerk (bijvoeglijk);
+	het recht op verlenging         kenmerk (bezittelijk) voor elke dag;
+	het actief lidmaatschap         Boolean;
+	de lidmaatschapsduur            Numeriek (niet-negatief geheel getal) met eenheid jaar;
+	de contributie                  Geldbedrag voor elk jaar;
+	het leestegoed                  Numeriek (geheel getal) met eenheid pt voor elke maand;
+	het puntentotaal                Numeriek (geheel getal) met eenheid pt;
+	het pasopschrift                Tekst;
+	de gespaarde punten in periode  Numeriek (geheel getal), gedimensioneerd met spaarperiode;
+
+Objecttype de Uitlening (mv: Uitleningen)
+	de uitleendatum   Datum in dagen;
+	de inleverdatum   Datum in dagen;
+	de dagen te laat  Numeriek (niet-negatief geheel getal) met eenheid dagen;
+	de boete          Geldbedrag;
+
+Objecttype de Boekerijvestiging (mv: Boekerijvestigingen)
+	de vestigingsnaam  Tekst;
+
+Domein Geldbedrag is van het type Numeriek (getal met 2 decimalen) met eenheid €
+
+Domein Genre is van het type Enumeratie
+	'roman'
+	'poëzie'
+	'naslagwerk'
+
+Eenheidsysteem gewicht
+	de milligram (mv: milligrammen)  mg  = 1/1000 g
+	de gram (mv: grammen)            g
+	de kilogram (mv: kilogrammen)    kg  = 1000 g
+
+Eenheidsysteem leeswaarde
+	het leespunt (mv: leespunten)  pt
+
+Eenheidsysteem valuta
+	de euro  EUR €
+
+Dimensie de spaarperiode, bestaande uit de spaarperiodes (na het attribuut met voorzetsel in):
+	1. vorige periode
+	2. huidige periode
+
+Tijdlijn de spaartermijn heeft tijdvakken van een kwartaal met variabel startpunt;
+
+Parameter de leenlimiet : Numeriek (niet-negatief geheel getal)
+Parameter het boetetarief : Geldbedrag met eenheid €/dag
+Parameter de standaardcontributie : Geldbedrag voor elk jaar;
+
+Feittype lidmaatschap van de boekerij
+	de vestiging                                   Boekerijvestiging
+	het ingeschreven lid (mv: ingeschreven leden)  Lid
+	Eén vestiging telt meerdere ingeschreven leden
+
+Dagsoort de sluitingsdag (mv: sluitingsdagen);

@@ -65,7 +65,7 @@ async function main() {
 		// to match, so the extension never activates and the server never
 		// indexes anything.
 		const workspacePath = process.env.CODE_TESTS_WORKSPACE
-			?? path.resolve(__dirname, '../../testFixture');
+			?? path.resolve(__dirname, '../../../samples');
 
 		const version = process.env.VSCODE_TEST_VERSION
 			?? supportedFloor(extensionDevelopmentPath);

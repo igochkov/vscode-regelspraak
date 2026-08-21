@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, getDocUri, waitUntil } from './helper';
 
 suite('Semantische tokens (S1)', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);

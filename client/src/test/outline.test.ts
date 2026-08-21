@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, doc, getDocUri, waitUntil } from './helper';
 
 suite('Overzicht en vouwen (P10, P16)', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);
@@ -20,7 +20,7 @@ suite('Overzicht en vouwen (P10, P16)', () => {
 		});
 
 		const names = symbols.map(s => s.name).join(' | ');
-		for (const expected of ['Klant', 'Bestelling', 'Plant']) {
+		for (const expected of ['Lid', 'Uitlening', 'Boekerijvestiging']) {
 			assert.ok(
 				symbols.some(s => s.name.includes(expected)),
 				`${expected} ontbreekt in de outline: ${names}`
