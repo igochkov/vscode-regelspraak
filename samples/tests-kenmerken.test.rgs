@@ -1,0 +1,87 @@
+// Voorbeeldtestset (TestSpraak) — kenmerken en feiten.
+//
+// Een kenmerk wordt geschreven in de vorm die zijn declaratie voorschrijft
+// (§3.5): bijvoeglijk als `is <naam>`, bezittelijk als `heeft een <naam>`.
+// Onder `Verwacht` mag dat ook ontkend worden — `is geen …`, `heeft geen …` —
+// en daar hoort het ook thuis: de situatie van de engine somt op wat een
+// instantie *heeft*, dus "heeft niet" is een bewering en geen invoer (RS958).
+
+Testset Kenmerken en feiten
+Rekendatum 01-01-2027
+
+Parameters
+	de standaardcontributie  50,00 EUR
+	de leenlimiet            10
+	de startdrempel          100 pt
+	de bonusdrempel          500 pt
+
+Testinitialisatie de hoofdvestiging met twee leden
+	Gegeven een Boekerijvestiging (Centrum) met
+		vestigingsnaam    "De Boekerij"
+		vestigingsnummer  "V-01"
+		openingsdatum     01-09-1998
+	Gegeven een Lid (Noor) met
+		inschrijfdatum  12-03-2025
+		pasnummer       "111222333"
+	Gegeven een Lid (Sam) met
+		inschrijfdatum  01-02-2019
+		pasnummer       "123456782"
+
+Testgeval Kenmerken als invoer, in de vorm van hun declaratie
+	Gegeven een Lid (Kim) met
+		inschrijfdatum  01-06-2026
+		pasnummer       "987654329"
+		is doorlezer
+		is geregistreerde lener
+		heeft een actieve reservering
+
+	Verwacht Kim met
+		is jeugdlid
+		is een correcte pasnummerhouder
+		is een controleerbare pasnummerhouder
+		is geen weigeringsgeval
+		is geen jaarrondspaarder
+
+Testgeval Een pasnummer dat de elfproef niet haalt
+	// Negen cijfers, dus `Controleer paslengte` is tevreden, maar de elfproef
+	// niet — precies het onderscheid dat de twee regels apart maken.
+	Gegeven een Lid (Riek) met
+		inschrijfdatum  01-06-2020
+		pasnummer       "111222334"
+
+	Verwacht Riek met
+		is een weigeringsgeval
+		is geen correcte pasnummerhouder
+		is een controleerbare pasnummerhouder
+
+Testgeval Twee leden bij één vestiging
+	// Een ingesloten testinitialisatie levert haar instanties aan dit testgeval,
+	// en één rol kan meerdere instanties tegelijk gevuld krijgen.
+	Gegeven testinitialisatie de hoofdvestiging met twee leden
+	Gegeven het feit lidmaatschap van de boekerij met Centrum als vestiging en Noor, Sam als ingeschreven lid
+
+	Verwacht Centrum met
+		ledenaantal  2
+	Verwacht Noor met
+		nieuwsbriefvoorkeur  "De Boekerij"
+		is jeugdlid
+	Verwacht Sam met
+		is geen jeugdlid
+
+Testgeval Een bonuspot zonder eigen waarden
+	// `Gegeven een <objecttype> (<id>)` zonder `met`: de instantie bestaat, en
+	// alles eraan komt van de regels.
+	Gegeven een Bonuspot (Pot) met
+		deelnemersaantal  1
+	Gegeven een Lid (Noor) met
+		inschrijfdatum         12-03-2010
+		leestegoed             280 pt
+		spaarfactor            1,50
+		maximale bonusaandeel  500 pt
+	Gegeven het feit verdeling van de bonuspot met Pot als te verdelen bonuspot en Noor als spaarder met recht op bonus
+
+	Verwacht Noor met
+		inlegtegoed  42 pt
+	Verwacht Pot met
+		totale tegoed  42 pt
+		is geen ruime pot

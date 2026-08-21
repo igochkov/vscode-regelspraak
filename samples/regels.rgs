@@ -1,4 +1,8 @@
-// Voorbeeldregels (RegelSpraak) — verzonnen domein: de Boekerij.
+// Voorbeeldregels (RegelSpraak) — gelijkstellingen en rekenkundige expressies
+// (§6, §13.4.4, §13.4.16, §13.4.17). Verzonnen domein: de Boekerij.
+//
+// Wat hier gerekend wordt, is elders gedeclareerd: gegevens.rgs. De voorwaarden
+// en kenmerken staan in voorwaarden.rgs, de acties in acties.rgs.
 
 Regel bepaal lidmaatschapsduur
 	geldig altijd
@@ -8,42 +12,207 @@ Regel bepaal boete
 	geldig vanaf 01-01-2027 t/m 31-12-2027
 		De boete van een Uitlening moet berekend worden als de dagen te laat van de Uitlening maal het boetetarief, met een minimum van 0 € en een maximum van 25 € naar beneden afgerond op 0 decimalen.
 	Geldig vanaf 2028
-		De boete van een Uitlening moet berekend worden als de dagen te laat van de Uitlening maal het boetetarief.
+		De boete van een Uitlening moet berekend worden als de dagen te laat van de Uitlening maal het verhoogde boetetarief, met een maximum van 40 € naar boven afgerond op 0 decimalen.
 
 Regel Jeugdlid
 	geldig altijd
 		Een Lid is jeugdlid
 		indien zijn lidmaatschapsduur kleiner is dan 3 jaar.
 
-Regel Recht op verlenging
-	geldig altijd
-		Een Lid heeft het recht op verlenging
-		indien hij aan alle volgende voorwaarden voldoet:
-			• actief lidmaatschap van het Lid is gelijk aan waar
-			• hij voldoet aan geen van de volgende voorwaarden:
-				•• hij is jeugdlid
-				•• zijn leestegoed is leeg.
+// §13.4.2 #5 — een versie mag ook alleen een einddatum hebben.
+Regel bepaal oude contributie
+	geldig t/m 2026
+		De contributie van een Lid moet gesteld worden op de standaardcontributie.
 
-Regel Controleer inschrijfdatum
+Regel bepaal uiterste inleverdatum
 	geldig altijd
-		De inschrijfdatum van een Lid moet gevuld zijn.
+		De uiterste inleverdatum van een Uitlening moet berekend worden als de uitleendatum van de Uitlening plus 21 dagen.
 
-Regel Puntentotaal alle periodes
+Regel bepaal herinneringsdatum
 	geldig altijd
-		Het puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over alle spaarperiodes.
+		De herinneringsdatum van een Uitlening moet berekend worden als de inleverdatum van de Uitlening min de aanlooptermijn.
 
+// §13.4.17 #13 — de wortel; §6.1.3 vraagt de afronding erna (RS402).
+Regel bepaal spaarindex
+	geldig altijd
+		De spaarindex van een Lid moet berekend worden als de wortel van zijn spaarfactor naar beneden afgerond op 0 decimalen.
+
+// §13.4.17 #14 — machtsverheffen.
+Regel bepaal kwadraatscore
+	geldig altijd
+		De kwadraatscore van een Lid moet berekend worden als zijn spaarfactor tot de macht 2 rekenkundig afgerond op 2 decimalen.
+
+// §13.4.17 #17 — de absolute waarde, met verplichte haakjes.
+Regel bepaal schuldpositie
+	geldig altijd
+		De schuldpositie van een Lid moet berekend worden als 0 min de absolute waarde van (zijn inlegtegoed).
+
+// §13.4.16 #38 — "verminderd met" begrenst bij nul, waar "min" dat niet doet.
+Regel bepaal weegverschil
+	geldig altijd
+		Het weegverschil van een Zending moet berekend worden als het gewicht van de Zending verminderd met 0,250 kg richting nul afgerond op 2 decimalen.
+
+// §6.5 — delen door de absolute waarde van de deler.
+Regel bepaal gemiddelde inleg
+	geldig altijd
+		De gemiddelde inleg van een Bonuspot moet berekend worden als het totale tegoed van de Bonuspot gedeeld door (ABS) het deelnemersaantal van de Bonuspot rekenkundig afgerond op 2 decimalen.
+
+Regel bepaal verdeelsleutel
+	geldig altijd
+		De verdeelsleutel van een Bonuspot moet berekend worden als (het totale tegoed van de Bonuspot min het onverdeelde tegoed van de Bonuspot) gedeeld door 2 weg van nul afgerond op 1 decimalen.
+
+// §13.2 #17 — een breuk is een literaal, geen deling.
+Regel bepaal breukfactor
+	geldig altijd
+		De breukfactor van een Bonuspot moet gesteld worden op 3/8.
+
+// [D-50] — "het jaar uit …" opent óók een functievorm, en "het jaar uit druk"
+// is hier een attribuutnaam. De parser kiest de functie; de taalserver vindt de
+// naamlezing terug.
+Regel bepaal drukjaar
+	geldig altijd
+		Het drukjaar van een Publicatie moet berekend worden als het jaar uit druk van de Publicatie.
+
+// §13.4.17 #18–#24 — de datumonderdelen.
+Regel bepaal bezorgmaand
+	geldig altijd
+		De bezorgmaand van een Zending moet berekend worden als de maand uit (de bezorgdatum van de Zending).
+
+Regel bepaal bezorgjaar
+	geldig altijd
+		Het bezorgjaar van een Zending moet berekend worden als het jaar uit (de bezorgdatum van de Zending).
+
+Regel bepaal bezorgdag
+	geldig altijd
+		De bezorgdag van een Zending moet berekend worden als de dag uit (de bezorgdatum van de Zending).
+
+// §13.4.17 #37 — de eerste paasdag van een jaar.
+Regel bepaal referentiedatum
+	geldig altijd
+		De referentiedatum van een Boekerijvestiging moet berekend worden als de eerste paasdag van (het jaar uit (de openingsdatum van de Boekerijvestiging)).
+
+// §13.4.17 #35 en #31 — de datum met benoemde onderdelen, en het Rekenjaar.
+Regel bepaal stelseldatum
+	geldig altijd
+		De stelseldatum van een Boekerijvestiging moet gesteld worden op de datum met jaar: Rekenjaar, maand: 1 en dag: 1.
+
+// §13.4.17 #36 — de datumtijd, met elk onderdeel benoemd.
+Regel bepaal stelseltijdstip
+	geldig altijd
+		Het stelseltijdstip van een Boekerijvestiging moet gesteld worden op de datumtijd met jaar: 2027, maand: 3, dag: 14, uur: 9, minuut: 30, seconde: 0 en milliseconde: 0.
+
+// §13.2 #18 — een percentage als waarde op zichzelf, niet als operator.
+Regel bepaal kortingsfactor
+	geldig altijd
+		De kortingsfactor van een Lid moet gesteld worden op 2,50%.
+
+// §13.4.17 #32 — de absolute tijdsduur, in millisecondes.
+Regel bepaal bezorgvenster
+	geldig altijd
+		Het bezorgvenster van een Zending moet berekend worden als de absolute tijdsduur van het bezorgtijdstip van de Zending tot het beloofde tijdstip van de Zending in millisecondes.
+
+// §13.4.17 #39/#40 — de eerste en de laatste van een reeks datums.
+Regel bepaal activatiedatum
+	geldig altijd
+		De activatiedatum van een Lid moet berekend worden als de laatste van zijn aanvraagdatum, zijn betaaldatum en de eerste kalenderdag.
+
+// §13.4.17 #15/#16 — de minimale en de maximale waarde van een reeks.
+Regel bepaal laagste tegoed
+	geldig altijd
+		Het laagste tegoed van een Lid moet gesteld worden op de minimale waarde van zijn dagtegoed, zijn weektegoed en zijn kwartaaltegoed.
+
+Regel bepaal hoogste tegoed
+	geldig altijd
+		Het hoogste tegoed van een Lid moet gesteld worden op de maximale waarde van zijn dagtegoed en zijn weektegoed.
+
+// §13.2 #19/#20 — een datum- en een datumtijdliteraal.
+Regel bepaal vaste peildatum
+	geldig altijd
+		De peildatum van een Boekerijvestiging moet gesteld worden op dd. 15-06-2027.
+
+Regel bepaal peiltijdstip
+	geldig altijd
+		Het peiltijdstip van een Boekerijvestiging moet gesteld worden op dd. 15-06-2027 08:30:00.000.
+
+// §13.4.17 #9 en §5.4 — een tekstenreeks met een ingesloten conversie.
 Regel bepaal pasopschrift
 	geldig altijd
 		Het pasopschrift van een Lid moet gesteld worden op "pas van «het pasnummer van het Lid»".
 
+Regel bepaal nieuwsbriefvoorkeur
+	geldig altijd
+		De nieuwsbriefvoorkeur van een Lid moet gesteld worden op «de vestigingsnaam van de vestiging van het Lid».
+
+// §13.4.2 #10/#11 — het variabelendeel, en §8.4.2's "gedurende de tijd dat":
+// beide variabelen staan voor een tijdsafhankelijk attribuut, dus de voorwaarde
+// is er zelf een en de taal schrijft niet "indien".
+Regel bepaal nettoinleg
+	geldig altijd
+		De nettoinleg van een Lid moet gesteld worden op X min Y
+		gedurende de tijd dat X groter is dan Y.
+		Daarbij geldt:
+			X is zijn maandinleg maal 12
+			de Y is zijn inhouding maal 2.
+
+// §13.4.15 #68 — een periodevergelijking als voorwaardendeel, in drie vormen.
+Regel Contributie met overgangsperiode
+	geldig altijd
+		De contributie van een Lid moet gesteld worden op de standaardcontributie
+		van dd. 01-01-2027 tot dd. 01-07-2027.
+
+Regel Contributie nieuwe stijl
+	geldig altijd
+		De contributie van een Lid moet gesteld worden op de standaardcontributie maal 2
+		vanaf dd. 01-07-2027.
+
+// §13.4.15 #68 — de drie overige vormen van de periodevergelijking, elk op een
+// eigen attribuut zodat geen twee regels om dezelfde periode strijden. Let op de
+// spelling: een periode schrijft `tot en met`, waar een geldigheidsbereik `t/m`
+// schrijft — twee tokens, en alleen het eerste hoort hier.
+Regel Proefcontributie tot de omslag
+	geldig altijd
+		De proefcontributie van een Lid moet gesteld worden op 10,00 €
+		tot dd. 01-01-2027.
+
+Regel Najaarscontributie tot en met het jaareinde
+	geldig altijd
+		De najaarscontributie van een Lid moet gesteld worden op 20,00 €
+		tot en met dd. 31-12-2026.
+
+Regel Overgangscontributie in één jaar
+	geldig altijd
+		De overgangscontributie van een Lid moet gesteld worden op 30,00 €
+		van dd. 01-01-2026 tot en met dd. 31-12-2026.
+
+// §13.4.17 #12 — een percentage van een bedrag. §6.1.2 #2 rekent het percentage
+// eerst om naar zijn breuk, die de geschreven decimalen plus twee draagt; een
+// geheel doelattribuut vraagt daarom expliciet om afronding (RS401).
+Regel bepaal spaarbonus
+	geldig altijd
+		Het inlegtegoed van een Lid moet berekend worden als 15% van zijn leestegoed rekenkundig afgerond op 0 decimalen.
+
+// §13.3.7 / §5.8.5 — één gedimensioneerd attribuut, drie manieren om over de
+// dimensie te aggregeren: alles, een bereik, en een opsomming.
+Regel Puntentotaal alle periodes
+	geldig altijd
+		Het puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over alle spaarperiodes.
+
+Regel Puntentotaal recente periodes
+	geldig altijd
+		Het recente puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over de spaarperiodes vanaf twee periodes geleden t/m vorige periode.
+
+Regel Puntentotaal keuzeperiodes
+	geldig altijd
+		Het keuzepuntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over de spaarperiodes in {twee periodes geleden, vorige periode en huidige periode}.
+
+Regel Hoogste periodetegoed
+	geldig altijd
+		Het hoogste periodetegoed van een Lid moet berekend worden als de maximale waarde van zijn gespaarde punten in periode over alle spaarperiodes.
+
+// §12 — de beslistabel. Kolomtitel en cel vormen samen één zin; welke kolom
+// concludeert, blijkt uit wat die zin zegt en staat nergens als vlag in de tekst.
 Beslistabel Contributiestaffel
 	geldig vanaf 2027
 	|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |
 	| 1 | 25 €                                              | 3 jaar                                       |
 	| 2 | 40 €                                              | n.v.t.                                       |
-
-// §9.9 — een tijdlijn met een variabel startpunt heeft een regel nodig die dat
-// startpunt bepaalt; zonder die regel heeft de tijdlijn geen tijdvakken (RS702).
-Regel Startpunt spaartermijn
-	geldig altijd
-		Het startpunt van een spaartermijn voor een Lid wordt bepaald door zijn inschrijfdatum.

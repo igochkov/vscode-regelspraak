@@ -127,13 +127,27 @@ developable — you simply cannot exercise the language features.
   [Extension Development Host](https://code.visualstudio.com/api/get-started/your-first-extension)
   window.
 
-The host opens [samples/](../samples) as its workspace — a small, deliberately
-error-free RegelSpraak model in an invented domain (the Boekerij), beside a test
-set and a Markdown file for the injection grammar. That gives the extension
-something to activate on (`workspaceContains:**/*.rgs`) and something to
-exercise cross-file resolution against: hovering `Lid` in `regels.rgs` resolves
-to its declaration in `gegevens.rgs`. Delete a declaration there and the
+The host opens [samples/](../samples) as its workspace — a deliberately
+error-free RegelSpraak model in an invented domain (the Boekerij), with four
+testsets beside it and a Markdown file for the injection grammar. That gives the
+extension something to activate on (`workspaceContains:**/*.rgs`) and something
+to exercise cross-file resolution against: hovering `Lid` in `regels.rgs`
+resolves to its declaration in `gegevens.rgs`. Delete a declaration there and the
 matching `RS1xx` diagnostic should appear in the rules file.
+
+**It is also the reference for the language**, and deliberately so: every
+reachable production of both grammars — RegelSpraak and the `*.test.rgs` test
+language — is written somewhere in it, labelled alternatives included, so any
+construct can be looked up by example rather than reasoned about. Two properties
+follow, and [client/src/test/samples.test.ts](../client/src/test/samples.test.ts)
+asserts both against a running server: it reports **no** diagnostics, and the
+formatter leaves it untouched, because the files are stored in the form the
+formatter produces. So a line can be copied out of them as it stands — and a
+change to the layout engine cannot quietly restyle the examples.
+
+Adding to it means keeping both: run **Format Document** on what you write, and
+check the Problems panel is empty for every file. The testsets' `Verwacht` values
+are checked by hand until there is a way to run a testgeval from the editor.
 
 Check the "RegelSpraak Language Server" output channel to confirm the server
 started.

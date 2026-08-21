@@ -16,7 +16,7 @@ Testinitialisatie een vestiging met een lid
 	Gegeven een Boekerijvestiging (Centrum) met
 		vestigingsnaam  "De Boekerij"
 	Gegeven een Lid (Noor) met
-		pasnummer            "L-0001"
+		pasnummer            "111222333"
 		inschrijfdatum       12-03-2025
 		actief lidmaatschap  waar
 	Gegeven het feit lidmaatschap van de boekerij met Centrum als vestiging en Noor als ingeschreven lid
@@ -27,13 +27,13 @@ Testgeval Een kort lidmaatschap geeft een jeugdlid met korting
 	Verwacht Noor met
 		lidmaatschapsduur  2 jaar
 		contributie        25,00 EUR
-		pasopschrift       "pas van L-0001"
+		pasopschrift       "pas van 111222333"
 		is jeugdlid
 	Verwacht regelversie Jeugdlid is gevuurd
 
 Testgeval Een lange inschrijving betaalt het volle bedrag
 	Gegeven een Lid (Sam) met
-		pasnummer            "L-0002"
+		pasnummer            "123456782"
 		inschrijfdatum       01-02-2019
 		actief lidmaatschap  waar
 

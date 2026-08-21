@@ -1,0 +1,134 @@
+// Voorbeeldregels (RegelSpraak) — consistentieregels, uniciteit, creatie,
+// initialisatie, verdeling, dagsoortdefinitie en startpuntbepaling
+// (§9, §13.4.6–§13.4.12). Verzonnen domein: de Boekerij.
+//
+// Dit zijn de resultaatdelen die niets berekenen: ze keuren goed of af, maken
+// iets aan, of leggen vast waar een tijdlijn begint.
+
+// §13.4.8 #2–#6 — de enkelvoudige consistentieregel, in vier operatorvormen.
+Regel Controleer inschrijfdatum
+	geldig altijd
+		De inschrijfdatum van een Lid moet gevuld zijn.
+
+Regel Controleer bezorgtermijn
+	geldig altijd
+		De bezorgtermijn van een Zending moet kleiner of gelijk zijn aan 5 dagen.
+
+Regel Controleer paslengte
+	geldig altijd
+		Het pasnummer van een Lid moet numeriek zijn met exact 9 cijfers.
+
+Regel Controleer uitleendatum
+	geldig altijd
+		De uitleendatum van een Uitlening moet eerder of gelijk zijn aan de inleverdatum van de Uitlening.
+
+// §13.4.8 #7 — het samengestelde criterium, met een onderwerp ervoor.
+Regel Controleer poteisen
+	geldig altijd
+		Een Bonuspot moet voldoen aan ten minste één van de volgende criteria:
+			• het totale tegoed van de Bonuspot is groter dan 0
+			• de Bonuspot is een ruime pot.
+
+// Dezelfde constructie zonder onderwerp: "Er moet worden voldaan aan …".
+Regel Controleer registratie
+	geldig altijd
+		Er moet worden voldaan aan het volgende criterium:
+			• het vestigingsnummer van een Boekerijvestiging is gevuld.
+
+// §13.4.8 #10 — een genest criterium onder een samengesteld criterium.
+Regel Controleer speciale pot
+	geldig altijd
+		Een Bonuspot moet voldoen aan alle van de volgende criteria:
+			• het totale tegoed van de Bonuspot is groter dan 0
+			• er wordt voldaan aan ten minste één van de volgende criteria:
+				•• de Bonuspot is een ruime pot
+				•• het onverdeelde tegoed van de Bonuspot is gelijk aan 0.
+
+// §13.4.8 #13 — uniciteit over één attribuut van alle exemplaren.
+Regel Uniek pasnummer
+	geldig altijd
+		De pasnummers van alle Leden moeten uniek zijn.
+
+// §13.4.8 #14 — de concatenatie van meerdere attributen, en §13.4.8 #11's
+// "verenigd met", dat twee verzamelingen als één namespace toetst.
+Regel Unieke titelcombinatie
+	geldig altijd
+		De concatenatie van de titels en de uitgavejaren van alle Publicaties verenigd met de concatenatie van de titels en de uitgavejaren van alle Bundels moeten uniek zijn.
+
+Regel Unieke vestigingsnamen
+	geldig altijd
+		De vestigingsnamen van alle Boekerijvestigingen verenigd met de titels van alle Publicaties moeten uniek zijn.
+
+// §13.4.9 — initialisatie: een startwaarde die een latere regel mag overschrijven.
+Regel Initialiseer contributie
+	geldig altijd
+		De contributie van een Lid moet geïnitialiseerd worden op de standaardcontributie.
+
+// §13.4.6 / §9.3 — objectcreatie, met één en met twee waardetoekenningen.
+Regel Aanmaak bonusdossier
+	geldig altijd
+		Een Lid heeft een toegekende bonuspot met het deelnemersaantal gelijk aan 1.
+
+Regel Aanmaak bonusdossier met status
+	geldig altijd
+		Een Lid heeft een toegekende bonuspot met het totale tegoed gelijk aan de startdrempel en het deelnemersaantal gelijk aan 1
+		indien hij een actieve deelnemer is.
+
+// §13.4.7 / §9.4 — feitcreatie: een relatie tussen twee bestaande objecten.
+Regel Koppel ontvanger
+	geldig altijd
+		Een ontvanger van een toegekende bonuspot is een spaarder met recht op bonus van de te verdelen bonuspot.
+
+// §13.4.10 #2 — verdeling zonder groepen, in gelijke delen en naar rato.
+Regel Verdeling bonus in gelijke delen
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld in gelijke delen.
+
+Regel Verdeling bonus naar rato
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld naar rato van de spaarfactor.
+
+// §13.4.10 #3–#8 — het meervoudige verdeelcriterium: rangorde, gelijkspel,
+// maximum, afronding, en de onverdeelde rest als tweede zin.
+Regel Verdeling bonus met rangorde
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van toenemende de lidmaatschapsduur,
+			- bij een even groot criterium naar rato van de spaarfactor,
+			- met een maximum van het maximale bonusaandeel,
+			- afgerond op 0 decimalen naar beneden.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
+
+Regel Verdeling bonus aflopend
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van afnemende de spaarfactor,
+			- in gelijke delen.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
+
+Regel Verdeling bonus per groep naar rato
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van toenemende de lidmaatschapsduur,
+			- naar rato van de spaarfactor.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
+
+// §13.4.11 — een dagsoortdefinitie: "de dag" is het onderwerp van de voorwaarde.
+Regel Inventarisdag
+	geldig altijd
+		Een dag is een inventarisdag
+		indien de dag aan alle volgende voorwaarden voldoet:
+			• de maand uit (de dag) is gelijk aan 1
+			• de dag uit (de dag) is gelijk aan 2.
+
+Regel Sluitingsdag
+	geldig altijd
+		Een dag is een sluitingsdag
+		indien de dag een inventarisdag is.
+
+// §13.4.12 / §9.9 — een tijdlijn met een variabel startpunt heeft een regel
+// nodig die dat startpunt bepaalt; zonder die regel heeft de tijdlijn geen
+// tijdvakken (RS702).
+Regel Startpunt spaartermijn
+	geldig altijd
+		Het startpunt van een spaartermijn voor een Lid wordt bepaald door zijn inschrijfdatum.

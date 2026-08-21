@@ -37,6 +37,9 @@ suite('Taalserver herstarten (NFR-5)', () => {
 	});
 
 	test('twee herstarts vlak na elkaar laten één werkende server achter', async () => {
+		const voor = (await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
+			'vscode.executeDocumentSymbolProvider', docUri)).map(s => s.name);
+
 		// Serialised in the extension: interleaved stop/start phases would
 		// leave a second server running that nothing refers to any more.
 		await Promise.all([
@@ -52,12 +55,10 @@ suite('Taalserver herstarten (NFR-5)', () => {
 			return outcome && outcome.length > 0 ? outcome : undefined;
 		});
 
-		// Two servers answering the same request would double the outline.
-		const names = symbols.map(s => s.name);
-		assert.strictEqual(
-			new Set(names).size,
-			names.length,
-			`dubbele symbolen na herstart: ${names.join(', ')}`
-		);
+		// Two servers answering the same request would double the outline — so it
+		// is compared with what one server just answered, not tested for unique
+		// names: a name may legitimately appear twice, and does here, because an
+		// `Extensie van objecttype` block re-opens a type the same file declares.
+		assert.deepStrictEqual(symbols.map(s => s.name), voor);
 	});
 });

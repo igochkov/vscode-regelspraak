@@ -132,9 +132,14 @@ suite('Navigatie en hernoemen (P5–P9, P11, P20)', () => {
 				'vscode.executeDocumentRenameProvider', rulesUri, inRules('lidmaatschapsduur van een'), 'lidmaatschapstermijn');
 			return outcome && outcome.size > 0 ? outcome : undefined;
 		});
-		const files = edit.entries().map(([uri]) => uri.fsPath).sort();
-		assert.deepStrictEqual(files,
-			[dataUri.fsPath, rulesUri.fsPath, testsUri.fsPath].sort());
+		// The three that carry the property, not the whole set: every sample that
+		// names the attribute is edited, and `samples/` grows. An equality here
+		// would make adding a sample file break a test in another repository.
+		const files = edit.entries().map(([uri]) => uri.fsPath);
+		for (const wanted of [dataUri, rulesUri, testsUri]) {
+			assert.ok(files.includes(wanted.fsPath),
+				`${wanted.fsPath} ontbreekt: ${files.join(' | ')}`);
+		}
 		for (const [, edits] of edit.entries()) {
 			for (const edit of edits) {
 				assert.strictEqual(edit.newText, 'lidmaatschapstermijn');
