@@ -1,0 +1,11 @@
+// Dimensies (§13.3.7), in beide verwijsvormen: met een voorzetsel achter de
+// attribuutnaam, en bijvoeglijk ervoor.
+
+Dimensie de spaarperiode, bestaande uit de spaarperiodes (na het attribuut met voorzetsel in):
+	1. twee periodes geleden
+	2. vorige periode
+	3. huidige periode
+
+Dimensie de uitvoeringsdimensie, bestaande uit de uitvoeringsdimensies (voor het attribuut zonder voorzetsel):
+	1. digitale
+	2. papieren

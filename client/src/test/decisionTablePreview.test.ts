@@ -19,7 +19,7 @@ const PREVIEW_COMMAND = 'regelspraak.previewBeslistabel';
 interface SourceLike { decisionTables(uri: string): Promise<DecisionTable[]> }
 
 suite('Beslistabelvoorbeeld (W4)', () => {
-	const docUri = getDocUri('regels.rgs');
+	const docUri = getDocUri('regels/contributie.rgs');
 	let source: SourceLike;
 
 	suiteSetup(async () => {

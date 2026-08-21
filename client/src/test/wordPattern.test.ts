@@ -11,7 +11,7 @@ import { activate, getDocUri } from './helper';
  * a unit test would have noticed — the JSON was valid either way.
  */
 suite('Woordpatroon', () => {
-	const docUri = getDocUri('gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);

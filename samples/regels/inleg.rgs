@@ -1,0 +1,41 @@
+// Inleg en afdracht over tijd: `gedurende de tijd dat` (§8.4.2), het totaal over
+// een tijdlijn (§13.4.17 #56) en het tijdsevenredig deel (§7.3).
+
+// §13.4.2 #10/#11 — het variabelendeel, en §8.4.2's "gedurende de tijd dat":
+// beide variabelen staan voor een tijdsafhankelijk attribuut, dus de voorwaarde
+// is er zelf een en de taal schrijft niet "indien".
+Regel bepaal nettoinleg
+	geldig altijd
+		De nettoinleg van een Lid moet gesteld worden op X min Y
+		gedurende de tijd dat X groter is dan Y.
+		Daarbij geldt:
+			X is zijn maandinleg maal 12
+			de Y is zijn inhouding maal 2.
+
+// §13.4.17 #56 — het totaal over een tijdlijn, met een tijdvoorwaarde erbij.
+Regel Tegoedopbouw
+	geldig altijd
+		Het totale spaartegoed van een Lid moet gesteld worden op (het totaal van zijn maandinleg gedurende de tijd dat hij een recht op verlenging heeft).
+
+// §10.3 — "gedurende de tijd dat" beperkt de uitkomst tot die periodes.
+Regel Tegoedopbouw actieve periode
+	geldig altijd
+		Het spaartegoed van een Lid moet berekend worden als zijn maandinleg plus zijn bonusinleg
+		gedurende de tijd dat hij een actieve deelnemer is.
+
+// §13.4.15 #69 — "het is de periode …" als voorwaarde in een opsomming.
+Regel Beperkte tegoedopbouw
+	geldig altijd
+		Het spaartegoed van een Lid moet berekend worden als zijn maandinleg
+		gedurende de tijd dat er aan alle volgende voorwaarden wordt voldaan:
+			• hij heeft een recht op verlenging
+			• het is de periode van dd. 01-01-2027 tot dd. 01-07-2027.
+
+// §7.3 — het tijdsevenredig deel, per maand en per jaar.
+Regel Evenredige jaarbijdrage
+	geldig altijd
+		De maandbijdrage van een Lid moet gesteld worden op (het tijdsevenredig deel per maand van JAARBIJDRAGE gedurende de tijd dat hij een actieve deelnemer is).
+
+Regel Evenredige jaarafdracht
+	geldig altijd
+		De jaarafdracht van een Lid moet gesteld worden op (het tijdsevenredig deel per jaar van JAARBIJDRAGE gedurende de tijd dat hij een recht op verlenging heeft).

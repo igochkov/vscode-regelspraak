@@ -25,7 +25,7 @@ suite('Voorbeeldmodel', () => {
 	let files: vscode.Uri[];
 
 	suiteSetup(async () => {
-		await activate(getDocUri('gegevens.rgs'));
+		await activate(getDocUri('gegevens/lid.rgs'));
 		files = (await vscode.workspace.findFiles('**/*.rgs'))
 			.sort((a, b) => a.fsPath.localeCompare(b.fsPath));
 		assert.ok(files.length >= 5, `verwachtte meer voorbeeldbestanden: ${files.length}`);

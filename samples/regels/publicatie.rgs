@@ -1,0 +1,20 @@
+// De publicatie: een enumeratie vergelijken, en een staffel als beslistabel.
+
+// [D-50] — "het jaar uit …" opent óók een functievorm, en "het jaar uit druk"
+// is hier een attribuutnaam. De parser kiest de functie; de taalserver vindt de
+// naamlezing terug.
+Regel bepaal drukjaar
+	geldig altijd
+		Het drukjaar van een Publicatie moet berekend worden als het jaar uit druk van de Publicatie.
+
+// §13.4.17 #2 — een reeks enumeratiewaarden, met "of" als laatste scheiding.
+Regel Fictiewerk
+	geldig altijd
+		Een Publicatie is een fictiewerk
+		indien het genre van de Publicatie gelijk is aan 'roman' of 'strip'.
+
+Beslistabel Genrekorting
+	geldig altijd
+	|   | de genrekorting van een Publicatie moet gesteld worden op | indien het genre van de Publicatie gelijk is aan |
+	| 1 | 10%                                                       | 'roman', 'strip' of 'poëzie'                     |
+	| 2 | 0%                                                        | n.v.t.                                           |

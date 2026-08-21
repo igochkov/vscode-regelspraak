@@ -1,0 +1,64 @@
+// Wat een Lid tot lid maakt: hoe lang het lid is, en de kenmerken die daaraan
+// hangen. Kenmerktoekenning (§13.4.5) en samengestelde voorwaarden (§13.4.14).
+
+Regel bepaal lidmaatschapsduur
+	geldig altijd
+		De lidmaatschapsduur van een Lid moet berekend worden als de tijdsduur van zijn inschrijfdatum tot de Rekendatum in hele jaren.
+
+Regel Jeugdlid
+	geldig altijd
+		Een Lid is jeugdlid
+		indien zijn lidmaatschapsduur kleiner is dan 3 jaar.
+
+// §13.4.14 — een samengestelde voorwaarde met "alle", en een kenmerknaam die
+// getallen en "tot en met" bevat: een naam is een gewone woordenreeks ([D-12]).
+Regel Trouwe lener
+	geldig altijd
+		Een Lid is een trouwe lener van 5 tot en met 10 jaar lidmaatschap
+		indien hij aan alle volgende voorwaarden voldoet:
+			• zijn lidmaatschapsduur is groter of gelijk aan 5 jaar
+			• zijn lidmaatschapsduur is kleiner of gelijk aan 10 jaar
+			• hij is een geregistreerde lener.
+
+// §13.4.14 #4 — "alle van de", en een geneste opsomming onder "geen van de".
+Regel Recht op verlenging
+	geldig altijd
+		Een Lid heeft het recht op verlenging
+		indien hij aan alle van de volgende voorwaarden voldoet:
+			• het actief lidmaatschap van het Lid is gelijk aan waar
+			• hij voldoet aan geen van de volgende voorwaarden:
+				•• hij is jeugdlid
+				•• zijn leestegoed is leeg
+				•• hij heeft geen actieve reservering.
+
+// §13.2 #14 en §13.4.15 #72 — `onwaar` als literaal, en de ontkennende vorm
+// van een stellende vergelijking ("is niet gelijk aan").
+Regel Slapende inschrijving
+	geldig altijd
+		Een Lid is een slapende inschrijving
+		indien er aan alle volgende voorwaarden wordt voldaan:
+			• het actief lidmaatschap van het Lid is gelijk aan onwaar
+			• zijn pasnummer is niet gelijk aan "000000000".
+
+// §13.4.17 #39/#40 — de eerste en de laatste van een reeks datums.
+Regel bepaal activatiedatum
+	geldig altijd
+		De activatiedatum van een Lid moet berekend worden als de laatste van zijn aanvraagdatum, zijn betaaldatum en de eerste kalenderdag.
+
+// §13.4.17 #9 en §5.4 — een tekstenreeks met een ingesloten conversie.
+Regel bepaal pasopschrift
+	geldig altijd
+		Het pasopschrift van een Lid moet gesteld worden op "pas van «het pasnummer van het Lid»".
+
+Regel bepaal nieuwsbriefvoorkeur
+	geldig altijd
+		De nieuwsbriefvoorkeur van een Lid moet gesteld worden op «de vestigingsnaam van de vestiging van het Lid».
+
+// §13.2 #12 — de rangtelwoorden, over de rol van een wederkerig feittype.
+Regel Vergelijkingsdatum leesduo
+	geldig altijd
+		De vergelijkingsdatum van een Lid moet gesteld worden op de inschrijfdatum van de eerstgenoemde leespartner.
+
+Regel Tweede vergelijkingsdatum leesduo
+	geldig altijd
+		De tweede vergelijkingsdatum van een Lid moet gesteld worden op de inschrijfdatum van de als tweede genoemde leespartner.

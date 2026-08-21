@@ -1,0 +1,76 @@
+// Het Lid — het objecttype waar het model om draait (§13.3.1).
+// Bezield, dus regels mogen het met `hij` en `zijn` aanspreken (§13.4.17 #42).
+// De koptekstregels verdelen de leden in groepen (§13.3.1 #5).
+
+Objecttype het Lid (mv: Leden) (bezield)
+	--- identificatie
+	het pasnummer (mv: pasnummers)                         Tekst;
+	het pasopschrift                                       Tekst;
+	de nieuwsbriefvoorkeur                                 Tekst;
+	de inschrijfdatum                                      Datum in dagen;
+	de aanvraagdatum                                       Datum in dagen;
+	de betaaldatum                                         Datum in dagen;
+	de activatiedatum                                      Datum in dagen;
+	het aanmeldtijdstip                                    Datum en tijd in millisecondes;
+	--- lidmaatschap
+	is jeugdlid                                            kenmerk (bijvoeglijk);
+	is doorlezer (mv: doorlezers)                          kenmerk (bijvoeglijk);
+	het recht op verlenging                                kenmerk (bezittelijk) voor elke dag;
+	de actieve reservering                                 kenmerk (bezittelijk);
+	de geregistreerde lener                                kenmerk;
+	de actieve deelnemer                                   kenmerk;
+	de correcte pasnummerhouder                            kenmerk;
+	de controleerbare pasnummerhouder                      kenmerk;
+	het controlegeval                                      kenmerk;
+	het weigeringsgeval                                    kenmerk;
+	de jaarrondspaarder                                    kenmerk;
+	de slapende inschrijving                               kenmerk;
+	de maandrondspaarder                                   kenmerk;
+	// §13.2 #8 — een naam is een gewone woordenreeks: getallen en "tot en met"
+	// horen erbij ([D-12]).
+	de trouwe lener van 5 tot en met 10 jaar lidmaatschap  kenmerk;
+	het actief lidmaatschap                                Boolean;
+	de lidmaatschapsduur                                   Numeriek (niet-negatief geheel getal) met eenheid jaar;
+	de contributie                                         Geldbedrag voor elk jaar;
+	--- puntenprogramma
+	het leestegoed                                         Numeriek (geheel getal) met eenheid pt voor elke maand;
+	het inlegtegoed                                        Numeriek (geheel getal) met eenheid pt;
+	het dagtegoed                                          Numeriek (geheel getal) met eenheid pt voor elke dag;
+	het weektegoed                                         Numeriek (geheel getal) met eenheid pt voor elke week startend op 04-01-2027;
+	het kwartaaltegoed                                     Numeriek (geheel getal) met eenheid pt voor elk kwartaal;
+	het halfjaartegoed                                     Numeriek (geheel getal) met eenheid pt voor elke 6 maanden startend op 01-01-2027;
+	het termijntegoed                                      Numeriek (geheel getal) met eenheid pt voor elke spaartermijn;
+	het laagste tegoed                                     Numeriek (geheel getal) met eenheid pt;
+	het hoogste tegoed                                     Numeriek (geheel getal) met eenheid pt;
+	het bonusaandeel (mv: bonusaandelen)                   Numeriek (geheel getal) met eenheid pt;
+	het maximale bonusaandeel                              Numeriek (geheel getal) met eenheid pt;
+	de gespaarde punten in periode                         Numeriek (geheel getal), gedimensioneerd met spaarperiode;
+	het inkomen per uitvoering                             Numeriek (geheel getal), gedimensioneerd met spaarperiode en uitvoeringsdimensie;
+	het puntentotaal                                       Numeriek (geheel getal);
+	het recente puntentotaal                               Numeriek (geheel getal);
+	het keuzepuntentotaal                                  Numeriek (geheel getal);
+	het hoogste periodetegoed                              Numeriek (geheel getal);
+	de spaarfactor                                         Numeriek (positief getal met 2 decimalen);
+	de spaarindex                                          Numeriek (geheel getal);
+	de kwadraatscore                                       Numeriek (getal met 2 decimalen);
+	de schuldpositie                                       Krediet;
+	het rentepercentage                                    Percentage (getal met 2 decimalen) met eenheid %/jaar;
+	de genrevoorkeur                                       Genre;
+	de kortingsfactor                                      Percentage (getal met 2 decimalen) met eenheid %;
+	--- inleg en afdracht
+	de maandinleg                                          Geldbedrag met eenheid €/maand voor elke maand;
+	de bonusinleg                                          Geldbedrag met eenheid €/maand voor elke maand;
+	het spaartegoed                                        Geldbedrag met eenheid €/maand voor elke maand;
+	het totale spaartegoed                                 Geldbedrag;
+	de inhouding                                           Geldbedrag met eenheid €/maand voor elke maand;
+	de nettoinleg                                          Geldbedrag met eenheid €/maand voor elke maand;
+	de maandbijdrage                                       Geldbedrag met eenheid €/maand voor elke maand;
+	de jaarafdracht                                        Geldbedrag met eenheid €/jaar voor elk jaar;
+	de proefcontributie                                    Geldbedrag voor elk jaar;
+	de najaarscontributie                                  Geldbedrag voor elk jaar;
+	de overgangscontributie                                Geldbedrag voor elk jaar;
+	// §7.2 geeft de uitkomst van "het aantal dagen in … dat …" zelf: dagen per
+	// de genoemde tijdseenheid, op een tijdlijn die in diezelfde eenheid knipt.
+	het aantal toegangsdagen                               Numeriek (geheel getal) met eenheid dagen/maand voor elke maand;
+	het aantal spaardagen                                  Numeriek (geheel getal) met eenheid dagen/jaar voor elk jaar;
+	het aantal zware zendingen                             Numeriek (geheel getal);

@@ -1,0 +1,9 @@
+// Een extensieblok (§3.1.2), met opzet in een eigen bestand: het heropent een
+// objecttype dat elders gedeclareerd is, en de leden erin horen bij dát type.
+
+// §3.1.2 — een extensieblok heropent een objecttype dat elders gedeclareerd is,
+// desnoods in een ander bestand. De leden erin horen bij het objecttype.
+Extensie van objecttype het Lid
+	--- leesduo
+	de vergelijkingsdatum         Datum in dagen;
+	de tweede vergelijkingsdatum  Datum in dagen;

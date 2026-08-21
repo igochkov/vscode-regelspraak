@@ -25,7 +25,7 @@ interface ModelExplorerLike {
 }
 
 suite('Modelverkenner (W1, W2)', () => {
-	const docUri = getDocUri('gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 	let explorer: ModelExplorerLike;
 
 	suiteSetup(async () => {

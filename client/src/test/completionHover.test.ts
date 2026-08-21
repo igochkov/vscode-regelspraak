@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, doc, getDocUri, positionOf, setTestContent, waitUntil } from './helper';
 
 suite('Aanvulling en hover (P2, P3)', () => {
-	const docUri = getDocUri('regels.rgs');
+	const docUri = getDocUri('regels/lidmaatschap.rgs');
 	let original: string;
 
 	suiteSetup(async () => {

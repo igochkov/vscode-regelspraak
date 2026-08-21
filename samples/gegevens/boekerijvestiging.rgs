@@ -1,0 +1,21 @@
+// De Boekerijvestiging — waar de Leden ingeschreven staan.
+
+Objecttype de Boekerijvestiging (mv: Boekerijvestigingen)
+	de vestigingsnaam (mv: vestigingsnamen)  Tekst;
+	het vestigingsnummer                     Tekst;
+	de openingsdatum                         Datum in dagen;
+	de peildatum                             Datum in dagen;
+	het peiltijdstip                         Datum en tijd in millisecondes;
+	het stelseltijdstip                      Datum en tijd in millisecondes;
+	de referentiedatum                       Datum in dagen;
+	de stelseldatum                          Datum in dagen;
+	het bezoekersaantal                      Numeriek (geheel getal);
+	het uitleenaantal                        Numeriek (geheel getal);
+	het actieve ledenaantal                  Numeriek (geheel getal);
+	het ledenaantal                          Numeriek (geheel getal);
+	de openingsuren                          Numeriek (geheel getal) met eenheid uur;
+	de leesdichtheid                         Numeriek (getal) met eenheid pt/m^2;
+	de drukbezochte vestiging                kenmerk;
+	de spaarvestiging                        kenmerk;
+	de overgangsvestiging                    kenmerk;
+	de leeszaalvestiging                     kenmerk;

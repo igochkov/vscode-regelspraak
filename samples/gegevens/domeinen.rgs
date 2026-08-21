@@ -1,0 +1,11 @@
+// Domeinen (§13.3.4): een eigen naam voor een datatype, en een enumeratie.
+
+Domein Geldbedrag is van het type Numeriek (getal met 2 decimalen) met eenheid €
+
+Domein Krediet is van het type Numeriek (negatief geheel getal)
+
+Domein Genre is van het type Enumeratie
+	'roman'
+	'poëzie'
+	'naslagwerk'
+	'strip'

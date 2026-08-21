@@ -8,7 +8,7 @@ import { activate, doc, getDocUri, waitUntil } from './helper';
 const SCHEME = 'regelspraak-model';
 
 suite('Modelweergave (W5)', () => {
-	const docUri = getDocUri('gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 	let original: string;
 
 	suiteSetup(async () => {
@@ -56,7 +56,7 @@ suite('Modelweergave (W5)', () => {
 	});
 
 	test('noemt het bestand dat beschreven wordt, in de kop', async () => {
-		assert.ok((await view()).getText().startsWith('// Modelweergave van gegevens.rgs'));
+		assert.ok((await view()).getText().startsWith('// Modelweergave van lid.rgs'));
 	});
 
 	test('toont de declaraties met hun leden en hun gedeclareerde datatype', async () => {

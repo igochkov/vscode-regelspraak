@@ -10,7 +10,7 @@ import { activate, getDocUri, waitUntil } from './helper';
  * what this asserts.
  */
 suite('Taalserver herstarten (NFR-5)', () => {
-	const docUri = getDocUri('gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);

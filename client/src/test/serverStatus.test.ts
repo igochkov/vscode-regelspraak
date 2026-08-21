@@ -17,7 +17,7 @@ interface ServerStatusLike {
 }
 
 suite('Taalserverstatus (C7)', () => {
-	const docUri = getDocUri('gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 	let status: ServerStatusLike;
 
 	suiteSetup(async () => {
