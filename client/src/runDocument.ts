@@ -32,11 +32,14 @@ export const SHOW_RUN_COMMAND = 'regelspraak.showUitkomst';
  * tab, and the document it came from is in the query — W5's split, for W5's
  * reason: a percent-encoded absolute path is unreadable on a tab.
  */
-function runUri(source: Uri, caseName: string): Uri {
+function runUri(source: Uri, caseName: string, focus?: string): Uri {
 	return Uri.from({
 		scheme: RUN_SCHEME,
-		path: `${caseName} (uitkomst)`,
-		query: `${source.toString()}#${encodeURIComponent(caseName)}`
+		// The rule on the tab where there is one: pressing `uitvoeren` above a
+		// rule is a question about that rule, and the answer's tab should say so
+		// rather than naming the scenario it happened to be asked against.
+		path: focus ? `${focus} (uitkomst)` : `${caseName} (uitkomst)`,
+		query: `${source.toString()}#${encodeURIComponent(focus ?? caseName)}`
 	});
 }
 
@@ -63,10 +66,17 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 			?? '// Deze uitkomst is er niet meer. Voer het testgeval opnieuw uit.\n';
 	}
 
-	/** Shows what a finished run computed, beside the testset it came from. */
-	async show(source: Uri, run: TestRun): Promise<void> {
-		const uri = runUri(source, run.case);
-		this.rendered.set(uri.toString(), render(source, run));
+	/**
+	 * Shows what a finished run computed, beside the document it was asked from.
+	 *
+	 * `focus` is X2b: the same run, read as an answer about one rule. Same request
+	 * and same renderer, because "what did this rule do" is a question about a run
+	 * and not a different kind of run — the engine has no way to evaluate one rule
+	 * alone, and pretending otherwise would be a second execution model.
+	 */
+	async show(source: Uri, run: TestRun, focus?: string): Promise<void> {
+		const uri = runUri(source, run.case, focus);
+		this.rendered.set(uri.toString(), render(source, run, focus));
 		this.changed.fire(uri);
 		const document = await workspace.openTextDocument(uri);
 		await window.showTextDocument(document, {
@@ -82,10 +92,12 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 	}
 }
 
-function render(source: Uri, run: TestRun): string {
+function render(source: Uri, run: TestRun, focus?: string): string {
 	const name = source.path.split('/').pop() ?? '';
 	const lines: string[] = [
-		`// Uitkomst van '${run.case}'`,
+		focus
+			? `// Wat '${focus}' deed, in testgeval '${run.case}'`
+			: `// Uitkomst van '${run.case}'`,
 		`// ${name}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`,
 		'//',
 		'// Alleen-lezen, en de stand van één run. Pas de testset aan en voer',
@@ -99,6 +111,25 @@ function render(source: Uri, run: TestRun): string {
 			lines.push(`\t${one}`);
 		}
 		return `${lines.join('\n')}\n`;
+	}
+
+	// A rule-focused view leads with that rule and leaves the rest below: the
+	// question was about one rule, and the whole run is context for it.
+	if (focus && run.detail) {
+		const wrote = run.detail.trace.filter(one => one.rule === focus);
+		lines.push(...section(`Geschreven door '${focus}'`, wrote.length === 0
+			? [`\t(niets — deze regel vuurde niet in dit testgeval)`]
+			: wrote.flatMap(one => [
+				`\t${one.instance ? `${one.instance} · ` : ''}${target(one.target, one.coordinates)}`
+					+ ` = ${one.value}`,
+				...one.operands.map(operand =>
+					`\t\t${operand.instance ? `${operand.instance} · ` : ''}${operand.label}`
+						+ ` = ${operand.value}`)
+			])));
+		const fired = run.detail.firedRules.find(one => one.rule === focus);
+		lines.push(...section('Vuurde', [fired
+			? `\tvoor ${fired.count} instantie${fired.count === 1 ? '' : 's'}`
+			: '\tniet in dit testgeval']));
 	}
 
 	lines.push(...section('Verwachtingen', run.assertions.length === 0

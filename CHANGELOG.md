@@ -104,6 +104,45 @@ already given a meaning — and the Test Explorer runs them.
   `gegeven-feit` and `verwacht-regelversie` — each body validated against the
   test grammar on every build, as the model snippets are against the model
   grammar.
+- **Run from the text.** Above every testset there is an **alle testgevallen
+  uitvoeren** link and above every testgeval an **uitvoeren** link. They hand the
+  work to the same Test Explorer the Testing view drives, so a run started in the
+  text and a run started in the view are one run with one result — the item turns
+  green or red either way. A testgeval that cannot be composed keeps its link:
+  pressing it reports the finding with the code that caused it, which is worth
+  more than a missing link.
+- **What a run computed, as a document.** **Uitkomst van dit testgeval tonen**
+  opens a read-only view beside the testset for the testgeval your cursor is in:
+  every expectation with what it actually got, the rekendatum, the values you
+  gave and the values the model derived, the characteristics it concluded, the
+  faults and the inconsistencies, and the **derivation trace** — one line per
+  write, in the order the writes happened, naming the rule that made it and the
+  operands it read. A value that varies over time is listed per period rather
+  than as one number.
+
+  Everything in it is written in RegelSpraak's own notation, because it is
+  computed on the server: amounts carry their unit, a fraction is a fraction and
+  a date is a date. Nothing in this view calculates anything — it is the state of
+  one run, and re-running is how it changes.
+- **Run a rule against a testgeval.** Above every `Regel` and every
+  `Beslistabel` there is now an **uitvoeren** link, which runs the *active
+  testgeval* and opens the same view focused on that rule: what it wrote, for
+  which instances, out of which operands — and, when it did not fire, that it did
+  not fire, which is an answer rather than an empty screen.
+
+  It runs the whole model, deliberately. Firing order follows the dependencies
+  between rules, and a rule's inputs are whatever the rules before it derived, so
+  a rule evaluated in isolation is not a defined thing. "Run this rule" therefore
+  means run the model and show what this rule did.
+
+  Which testgeval is *active* has two layers.
+  `regelspraak.execution.defaultScenario` is the shared default — written as
+  `tests/lidmaatschap.test.rgs#Een kort lidmaatschap`, meant to be committed, so
+  a team shares the scenario its model is usually demonstrated against — and
+  **Actief testgeval kiezen** overrides it for your window without touching the
+  setting, so a local choice is not a diff. Which of the two is in force is shown
+  in the language status beside every `.rgs` file, and pressing **uitvoeren**
+  with nothing chosen asks rather than refusing.
 
 ### Fixed
 
@@ -117,12 +156,13 @@ already given a meaning — and the Test Explorer runs them.
 
 ### Notes
 
-- **What running does not yet include.** A testgeval runs from the Testing view
-  and nowhere else: there is no run button in the text beside a rule, no way to
-  run one rule or one file against a scenario, and no view of the derivation
-  trace behind a result. Those are the roadmap's **Execution** row and are what
-  is left of it. A failing expectation names the rule that produced the value,
-  which is the part of a trace you need most often.
+- **What running does not yet include.** Every run starts from a testgeval —
+  there is no way to run a model against a situation you have not written down,
+  because the situation *is* the testset and writing it is the point. The outcome
+  view is text rather than an interactive panel: a trace is tabular by nature and
+  a document is something you can search, copy out of and keep open beside the
+  model. Click-through and collapsible chains are what a panel would add and are
+  still to come.
 - **Evaluation runs in a worker thread**, one run at a time, with a timeout it
   cannot outlive. A rule set that loops does not take the editor with it: the run
   is terminated and reported as an error naming the reason. A dependency cycle

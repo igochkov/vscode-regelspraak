@@ -20,6 +20,7 @@ import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './m
 import { ModelExplorer } from './modelExplorer';
 import { TestExplorer } from './testExplorer';
 import { RunDocuments, SHOW_RUN_COMMAND, caseAtCursor } from './runDocument';
+import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
@@ -95,6 +96,15 @@ const SHOW_MODEL_EXPLORER_COMMAND = 'regelspraak.showModelExplorer';
  */
 const RUN_TESTGEVAL_COMMAND = 'regelspraak.runTestgeval';
 
+/**
+ * X2b's run lens above a rule, and the server writes the same string.
+ *
+ * It carries the rule's document and its name. Which testgeval to run it
+ * against is deliberately *not* on the wire: that is this side's state, and a
+ * lens that named a scenario would go stale the moment another one is chosen.
+ */
+const RUN_REGEL_COMMAND = 'regelspraak.runRegel';
+
 /** The view id, and so also the id of the `.focus` command VS Code derives. */
 const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
 
@@ -118,6 +128,9 @@ const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
 const testExplorer = new TestExplorer();
 const runDocuments = new RunDocuments();
+
+/** X2b's, and the only one of these that needs the extension context. */
+let activeScenario: ActiveScenario | undefined;
 
 /** Created on activation, so it can say "starting" before there is a client. */
 let serverStatus: ServerStatus | undefined;
@@ -164,6 +177,7 @@ export interface RegelSpraakApi {
 	serverStatus: ServerStatus;
 	modelSource: ModelSource;
 	testExplorer: TestExplorer;
+	activeScenario: ActiveScenario;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -244,6 +258,22 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 
 	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
 
+	activeScenario = new ActiveScenario(context, testExplorer);
+	context.subscriptions.push(
+		activeScenario,
+		commands.registerCommand(CHOOSE_SCENARIO_COMMAND, () => activeScenario?.choose()),
+		// X2b. The rule comes from the lens; the scenario is this side's state, and
+		// pressing with none chosen asks for one rather than refusing.
+		commands.registerCommand(RUN_REGEL_COMMAND,
+			(uri: string, ruleName: string) => runRule(uri, ruleName)),
+		// The setting is one of the two layers, so the status item has to follow it:
+		// a default edited in settings.json would otherwise still read as the old one.
+		workspace.onDidChangeConfiguration(event => {
+			if (event.affectsConfiguration(SCENARIO_SETTING)) {
+				activeScenario?.refresh();
+			}
+		}));
+
 	// Re-resolve on change, so pointing the setting at a different server build
 	// takes effect without reloading the window.
 	context.subscriptions.push(
@@ -255,7 +285,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus, modelSource, testExplorer };
+	return { modelExplorer, serverStatus, modelSource, testExplorer, activeScenario };
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -287,6 +317,28 @@ async function showRunOutcome(): Promise<void> {
 	const run = await testExplorer.runForDetail(uri, caseName);
 	if (run) {
 		await runDocuments.show(editor.document.uri, run);
+	}
+}
+
+/**
+ * Runs the active scenario and shows what one rule did (X2b).
+ *
+ * This *is* a test run — the same request, read as an answer about a rule rather
+ * than about an expectation — because the engine has no way to evaluate one rule
+ * on its own: firing order is dependency-driven over the whole model ([E-7]), and
+ * a rule's inputs are whatever the rules before it derived. So "run this rule"
+ * can only mean run the model and show what this rule did, and a second kind of
+ * run would be a second execution model.
+ */
+async function runRule(uri: string, ruleName: string): Promise<void> {
+	const scenario = await activeScenario?.require();
+	if (!scenario) {
+		return; // nothing to pick, or the pick was dismissed — both already said so
+	}
+	const run = await testExplorer.runForDetail(scenario.uri, scenario.case);
+	if (run) {
+		// Beside the *rule*, not beside the testset: the question was asked here.
+		await runDocuments.show(Uri.parse(uri), run, ruleName);
 	}
 }
 

@@ -94,6 +94,11 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.kiesTestgeval",
+				"title": "Actief testgeval kiezen",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.showServerLog",
 				"title": "Logboek van de taalserver tonen",
 				"category": "RegelSpraak"
@@ -291,6 +296,12 @@
 			"type": "object",
 			"title": "RegelSpraak",
 			"properties": {
+				"regelspraak.execution.defaultScenario": {
+					"scope": "window",
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Het testgeval waartegen **Regel uitvoeren** een regel uitvoert, als `pad/naar/bestand.test.rgs#naam van het testgeval` — het pad relatief ten opzichte van de eerste werkmap. Dit is de gedeelde standaard, bedoeld om mee te committen; **RegelSpraak: Actief testgeval kiezen** overschrijft hem voor dit venster zonder de instelling te wijzigen. Welke van de twee geldt, staat bij de taalstatus van een `.rgs`-bestand."
+				},
 				"regelspraak.server.path": {
 					"scope": "machine-overridable",
 					"type": "string",

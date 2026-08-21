@@ -224,6 +224,23 @@ export class TestExplorer {
 		});
 	}
 
+	/**
+	 * Every testgeval in the workspace, for X2b's Quick Pick.
+	 *
+	 * From the tree rather than by asking again: the tree *is* the answer to
+	 * `regelspraak/tests`, and a second request would be a second reading of the
+	 * same fact that could disagree with what the Testing view is showing.
+	 */
+	allCases(): { uri: string; case: string }[] {
+		const found: { uri: string; case: string }[] = [];
+		this.controller.items.forEach(testset => {
+			testset.children.forEach(one => {
+				found.push({ uri: testset.id, case: one.label });
+			});
+		});
+		return found;
+	}
+
 	/** Every testgeval of one document, with the lines it spans (X4's cursor lookup). */
 	casesOfDocument(uri: string): { name: string; startLine: number; endLine: number }[] {
 		const testset = this.controller.items.get(uri);
