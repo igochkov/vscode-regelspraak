@@ -19,6 +19,7 @@ import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
 import { TestExplorer } from './testExplorer';
+import { RunDocuments, SHOW_RUN_COMMAND, caseAtCursor } from './runDocument';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
@@ -116,6 +117,7 @@ const modelExplorer = new ModelExplorer(modelSource);
 const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
 const testExplorer = new TestExplorer();
+const runDocuments = new RunDocuments();
 
 /** Created on activation, so it can say "starting" before there is a client. */
 let serverStatus: ServerStatus | undefined;
@@ -183,6 +185,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		modelExplorer,
 		modelDocuments,
 		testExplorer,
+		runDocuments,
 		window.createTreeView(MODEL_EXPLORER_VIEW, {
 			treeDataProvider: modelExplorer,
 			// The declaration a row stands for is what a click opens; selecting
@@ -211,7 +214,10 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		// X2a. Handed to the Test Explorer rather than to the request, so a run
 		// from the text and a run from the Testing view are one thing.
 		commands.registerCommand(RUN_TESTGEVAL_COMMAND,
-			(uri: string, caseName?: string) => testExplorer.runFromLens(uri, caseName)));
+			(uri: string, caseName?: string) => testExplorer.runFromLens(uri, caseName)),
+		// X4. From the palette, on the testgeval the cursor is in: a second lens
+		// per case would double the noise above every one of them.
+		commands.registerCommand(SHOW_RUN_COMMAND, showRunOutcome));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -254,6 +260,34 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 
 export function deactivate(): Thenable<void> | undefined {
 	return stopClient();
+}
+
+/**
+ * Runs the testgeval the cursor is in and shows what it computed (X4).
+ *
+ * Which case that is comes from the Test Explorer's own tree, whose ranges are
+ * the server's answer — so "which testgeval is this" is decided by the same fact
+ * the Testing view draws with, and not by a second reading of the text on a side
+ * that has no parser for it.
+ */
+async function showRunOutcome(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor) {
+		void window.showInformationMessage('Open eerst een testset (*.test.rgs).');
+		return;
+	}
+	const uri = editor.document.uri.toString();
+	const caseName = caseAtCursor(
+		testExplorer.casesOfDocument(uri), editor.selection.active);
+	if (!caseName) {
+		void window.showInformationMessage(
+			'Zet de cursor in een testgeval waarvan u de uitkomst wilt zien.');
+		return;
+	}
+	const run = await testExplorer.runForDetail(uri, caseName);
+	if (run) {
+		await runDocuments.show(editor.document.uri, run);
+	}
 }
 
 async function formatDocument(): Promise<void> {

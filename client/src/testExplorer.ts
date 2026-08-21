@@ -50,13 +50,56 @@ interface TestAssertion {
 
 interface TestFault { rule: string; instance?: string; message: string }
 
-interface TestRun {
+/**
+ * What a run computed (X4) — see the server's `protocol.ts`, which defines it.
+ *
+ * Every value is already a RegelSpraak literal: this side has no arithmetic and
+ * no unit algebra, so a structured value would be something it could only print,
+ * and the notation a trace is read in has to be the one a failing diff is
+ * written in.
+ */
+export interface RunDetail {
+	rekendatum: string;
+	values: RunValue[];
+	kenmerken: RunKenmerk[];
+	firedRules: { rule: string; count: number }[];
+	inconsistencies: { rule: string; instance?: string }[];
+	trace: RunTraceEntry[];
+}
+
+export interface RunValue {
+	instance: string;
+	attribute: string;
+	coordinates?: string[];
+	value?: string;
+	segments?: { from?: string; to?: string; value: string }[];
+	derived: boolean;
+}
+
+export interface RunKenmerk {
+	instance: string;
+	kenmerk: string;
+	present: boolean;
+	derived: boolean;
+}
+
+export interface RunTraceEntry {
+	instance?: string;
+	target: string;
+	coordinates?: string[];
+	rule: string;
+	value: string;
+	operands: { label: string; instance?: string; value: string }[];
+}
+
+export interface TestRun {
 	case: string;
 	outcome: 'uitgevoerd' | 'geweigerd';
 	reason?: string;
 	details?: string[];
 	assertions: TestAssertion[];
 	faults: TestFault[];
+	detail?: RunDetail;
 }
 
 function rangeOf(wire: WireRange): vscode.Range {
@@ -70,6 +113,8 @@ export class TestExplorer {
 	private client: LanguageClient | undefined;
 	/** Moved by every invalidation, so a reply in flight can be told from a fresh one. */
 	private generation = 0;
+	/** Each case's whole extent by item id — the item itself carries only its name. */
+	private readonly spans = new Map<string, [number, number]>();
 
 	constructor() {
 		this.controller = vscode.tests.createTestController(
@@ -131,6 +176,7 @@ export class TestExplorer {
 		if (asked !== this.generation) {
 			return;
 		}
+		this.spans.clear();
 		this.controller.items.replace(answer.testsets.map(one => this.itemFor(one)));
 	}
 
@@ -142,6 +188,7 @@ export class TestExplorer {
 			const child = this.controller.createTestItem(
 				`${testset.uri}#${one.name}`, one.name, uri);
 			child.range = rangeOf(one.nameRange);
+			this.spans.set(child.id, [one.range.start.line, one.range.end.line]);
 			// What the server said about it, on the item rather than in a run: a
 			// case that cannot compose is worth seeing before anybody presses play,
 			// and a run-only case is worth telling apart from one that asserts.
@@ -154,6 +201,46 @@ export class TestExplorer {
 			return child;
 		}));
 		return item;
+	}
+
+	/**
+	 * Runs one testgeval and answers with everything it computed (X4).
+	 *
+	 * Apart from `runFromLens`, deliberately: that one drives the `TestController`
+	 * so the Testing view owns the outcome, and this one hands the answer back to
+	 * a caller that is going to render it. Asking for `detail` here and not there
+	 * is the same split — the view wants pass or fail, a reader wants the trace.
+	 */
+	async runForDetail(uri: string, caseName: string): Promise<TestRun | undefined> {
+		const client = this.client;
+		if (!client) {
+			void vscode.window.showWarningMessage('Er draait geen RegelSpraak-taalserver.');
+			return undefined;
+		}
+		return await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
+			textDocument: { uri },
+			case: caseName,
+			detail: true
+		});
+	}
+
+	/** Every testgeval of one document, with the lines it spans (X4's cursor lookup). */
+	casesOfDocument(uri: string): { name: string; startLine: number; endLine: number }[] {
+		const testset = this.controller.items.get(uri);
+		if (!testset) {
+			return [];
+		}
+		const found: { name: string; startLine: number; endLine: number }[] = [];
+		testset.children.forEach(one => {
+			// The item's range is its *name*; the case spans further, so the lookup
+			// needs the declaration's extent. Kept beside the item when the tree was
+			// built rather than re-derived here.
+			const span = this.spans.get(one.id);
+			if (span) {
+				found.push({ name: one.label, startLine: span[0], endLine: span[1] });
+			}
+		});
+		return found;
 	}
 
 	/**

@@ -89,6 +89,11 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.showUitkomst",
+				"title": "Uitkomst van dit testgeval tonen",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.showServerLog",
 				"title": "Logboek van de taalserver tonen",
 				"category": "RegelSpraak"
@@ -111,6 +116,10 @@
 				},
 				{
 					"command": "regelspraak.previewBeslistabel",
+					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.showUitkomst",
 					"when": "editorLangId == regelspraak"
 				}
 			],
