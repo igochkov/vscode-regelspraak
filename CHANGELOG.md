@@ -111,7 +111,7 @@ already given a meaning — and the Test Explorer runs them.
   green or red either way. A testgeval that cannot be composed keeps its link:
   pressing it reports the finding with the code that caused it, which is worth
   more than a missing link.
-- **What a run computed, as a document.** **Uitkomst van dit testgeval tonen**
+- **What a run computed, as a panel.** **Uitkomst van dit testgeval tonen**
   opens a read-only view beside the testset for the testgeval your cursor is in:
   every expectation with what it actually got, the rekendatum, the values you
   gave and the values the model derived, the characteristics it concluded, the
@@ -124,6 +124,16 @@ already given a meaning — and the Test Explorer runs them.
   computed on the server: amounts carry their unit, a fraction is a fraction and
   a date is a date. Nothing in this view calculates anything — it is the state of
   one run, and re-running is how it changes.
+
+  Three things make it a panel rather than a page of text. A passing and a
+  failing expectation are **coloured** apart rather than marked apart, in your
+  theme's own colours — this extension ships none of its own. A trace line
+  **clicks through** to the rule that wrote it, wherever that rule lives, and a
+  failing expectation to the `Verwacht` line that made it. And a write's operands
+  — what it was computed out of — sit in a **chain you can fold**, so the one
+  value you are chasing opens and the other forty stay out of the way. There is
+  an **Als tekst openen** button for the times you want to paste a trace into a
+  ticket.
 - **Run a rule against a testgeval.** Above every `Regel` and every
   `Beslistabel` there is now an **uitvoeren** link, which runs the *active
   testgeval* and opens the same view focused on that rule: what it wrote, for
@@ -140,9 +150,17 @@ already given a meaning — and the Test Explorer runs them.
   `tests/lidmaatschap.test.rgs#Een kort lidmaatschap`, meant to be committed, so
   a team shares the scenario its model is usually demonstrated against — and
   **Actief testgeval kiezen** overrides it for your window without touching the
-  setting, so a local choice is not a diff. Which of the two is in force is shown
-  in the language status beside every `.rgs` file, and pressing **uitvoeren**
-  with nothing chosen asks rather than refusing.
+  setting, so a local choice is not a diff. The same picker clears a choice
+  again, which puts you back to being asked on the next run. Pressing
+  **uitvoeren** with nothing chosen asks rather than refusing.
+- **Both status items are in the status bar**, beside a `.rgs` file and nowhere
+  else: which testgeval a run will use, and whether the language server is up.
+  They were language status items — folded behind the `{}` icon, invisible until
+  hovered — which for the active testgeval defeated the point of showing it at
+  all: a run made against a scenario you chose days ago is the mistake it exists
+  to prevent. Click the first to choose or clear a testgeval, the second to open
+  the server's log. Both are coloured when they need you: no testgeval chosen,
+  or a server that is not running.
 
 ### Fixed
 
@@ -158,11 +176,10 @@ already given a meaning — and the Test Explorer runs them.
 
 - **What running does not yet include.** Every run starts from a testgeval —
   there is no way to run a model against a situation you have not written down,
-  because the situation *is* the testset and writing it is the point. The outcome
-  view is text rather than an interactive panel: a trace is tabular by nature and
-  a document is something you can search, copy out of and keep open beside the
-  model. Click-through and collapsible chains are what a panel would add and are
-  still to come.
+  because the situation *is* the testset and writing it is the point. And a run
+  is a run of the whole model: firing order follows the dependencies between
+  rules, so a rule evaluated on its own is not a defined thing and no gesture
+  offers it.
 - **Evaluation runs in a worker thread**, one run at a time, with a timeout it
   cannot outlive. A rule set that loops does not take the editor with it: the run
   is terminated and reported as an error naming the reason. A dependency cycle
