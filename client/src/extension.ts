@@ -18,6 +18,7 @@ import {
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
+import { TestExplorer } from './testExplorer';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
@@ -105,6 +106,7 @@ const modelSource = new ModelSource();
 const modelExplorer = new ModelExplorer(modelSource);
 const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
+const testExplorer = new TestExplorer();
 
 /** Created on activation, so it can say "starting" before there is a client. */
 let serverStatus: ServerStatus | undefined;
@@ -150,6 +152,7 @@ export interface RegelSpraakApi {
 	modelExplorer: ModelExplorer;
 	serverStatus: ServerStatus;
 	modelSource: ModelSource;
+	testExplorer: TestExplorer;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -170,6 +173,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		{ dispose: () => void commands.executeCommand('setContext', ACTIVE_CONTEXT, false) },
 		modelExplorer,
 		modelDocuments,
+		testExplorer,
 		window.createTreeView(MODEL_EXPLORER_VIEW, {
 			treeDataProvider: modelExplorer,
 			// The declaration a row stands for is what a click opens; selecting
@@ -232,7 +236,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus, modelSource };
+	return { modelExplorer, serverStatus, modelSource, testExplorer };
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -408,8 +412,13 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => {
 		modelExplorer.refresh();
 		modelDocuments.refresh();
+		// The Test Explorer is the third such projection, and it needs the same
+		// notification for a wider reason: a testgeval composes against the whole
+		// model, so a rule edited in another file can change whether one runs.
+		void testExplorer.refresh();
 	});
 	modelSource.setClient(client);
+	testExplorer.setClient(client);
 	modelExplorer.refresh();
 }
 
@@ -419,6 +428,7 @@ async function stopClient(): Promise<void> {
 	client = undefined;
 	watcher = undefined;
 	modelSource.setClient(undefined);
+	testExplorer.setClient(undefined);
 	modelExplorer.refresh();
 	// Only where one was running: a failed start already said something more
 	// useful, and `stopClient` runs on the way into every restart.
