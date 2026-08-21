@@ -384,9 +384,11 @@ function page(cspSource: string, scriptNonce: string): string {
 			item.append(rowLine(row, false));
 			return item;
 		}
-		// Collapsed by default: the operands matter for the one value being chased
-		// and are noise for every other line on the screen.
+		// Collapsed unless the row says otherwise: a write's operands matter for the
+		// one value being chased and are noise for the other forty, while a finding
+		// that hides why it was found is a report the reader has to interrogate.
 		const details = document.createElement('details');
+		details.open = row.open === true;
 		const summary = document.createElement('summary');
 		summary.append(rowLine(row, true));
 		details.append(summary);

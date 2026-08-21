@@ -63,8 +63,29 @@ export interface RunDetail {
 	values: RunValue[];
 	kenmerken: RunKenmerk[];
 	firedRules: { rule: string; count: number }[];
-	inconsistencies: { rule: string; instance?: string }[];
+	inconsistencies: RunInconsistency[];
 	trace: RunTraceEntry[];
+}
+
+/**
+ * A consistency rule (§9.5) that found its model inconsistent, and why.
+ *
+ * `criteria` is the compound check's own criteria in the order it evaluated them
+ * and no further: §13.4.8's `alle` stops at the first that fails, so the last
+ * entry is the one that decided. A single-criterion rule sends none — it *is* its
+ * criterion. `operands` is what the check read, the same record a write carries.
+ */
+export interface RunInconsistency {
+	rule: string;
+	instance?: string;
+	criteria?: { text: string; holds: boolean }[];
+	operands?: RunOperand[];
+}
+
+export interface RunOperand {
+	label: string;
+	instance?: string;
+	value: string;
 }
 
 export interface RunValue {
@@ -89,7 +110,7 @@ export interface RunTraceEntry {
 	coordinates?: string[];
 	rule: string;
 	value: string;
-	operands: { label: string; instance?: string; value: string }[];
+	operands: RunOperand[];
 }
 
 export interface TestRun {

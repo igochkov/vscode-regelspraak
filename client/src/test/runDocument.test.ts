@@ -250,6 +250,43 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(rows[0].note, undefined, 'de naam staat al in het label');
 		});
 
+		test('een inconsistentie toont waarom, en toont het meteen', () => {
+			const rows = view(ran({
+				inconsistencies: [{
+					rule: 'Controleer poteisen',
+					instance: 'Bonuspot #1',
+					criteria: [
+						{ text: 'het totale tegoed van de Bonuspot is groter dan 0', holds: true },
+						{ text: 'de Bonuspot is een ruime pot', holds: false }
+					],
+					operands: [{ label: 'totale tegoed', instance: 'Bonuspot #1', value: '40 pt' }]
+				}]
+			})).get('Inconsistent bevonden')!.rows;
+			// The criteria first — that is the answer — then what the check read.
+			assert.deepEqual(rows[0].children?.map(one => [one.kind, one.label]), [
+				['pass', 'het totale tegoed van de Bonuspot is groter dan 0'],
+				['fail', 'de Bonuspot is een ruime pot'],
+				['operand', 'Bonuspot #1 · totale tegoed']
+			]);
+			// A finding shows its reason without being asked: one behind a click is a
+			// report the reader has to interrogate.
+			assert.equal(rows[0].open, true);
+			// The criteria are not links: a criterion is a clause of the rule the row
+			// already goes to, and has no destination of its own.
+			assert.ok(rows[0].children!.every(one => one.link === undefined));
+		});
+
+		test('laat een uniciteitscontrole zonder reden gewoon staan', () => {
+			// §8.1.6 compares instances rather than reading a value, so it has neither
+			// criteria nor operands — and a row with no children must not grow an
+			// empty fold.
+			const rows = view(ran({
+				inconsistencies: [{ rule: 'Uniek pasnummer' }]
+			})).get('Inconsistent bevonden')!.rows;
+			assert.equal(rows[0].children, undefined);
+			assert.equal(rows[0].open, undefined);
+		});
+
 		test('een traceregel springt op de regelnaam ernaast, met of zonder operanden', () => {
 			const rows = view(ran({
 				trace: [

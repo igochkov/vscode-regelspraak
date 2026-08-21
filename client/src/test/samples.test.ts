@@ -22,6 +22,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { TestRun } from '../testExplorer';
+import { buildView } from '../runView';
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
 /** Enough of the extension's API to reach the runner, as the C7 suite does. */
@@ -115,6 +116,36 @@ suite('Voorbeeldmodel', () => {
 			}
 		}
 		assert.deepStrictEqual(failed, []);
+	});
+
+	test('elke inconsistentie in de voorbeelden zegt waarom zij er is', async function () {
+		this.timeout(120000);
+		const api = await vscode.extensions.getExtension(EXTENSION_ID)!.activate() as Api;
+		await waitUntil('de testsets van de voorbeelden', async () => {
+			await api.testExplorer.refresh();
+			return api.testExplorer.allCases().length >= 16 ? true : undefined;
+		});
+		// `kenmerken.test.rgs` runs the corpus's consistency rules, so this is where
+		// the whole path is visible: the engine walks the criteria, the wire carries
+		// them, and the view turns them into the reason under the finding.
+		const one = api.testExplorer.allCases()
+			.find(each => each.case === 'Twee leden bij één vestiging');
+		assert.ok(one, 'het testgeval met de consistentieregels ontbreekt');
+		const run = await api.testExplorer.runForDetail(one.uri, one.case);
+		const found = run?.detail?.inconsistencies ?? [];
+		assert.ok(found.length > 0, 'dit testgeval hoort inconsistenties op te leveren');
+		for (const each of found) {
+			// Every finding says why: a compound check names its criteria, and any
+			// check that read a value reports what it read. A finding with neither
+			// would be the bare "one of them failed" this replaced.
+			assert.ok((each.criteria ?? []).length > 0 || (each.operands ?? []).length > 0,
+				`${each.rule} meldt geen reden`);
+		}
+		// And the view puts that reason under the finding, opened.
+		const section = buildView('kenmerken.test.rgs', run!)
+			.sections.find(each => each.title === 'Inconsistent bevonden');
+		assert.ok(section, 'de afdeling ontbreekt');
+		assert.ok(section.rows.every(row => (row.children ?? []).length > 0 && row.open === true));
 	});
 
 	test('de formatter laat elk voorbeeldbestand ongemoeid', async () => {

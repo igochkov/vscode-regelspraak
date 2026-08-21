@@ -138,6 +138,16 @@ already given a meaning — and the Test Explorer runs them.
   Where a value was written more than once in a run — an initialisation and then
   the rule that supersedes it — the rule you are offered is the **last** one,
   because that is the write the value in front of you came from.
+
+  **A consistency rule that was not satisfied says why.** *Inconsistent bevonden*
+  lists each criterion the check evaluated with a tick or a cross, so you can see
+  which one failed rather than only that one did, and beneath them the values the
+  check read. Shown without being asked, because a finding that hides its reason
+  is a report you have to interrogate. The list stops where the check stopped: an
+  `alle van de volgende criteria` gives up at the first criterion that fails, so
+  that criterion is the last one listed — and the ones after it are genuinely not
+  evaluated, which is why they are not shown. A rule with a single criterion lists
+  none: it *is* its criterion, and the rule already says it.
 - **Run a rule against a testgeval.** Above every `Regel` and every
   `Beslistabel` there is now an **uitvoeren** link, which runs the *active
   testgeval* and opens the same view focused on that rule: what it wrote, for

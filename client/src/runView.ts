@@ -64,6 +64,14 @@ export interface RunRow {
 	range?: WireRange;
 	/** Operands under a write, periods under a timeline value. */
 	children?: RunRow[];
+	/**
+	 * Whether those children are shown without asking.
+	 *
+	 * A *finding* shows its reason — an inconsistency whose failing criterion is
+	 * behind a click is a report the reader has to interrogate. A trace hides its
+	 * operands, because there the reason matters for one line out of forty.
+	 */
+	open?: boolean;
 	/** Set by `withLinks` — one per row at most, and never by hand. */
 	link?: RunLink;
 }
@@ -177,12 +185,16 @@ export function buildView(fileName: string, run: TestRun, focus?: string): RunVi
 	if (detail.inconsistencies.length > 0) {
 		view.sections.push({
 			title: 'Inconsistent bevonden',
-			rows: detail.inconsistencies.map((one): RunRow => ({
-				kind: 'inconsistency',
-				label: withInstance(one.rule, one.instance),
-				rule: one.rule,
-				ruleAt: 'label'
-			}))
+			rows: detail.inconsistencies.map((one): RunRow => {
+				const why = reasons(one);
+				return {
+					kind: 'inconsistency',
+					label: withInstance(one.rule, one.instance),
+					rule: one.rule,
+					ruleAt: 'label',
+					...(why.length > 0 ? { children: why, open: true } : {})
+				};
+			})
 		});
 	}
 
@@ -272,6 +284,31 @@ export function withLinks(view: RunView): RunView {
 		...view,
 		sections: view.sections.map(section => ({ ...section, rows: section.rows.map(walk) }))
 	};
+}
+
+/**
+ * Why a consistency rule found its model inconsistent.
+ *
+ * The criteria first, because that is the answer — the last one is the criterion
+ * that decided, since §13.4.8's `alle` stops there — and then the values the check
+ * read, because the next question after "which criterion" is "out of what".
+ *
+ * Both are absent for a uniqueness check (§8.1.6), which compares instances rather
+ * than reading a value, and for a single-criterion rule, which *is* its criterion:
+ * quoting the rule's own sentence back under its own name says nothing.
+ */
+function reasons(one: RunDetail['inconsistencies'][number]): RunRow[] {
+	return [
+		...(one.criteria ?? []).map((each): RunRow => ({
+			kind: each.holds ? 'pass' : 'fail',
+			label: each.text
+		})),
+		...(one.operands ?? []).map((each): RunRow => ({
+			kind: 'operand',
+			label: withInstance(each.label, each.instance, true),
+			value: each.value
+		}))
+	];
 }
 
 /** The two sections a focused view leads with (X2b). */
