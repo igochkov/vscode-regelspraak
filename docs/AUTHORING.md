@@ -103,13 +103,22 @@ long.** Length is a symptom; subject is the reason. A 200-line file about one
 subject is easier to follow than four 50-line files that each hold a third of an
 answer.
 
-This will matter more than style shortly. `Regelgroep` is the language's own
-grouping construct — the scope inside which recursion is allowed — and the
-direction taken is that **one file of rules is one group**, named by a header
-line at the top of the file. Under that reading a file boundary carries meaning,
-and a split made to shorten a file draws a group boundary nobody intended.
-Splitting along subject lines is right either way, which is why it is worth
-doing before the construct arrives rather than after.
+This already matters more than style. **One file of rules is one regelgroep**,
+and a header line names it:
+
+```
+Regelgroep contributie
+```
+
+One per file — the file *is* the group, so a second header contradicts the first
+and is reported as such. The name is free text, like a rule's, so it may be
+prose. It is optional: a file without one is a file of rules belonging to no
+group, which is what every model was before the construct existed.
+
+Naming a group is all it does today. It has no bearing on what is computed or in
+what order — but it is the boundary a future recursive group would be drawn on,
+which is why a split made to shorten a file rather than to separate subjects is
+worth avoiding now.
 
 ## Where things do *not* go
 

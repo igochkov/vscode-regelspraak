@@ -2,6 +2,9 @@
 // uniciteit over een verzameling — desnoods over twee verzamelingen samen.
 
 // §13.4.8 #2–#6 — de enkelvoudige consistentieregel, in vier operatorvormen.
+
+Regelgroep consistentiecontroles
+
 Regel Controleer inschrijfdatum
 	geldig altijd
 		De inschrijfdatum van een Lid moet gevuld zijn.

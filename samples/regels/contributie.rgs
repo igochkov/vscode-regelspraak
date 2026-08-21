@@ -2,6 +2,11 @@
 // beslistabel (§12) die hetzelfde attribuut per staffel stelt.
 
 // §13.4.2 #5 — een versie mag ook alleen een einddatum hebben.
+
+// Een regelgroep geeft de regels van dit bestand een naam. Eén per bestand:
+// het bestand is de groep, dus een tweede kop spreekt de eerste tegen (RS614).
+Regelgroep contributie
+
 Regel bepaal oude contributie
 	geldig t/m 2026
 		De contributie van een Lid moet gesteld worden op de standaardcontributie.

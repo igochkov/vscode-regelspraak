@@ -1,6 +1,8 @@
 // Wat een Lid tot lid maakt: hoe lang het lid is, en de kenmerken die daaraan
 // hangen. Kenmerktoekenning (§13.4.5) en samengestelde voorwaarden (§13.4.14).
 
+Regelgroep lidmaatschap
+
 Regel bepaal lidmaatschapsduur
 	geldig altijd
 		De lidmaatschapsduur van een Lid moet berekend worden als de tijdsduur van zijn inschrijfdatum tot de Rekendatum in hele jaren.

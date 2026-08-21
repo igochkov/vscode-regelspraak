@@ -102,6 +102,13 @@
 			"Eén ${2} ${5:heeft} één ${2}"
 		]
 	},
+	"Regelgroep": {
+		"prefix": "regelgroep",
+		"description": "Naam voor de regels van dit bestand (één per bestand)",
+		"body": [
+			"Regelgroep ${1:naam van de regelgroep}"
+		]
+	},
 	"Regel": {
 		"prefix": "regel",
 		"description": "Regel met versie en berekening",

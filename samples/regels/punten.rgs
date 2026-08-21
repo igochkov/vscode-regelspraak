@@ -2,6 +2,9 @@
 // en de dagentellingen van §7.2.
 
 // §13.4.17 #13 — de wortel; §6.1.3 vraagt de afronding erna (RS402).
+
+Regelgroep puntenprogramma
+
 Regel bepaal spaarindex
 	geldig altijd
 		De spaarindex van een Lid moet berekend worden als de wortel van zijn spaarfactor naar beneden afgerond op 0 decimalen.
