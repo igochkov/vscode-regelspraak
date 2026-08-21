@@ -188,6 +188,14 @@ already given a meaning — and the Test Explorer runs them.
 
 ### Notes
 
+- **A decision table takes one `geldig` period, and the specification allows
+  several.** §12 gives a `Beslistabel` the same version pattern as a `Regel`, and a
+  rule may carry any number of versions with non-overlapping validity periods — but
+  a table with two of them is currently reported as a syntax error, and a file with
+  a syntax error in it gets no colour, outline, folding or checks at all. If you
+  need a table to change on a date, write two tables with different names and a
+  `geldig` period each; that parses and evaluates correctly. A fix is the next
+  thing on the list.
 - **What running does not yet include.** Every run starts from a testgeval —
   there is no way to run a model against a situation you have not written down,
   because the situation *is* the testset and writing it is the point. And a run
