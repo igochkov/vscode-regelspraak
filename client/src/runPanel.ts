@@ -34,7 +34,7 @@ import {
 
 import { WireRange } from './model';
 import { SHOW_RUN_AS_TEXT_COMMAND } from './runDocument';
-import { RunView, buildView } from './runView';
+import { RunLink, RunView, buildView } from './runView';
 import { TestRun } from './testExplorer';
 
 /**
@@ -45,11 +45,14 @@ import { TestRun } from './testExplorer';
  */
 export const SHOW_RUN_COMMAND = 'regelspraak.showUitkomst';
 
-/** What the panel can ask for, which is only ever to be shown a place. */
-export type RunGesture =
-	| { kind: 'reveal'; range: WireRange }
-	| { kind: 'revealRule'; rule: string }
-	| { kind: 'asText' };
+/**
+ * What the panel can ask for, which is only ever to be shown a place.
+ *
+ * The two navigating shapes are `RunLink`, so the panel cannot ask for a jump
+ * the view did not offer — which piece of a row is clickable, and what it opens,
+ * is `runView.ts`'s decision and is checked there.
+ */
+export type RunGesture = RunLink | { kind: 'asText' };
 
 /**
  * The rule's own declaration, looked up rather than carried.
@@ -89,9 +92,18 @@ export function ruleLocation(
 export class RunPanels implements Disposable {
 	private readonly open = new Map<string, Panel>();
 
-	/** Draws a finished run, focused on `focus` where there is one. */
-	async show(source: Uri, run: TestRun, focus?: string): Promise<void> {
-		const view = buildView(source.path.split('/').pop() ?? '', run, focus);
+	/**
+	 * Draws a finished run, focused on `focus` where there is one.
+	 *
+	 * `testset` is **the document the run came from**, not the one the gesture was
+	 * made in — named for it, because passing the rule's own file instead is a
+	 * mistake with no symptom until a reader clicks an expectation: every range in
+	 * the view is a position in the testset, so the jump then lands on that line
+	 * number in the wrong file. The panel opens beside whatever is active, so the
+	 * gesture's document is not needed for anything.
+	 */
+	async show(testset: Uri, run: TestRun, focus?: string): Promise<void> {
+		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
 		let panel = this.open.get(view.name);
 		if (!panel) {
 			const created = window.createWebviewPanel(
@@ -106,7 +118,7 @@ export class RunPanels implements Disposable {
 			panel = new Panel(created, () => this.open.delete(view.name));
 			this.open.set(view.name, panel);
 		}
-		await panel.draw(source, run, view, focus);
+		await panel.draw(testset, run, view, focus);
 	}
 
 	dispose(): void {
@@ -133,11 +145,11 @@ class Panel {
 		});
 	}
 
-	async draw(source: Uri, run: TestRun, view: RunView, focus?: string): Promise<void> {
-		this.drawn = { source, run, focus };
+	async draw(testset: Uri, run: TestRun, view: RunView, focus?: string): Promise<void> {
+		this.drawn = { source: testset, run, focus };
 		this.panel.title = `${view.name} (uitkomst)`;
 		this.panel.reveal(this.panel.viewColumn, true);
-		await this.panel.webview.postMessage({ type: 'run', view, source: source.toString() });
+		await this.panel.webview.postMessage({ type: 'run', view });
 	}
 
 	dispose(): void {
@@ -280,15 +292,20 @@ function page(cspSource: string, scriptNonce: string): string {
 	button.link:hover { text-decoration: underline; color: var(--vscode-textLink-activeForeground); }
 	details { margin: 0; }
 	details > ul { margin-left: 1.6rem; }
-	summary { cursor: pointer; list-style: none; }
+	/*
+	 * block, not the default list-item: a summary's marker box is laid out before
+	 * its content, and this summary's content is the row div — so the triangle
+	 * took a line of its own above every foldable row. The marker belongs in the
+	 * row, in the same 1em column every other row reserves for a tick or a
+	 * warning sign, which is what puts it in line with them.
+	 */
+	summary { cursor: pointer; display: block; }
 	summary::-webkit-details-marker { display: none; }
-	summary::before {
+	.disclosure::before {
 		content: "\\25B8";
 		color: var(--vscode-descriptionForeground);
-		display: inline-block;
-		width: 1em;
 	}
-	details[open] > summary::before { content: "\\25BE"; }
+	details[open] > summary .disclosure::before { content: "\\25BE"; }
 	.operands { margin-left: 1.6rem; }
 	.operand .label, .segment .label { color: var(--vscode-descriptionForeground); }
 	.refusal { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
@@ -323,42 +340,48 @@ function page(cspSource: string, scriptNonce: string): string {
 		return node;
 	}
 
-	function rowLine(row) {
+	/*
+	 * One row. Which piece is clickable is row.link, decided in runView.ts —
+	 * nothing is worked out here, because a decision made inside this string is a
+	 * decision no test can read. (And no backticks in here: this whole page is one
+	 * template literal, so one would end it — twice now.)
+	 */
+	function rowLine(row, foldable) {
 		const line = document.createElement('div');
 		line.className = 'row ' + row.kind;
 		const mark = document.createElement('span');
-		mark.className = 'mark';
-		mark.textContent = row.kind === 'pass' ? '\\u2713'
+		// The fold marker shares the column the tick and the warning sign use, so a
+		// foldable row starts where every other row starts.
+		mark.className = foldable ? 'mark disclosure' : 'mark';
+		mark.textContent = foldable ? '' : (row.kind === 'pass' ? '\\u2713'
 			: row.kind === 'fail' ? '\\u2717'
-			: row.kind === 'fault' || row.kind === 'inconsistency' ? '\\u26A0' : '';
+			: row.kind === 'fault' || row.kind === 'inconsistency' ? '\\u26A0' : '');
 		line.append(mark);
-		// A failing expectation goes to the line that expected it; anything with a
-		// rule behind it goes to the rule. Both are the next thing a reader opens.
-		line.append(piece(row.kind === 'note' ? 'label plain' : 'label', row.label,
-			row.range ? { kind: 'reveal', range: row.range } : undefined));
+
+		const on = where => row.link && row.link.on === where ? row.link : undefined;
+		line.append(piece(row.kind === 'note' ? 'label plain' : 'label', row.label, on('label')));
 		if (row.value !== undefined) {
 			line.append(piece('value', row.value));
 		}
 		if (row.note !== undefined) {
-			line.append(piece(row.rule === row.note ? 'note rule' : 'note', row.note,
-				row.rule === row.note ? { kind: 'revealRule', rule: row.rule } : undefined));
-		} else if (row.rule && !row.range) {
-			line.append(piece('note rule', row.rule, { kind: 'revealRule', rule: row.rule }));
+			const gesture = on('note');
+			line.append(piece(gesture ? 'note rule' : 'note', row.note, gesture));
 		}
 		return line;
 	}
 
 	function rowItem(row) {
 		const item = document.createElement('li');
-		if (!row.children || row.children.length === 0) {
-			item.append(rowLine(row));
+		const foldable = Boolean(row.children && row.children.length > 0);
+		if (!foldable) {
+			item.append(rowLine(row, false));
 			return item;
 		}
 		// Collapsed by default: the operands matter for the one value being chased
 		// and are noise for every other line on the screen.
 		const details = document.createElement('details');
 		const summary = document.createElement('summary');
-		summary.append(rowLine(row));
+		summary.append(rowLine(row, true));
 		details.append(summary);
 		const nested = document.createElement('ul');
 		for (const child of row.children) {

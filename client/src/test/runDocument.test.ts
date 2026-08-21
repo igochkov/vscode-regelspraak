@@ -12,8 +12,8 @@ import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
 import { RunPanels, ruleLocation } from '../runPanel';
-import { buildView } from '../runView';
-import { TestRun } from '../testExplorer';
+import { RunSection, buildView } from '../runView';
+import { RunDetail, TestRun } from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
 
@@ -187,6 +187,81 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				one.input instanceof vscode.TabInputWebview
 				&& one.input.viewType.includes('uitkomst')).length,
 			before);
+	});
+
+	// Every row carries at most one click-through, and which piece of the row it
+	// hangs on follows from what the row is. The first version decided this in the
+	// webview script, where no test could read it, and got two sections wrong.
+	suite('waar de sprong van een rij op hangt', () => {
+		const view = (run: TestRun): Map<string, RunSection> =>
+			new Map(buildView('x.test.rgs', run).sections.map(one => [one.title, one]));
+
+		const ran = (detail: Partial<RunDetail>, assertions: TestRun['assertions'] = []): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions, faults: [],
+			detail: {
+				rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace: [], ...detail
+			}
+		});
+
+		test('een verwachting springt naar haar eigen Verwacht-regel', () => {
+			const range = { start: { line: 9, character: 1 }, end: { line: 9, character: 8 } };
+			const rows = view(ran({}, [
+				{ label: 'Noor — contributie', passed: false, range, rule: 'bepaal contributie',
+					expected: '30 euro', actual: '25 euro' }
+			])).get('Verwachtingen')!.rows;
+			// The label, and to the line — where the reader changes it. Not to the
+			// rule, even though the row knows which rule produced the value: one row,
+			// one destination.
+			assert.deepEqual(rows[0].link, { on: 'label', kind: 'reveal', range });
+		});
+
+		test('een gevuurde regel springt naar de regel, met of zonder aantal', () => {
+			const rows = view(ran({
+				firedRules: [{ rule: 'bepaal boete', count: 2 }, { rule: 'Jeugdlid', count: 1 }]
+			})).get('Gevuurde regels')!.rows;
+			// Both, and on the label. The count used to take the note and with it the
+			// link, so a rule that fired twice was unclickable; a rule that fired once
+			// had no note and got its own name appended behind it as the link.
+			assert.deepEqual(rows[0].link, { on: 'label', kind: 'revealRule', rule: 'bepaal boete' });
+			assert.deepEqual(rows[1].link, { on: 'label', kind: 'revealRule', rule: 'Jeugdlid' });
+			assert.equal(rows[0].note, '2×');
+			assert.equal(rows[1].note, undefined, 'geen aantal bij één keer, en geen herhaalde naam');
+		});
+
+		test('een inconsistentie springt naar de regel die haar vond', () => {
+			const rows = view(ran({
+				inconsistencies: [{ rule: 'Controleer poteisen', instance: 'Bonuspot #1' }]
+			})).get('Inconsistent bevonden')!.rows;
+			assert.deepEqual(rows[0].link,
+				{ on: 'label', kind: 'revealRule', rule: 'Controleer poteisen' });
+			assert.equal(rows[0].note, undefined, 'de naam staat al in het label');
+		});
+
+		test('een traceregel springt op de regelnaam, want het label is de vouw', () => {
+			const rows = view(ran({
+				trace: [{
+					instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+					value: '25 euro', operands: [{ label: 'kortingsfactor', value: '2,5 %' }]
+				}]
+			})).get('Trace, in de volgorde waarin geschreven werd')!.rows;
+			// Clicking the label there would both fold and navigate, so the rule beside
+			// the value is the link instead.
+			assert.deepEqual(rows[0].link,
+				{ on: 'note', kind: 'revealRule', rule: 'bepaal contributie' });
+			assert.equal(rows[0].children?.[0].link, undefined, 'een operand gaat nergens heen');
+		});
+
+		test('een waarde met periodes vouwt open en springt nergens heen', () => {
+			const rows = view(ran({
+				values: [{
+					instance: 'Sam', attribute: 'proefcontributie', derived: true,
+					segments: [{ from: '01-01-2027', value: '10 euro' }]
+				}]
+			})).get('Afgeleid')!.rows;
+			assert.ok((rows[0].children ?? []).length > 0, 'een tijdlijnwaarde is vouwbaar');
+			assert.equal(rows[0].link, undefined, 'er is geen regel en geen bereik om heen te gaan');
+		});
 	});
 
 	suite('de sprong van het paneel naar de regel', () => {

@@ -101,9 +101,11 @@ const RUN_TESTGEVAL_COMMAND = 'regelspraak.runTestgeval';
 /**
  * X2b's run lens above a rule, and the server writes the same string.
  *
- * It carries the rule's document and its name. Which testgeval to run it
- * against is deliberately *not* on the wire: that is this side's state, and a
- * lens that named a scenario would go stale the moment another one is chosen.
+ * It carries the rule's document and its name. Only the name is used — the run
+ * is of the active testgeval, so the view's source is that testset and not the
+ * file the lens was pressed in. Which testgeval that is stays deliberately *off*
+ * the wire: it is this side's state, and a lens that named a scenario would go
+ * stale the moment another one is chosen.
  */
 const RUN_REGEL_COMMAND = 'regelspraak.runRegel';
 
@@ -340,15 +342,21 @@ async function showRunOutcome(): Promise<void> {
  * can only mean run the model and show what this rule did, and a second kind of
  * run would be a second execution model.
  */
-async function runRule(uri: string, ruleName: string): Promise<void> {
+async function runRule(_uri: string, ruleName: string): Promise<void> {
 	const scenario = await activeScenario?.require();
 	if (!scenario) {
 		return; // nothing to pick, or the pick was dismissed — both already said so
 	}
 	const run = await testExplorer.runForDetail(scenario.uri, scenario.case);
 	if (run) {
-		// Beside the *rule*, not beside the testset: the question was asked here.
-		await runPanels.show(Uri.parse(uri), run, ruleName);
+		// **The testset, not the rule's own document.** The view's source is where
+		// the run came from, and every range in it — each expectation's `Verwacht`
+		// line — is a position in *that* file. Passing the rule's document made
+		// those ranges line numbers in the wrong file, so clicking an expectation
+		// landed wherever that line happened to be in the model. The lens's own
+		// URI is not needed: the panel opens beside whatever is active, and the
+		// jump back to a rule goes through the workspace symbols by name.
+		await runPanels.show(Uri.parse(scenario.uri), run, ruleName);
 	}
 }
 

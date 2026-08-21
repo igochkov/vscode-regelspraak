@@ -71,10 +71,15 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 			?? '// Deze uitkomst is er niet meer. Voer het testgeval opnieuw uit.\n';
 	}
 
-	/** Shows what a finished run computed, beside the document it was asked from. */
-	async show(source: Uri, run: TestRun, focus?: string): Promise<void> {
-		const view = buildView(source.path.split('/').pop() ?? '', run, focus);
-		const uri = runUri(source, view);
+	/**
+	 * Shows what a finished run computed, beside the testset it came from.
+	 *
+	 * `testset` and not the document the gesture was made in — see `RunPanels.show`
+	 * for why that distinction is load-bearing.
+	 */
+	async show(testset: Uri, run: TestRun, focus?: string): Promise<void> {
+		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
+		const uri = runUri(testset, view);
 		this.rendered.set(uri.toString(), renderText(view));
 		this.changed.fire(uri);
 		const document = await workspace.openTextDocument(uri);

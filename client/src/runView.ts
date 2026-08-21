@@ -56,7 +56,22 @@ export interface RunRow {
 	range?: WireRange;
 	/** Operands under a write, periods under a timeline value. */
 	children?: RunRow[];
+	/** Set by `withLinks` — at most one per row, and never by hand. */
+	link?: RunLink;
 }
+
+/**
+ * Where a row's one click-through hangs, and what it opens.
+ *
+ * **At most one per row.** Two places to go makes the reader choose before they
+ * know what either does — and the first version of this decided in the renderer,
+ * putting the link on whichever piece happened to be present, which left a fired
+ * rule with a count unclickable and one without a count printing its own name
+ * twice after itself.
+ */
+export type RunLink =
+	| { on: 'label' | 'note'; kind: 'reveal'; range: WireRange }
+	| { on: 'label' | 'note'; kind: 'revealRule'; rule: string };
 
 export interface RunSection {
 	title: string;
@@ -201,7 +216,44 @@ export function buildView(fileName: string, run: TestRun, focus?: string): RunVi
 		}))
 	});
 
-	return view;
+	return withLinks(view);
+}
+
+/**
+ * Gives every row its one click-through, which follows from what the row is.
+ *
+ * A pass rather than a field set at each site, so the rule is in one place and a
+ * test can read it — and so that a new section cannot forget to have one.
+ *
+ *   - **Foldable** — the label is the fold, so a rule beside it takes the link.
+ *     That is the trace, where the rule reads as attribution after the value.
+ *   - **Written in the testset** — an expectation goes to its own `Verwacht`
+ *     line, which is where a reader changes it.
+ *   - **About a rule** — a fault, an inconsistency or a fired rule *is* its
+ *     rule, so the label is the link and nothing is repeated behind it.
+ */
+export function withLinks(view: RunView): RunView {
+	const link = (row: RunRow): RunLink | undefined => {
+		const foldable = (row.children ?? []).length > 0;
+		if (foldable) {
+			return row.rule && row.note === row.rule
+				? { on: 'note', kind: 'revealRule', rule: row.rule }
+				: undefined;
+		}
+		if (row.range) {
+			return { on: 'label', kind: 'reveal', range: row.range };
+		}
+		return row.rule ? { on: 'label', kind: 'revealRule', rule: row.rule } : undefined;
+	};
+	const walk = (row: RunRow): RunRow => ({
+		...row,
+		link: link(row),
+		children: row.children?.map(walk)
+	});
+	return {
+		...view,
+		sections: view.sections.map(section => ({ ...section, rows: section.rows.map(walk) }))
+	};
 }
 
 /** The two sections a focused view leads with (X2b). */
@@ -219,12 +271,14 @@ function focusSections(focus: string, detail: RunDetail): RunSection[] {
 		},
 		{
 			title: 'Vuurde',
+			// No `rule`: the section above already names it, and a link on "voor 2
+			// instanties" would be a second way to the same declaration rather than
+			// an answer to a different question.
 			rows: [{
 				kind: 'fired',
 				label: fired
 					? `voor ${fired.count} instantie${fired.count === 1 ? '' : 's'}`
-					: 'niet in dit testgeval',
-				rule: fired ? focus : undefined
+					: 'niet in dit testgeval'
 			}]
 		}
 	];
