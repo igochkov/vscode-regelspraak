@@ -83,6 +83,34 @@ suite('Testverkenner (W7)', () => {
 		assert.equal(explorer.runProfile.kind, vscode.TestRunProfileKind.Run);
 	});
 
+	// X2a — the lens in the text, and that it drives this same controller rather
+	// than a second run path.
+	test('hangt een uitvoerlens boven de testset en elk testgeval', async () => {
+		const lenses = await waitUntil('codelenzen van de taalserver', async () => {
+			const found = await vscode.commands.executeCommand<vscode.CodeLens[]>(
+				'vscode.executeCodeLensProvider', testsUri, 20);
+			return found && found.length > 0 ? found : undefined;
+		});
+		const run = lenses.filter(one => one.command?.command === 'regelspraak.runTestgeval');
+		// One for the testset, one per testgeval.
+		assert.equal(run.length, 5, run.map(one => one.command?.title).join(' | '));
+		assert.equal(run[0].command?.title, 'alle testgevallen uitvoeren');
+		assert.deepStrictEqual(run[0].command?.arguments, [testsUri.toString()]);
+		assert.equal(run[1].command?.arguments?.length, 2, 'een geval draagt zijn naam mee');
+	});
+
+	test('de lens voert uit via dezelfde testverkenner', async function () {
+		this.timeout(60000);
+		const found = (await testsets()).find(one => one.uri?.fsPath === testsUri.fsPath)!;
+		const one = childrenOf(found).find(c => c.label.includes('kort lidmaatschap'))!;
+		// Straight through the command the lens carries, arguments and all.
+		await vscode.commands.executeCommand('regelspraak.runTestgeval',
+			testsUri.toString(), one.label);
+		// The item is the controller's own, so a lens that had built its own run
+		// would leave this one untouched — and it survived, so it did not.
+		assert.equal(one.error, undefined);
+	});
+
 	// The run goes through the worker: this is the whole W7 stack in one pass —
 	// discovery, the custom request, composition, the engine, and the assertions
 	// coming back as something the Test Explorer can draw.

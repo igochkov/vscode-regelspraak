@@ -156,6 +156,45 @@ export class TestExplorer {
 		return item;
 	}
 
+	/**
+	 * Runs what a CodeLens in the text points at (X2a).
+	 *
+	 * Through the same profile the Testing view uses, so a run started from the
+	 * text and one started from the view are one thing: same states on the same
+	 * items, one history, and no second path to keep in step. The lens carries a
+	 * name because that is what the item's id already is.
+	 *
+	 * Revealed afterwards, because a lens that reports nowhere reads as a lens
+	 * that did nothing: a failure decorates the editor by itself, but a pass is
+	 * invisible unless the view is open.
+	 */
+	async runFromLens(uri: string, caseName?: string): Promise<void> {
+		// The lens can be pressed before the view has ever been opened, and the
+		// tree is built on demand.
+		if (this.controller.items.size === 0) {
+			await this.refresh();
+		}
+		const testset = this.controller.items.get(uri);
+		if (!testset) {
+			void vscode.window.showWarningMessage(
+				'Deze testset staat nog niet in de testverkenner. Draait de taalserver?');
+			return;
+		}
+		const target = caseName === undefined ? testset : testset.children.get(`${uri}#${caseName}`);
+		if (!target) {
+			void vscode.window.showWarningMessage(`Onbekend testgeval: ${caseName}`);
+			return;
+		}
+		void vscode.commands.executeCommand('vscode.revealTestInExplorer', target);
+		const source = new vscode.CancellationTokenSource();
+		try {
+			await this.run(
+				new vscode.TestRunRequest([target], undefined, this.profile), source.token);
+		} finally {
+			source.dispose();
+		}
+	}
+
 	/** Every case the request covers, flattened — a testset means all of its cases. */
 	private casesOf(request: vscode.TestRunRequest): vscode.TestItem[] {
 		const wanted: vscode.TestItem[] = [];

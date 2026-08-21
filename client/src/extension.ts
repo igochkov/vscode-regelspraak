@@ -85,6 +85,15 @@ type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 /** Reveals the Model Explorer (W2), which is FSD §C2's `showModelExplorer`. */
 const SHOW_MODEL_EXPLORER_COMMAND = 'regelspraak.showModelExplorer';
 
+/**
+ * X2a's run lens, and the server writes the same string.
+ *
+ * A lens's `Command` crosses the protocol as plain JSON, so what travels is the
+ * document's URI and — for one case — the testgeval's name, which is the id the
+ * `TestController` already files that item under.
+ */
+const RUN_TESTGEVAL_COMMAND = 'regelspraak.runTestgeval';
+
 /** The view id, and so also the id of the `.focus` command VS Code derives. */
 const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
 
@@ -198,7 +207,11 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(PREVIEW_DECISION_TABLES_COMMAND,
 			(uri?: string, position?: WirePosition) => uri
 				? decisionTablePreviews.show(Uri.parse(uri), position && toPosition(position))
-				: previewActiveDocument(decisionTablePreviews)));
+				: previewActiveDocument(decisionTablePreviews)),
+		// X2a. Handed to the Test Explorer rather than to the request, so a run
+		// from the text and a run from the Testing view are one thing.
+		commands.registerCommand(RUN_TESTGEVAL_COMMAND,
+			(uri: string, caseName?: string) => testExplorer.runFromLens(uri, caseName)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
