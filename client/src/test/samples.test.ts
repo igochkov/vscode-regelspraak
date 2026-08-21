@@ -1,7 +1,7 @@
 // The example model itself, checked against a running language server.
 //
 // `samples/` is this repository's demonstration of the language and the only
-// copy of it: the server repository keeps its conformance corpus instead. Two
+// copy of it: the server repository keeps its conformance corpus instead. Three
 // properties travelled with it, and they are asserted here rather than nowhere.
 //
 //   - It reports nothing. Every construct RegelSpraak has is written here, so a
@@ -11,15 +11,27 @@
 //   - The formatter leaves it alone. The files are stored in the form the
 //     formatter produces, so a reader can copy any line of them and a change to
 //     the layout engine cannot silently restyle the examples underneath.
-//
-// What cannot be asserted here yet is that the `Verwacht` lines in the testsets
-// hold. That needs a way to run a testgeval from the editor, which is the next
-// release; until then the run is checked by hand.
+//   - Every testgeval passes. This is the third property and it arrived with X2:
+//     it needs a way to run a testgeval, and until there was one the `Verwacht`
+//     lines were checked by hand. They are the examples of what the language is
+//     *for*, and an expectation nobody runs is not a test — writing these by
+//     hand found two literal-reading bugs in the server that no static check
+//     could reach.
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 
-import { activate, getDocUri, waitUntil } from './helper';
+import { TestRun } from '../testExplorer';
+import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
+
+/** Enough of the extension's API to reach the runner, as the C7 suite does. */
+interface Api {
+	testExplorer: {
+		refresh(): Promise<void>;
+		allCases(): { uri: string; case: string }[];
+		runForDetail(uri: string, caseName: string): Promise<TestRun | undefined>;
+	};
+}
 
 suite('Voorbeeldmodel', () => {
 	let files: vscode.Uri[];
@@ -64,6 +76,45 @@ suite('Voorbeeldmodel', () => {
 				`${String(one.code)}: ${one.message}`));
 		}
 		assert.deepStrictEqual(found, []);
+	});
+
+	test('elk testgeval in de voorbeelden slaagt', async function () {
+		// Sixteen cases, each a full evaluation of the model in a worker.
+		this.timeout(180000);
+		const api = await vscode.extensions.getExtension(EXTENSION_ID)!.activate() as Api;
+		// The scan runs on the server's own schedule, and every testset has to be
+		// in it: a gate that silently covered half the cases would pass forever.
+		const cases = await waitUntil('alle testsets van de voorbeelden', async () => {
+			await api.testExplorer.refresh();
+			const found = api.testExplorer.allCases();
+			const testsets = new Set(found.map(one => one.uri));
+			return testsets.size >= 4 ? found : undefined;
+		});
+		assert.ok(cases.length >= 16, `verwachtte meer testgevallen: ${cases.length}`);
+
+		const failed: string[] = [];
+		for (const one of cases) {
+			const run = await api.testExplorer.runForDetail(one.uri, one.case);
+			const where = `${one.uri.split('/').pop()} · ${one.case}`;
+			if (!run) {
+				failed.push(`${where}: geen antwoord`);
+				continue;
+			}
+			if (run.outcome !== 'uitgevoerd') {
+				failed.push(`${where}: ${run.outcome} — ${run.reason ?? ''} ${(run.details ?? []).join('; ')}`);
+				continue;
+			}
+			// A fault is not a failure — the run carried on ([E-29]) — but nothing in
+			// the examples is supposed to produce one, so it is listed here too.
+			for (const fault of run.faults) {
+				failed.push(`${where}: fout in ${fault.rule} — ${fault.message}`);
+			}
+			for (const bad of run.assertions.filter(a => !a.passed)) {
+				failed.push(`${where}: ${bad.label} — verwacht ${bad.expected ?? 'leeg'},`
+					+ ` werkelijk ${bad.actual ?? 'leeg'}`);
+			}
+		}
+		assert.deepStrictEqual(failed, []);
 	});
 
 	test('de formatter laat elk voorbeeldbestand ongemoeid', async () => {
