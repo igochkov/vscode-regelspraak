@@ -7,17 +7,48 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [0.6.0] — The test language
+## [0.6.0] — The test language, and running it
 
 A second kind of file: `*.test.rgs`, where you write what a model is supposed to
 produce. A **testset** states the instances, the parameters and the rekendatum a
 run starts from; a **testgeval** says what it expects to come out of them. The
 editor treats it as part of the language rather than as a data file lying beside
 it, because every name in it is a name your GegevensSpraak declarations have
-already given a meaning.
+already given a meaning — and the Test Explorer runs them.
 
 ### Added
 
+- **Testsets run, from the Test Explorer.** Every `*.test.rgs` file in the
+  workspace appears in VS Code's Testing view as a testset with its testgevallen
+  under it; running one evaluates the whole model against the situation it
+  describes and checks its `Verwacht` lines. A failure is shown as a diff —
+  expected against actual, in RegelSpraak's own notation, with the rule that
+  derived the value named and the message placed on the line that expected it.
+  Values are compared by *value*, so `1,00 EUR`, `1 EUR` and `1,000 euro` all
+  match one amount.
+
+  Three states rather than two, because they mean different things. A testgeval
+  that **cannot be composed** — an id nothing declares, no rekendatum — carries
+  that finding on the item before you press anything, with the same code the
+  editor underlines it with. A run that **could not proceed** is reported as an
+  error rather than a failure: the model produced no answer, which is not the
+  same as producing a wrong one. And a testgeval with no `Verwacht` lines is
+  labelled *alleen uitvoeren*: it is a legitimate thing to write and running it
+  proves the model does not fault on that situation, but a pass means less.
+- **`Regelgroep <naam>`** gives the rules of a file a name, which the outline and
+  the Model Explorer then show. One per file — the file *is* the group, so a
+  second header contradicts the first and says so (`RS614`) — and optional: a
+  file without one is a file of rules belonging to no group, which is what every
+  model was until now.
+
+  **This is an extension beyond RegelSpraak v2.3.0** — the one *construct* this
+  extension adds to the language. §9.10 of the specification has the rule group
+  as a concept and gives it no way to write one down; naming one is useful now,
+  and the qualifier that would mark a group *recursive* is deferred until
+  recursion itself is built. A model that uses it is not portable to a tool that
+  implements v2.3.0 strictly, so it is worth knowing you are opting in. (`//`
+  comments are the other thing the specification does not define, and have been
+  accepted since the first release — a file convention rather than a construct.)
 - **Testsets are written in the model's own vocabulary, and checked against it.**
   A `Gegeven` line names an object type and gives its attributes values; a
   `Verwacht` line names those same attributes, or a kenmerk, or a rule whose
@@ -86,13 +117,17 @@ already given a meaning.
 
 ### Notes
 
-- **This release does not run anything yet.** The execution engine that will run
-  a testgeval is in this build, and the language server's own suites run every
-  testset in its conformance corpus through it — but nothing in the editor
-  invokes it. There is no run command, no Test Explorer and no results view;
-  those are the next release, and they are what the roadmap's **Execution** row
-  means. A testset you write today is checked, navigable and renameable, and it
-  will become runnable without your changing a line of it.
+- **What running does not yet include.** A testgeval runs from the Testing view
+  and nowhere else: there is no run button in the text beside a rule, no way to
+  run one rule or one file against a scenario, and no view of the derivation
+  trace behind a result. Those are the roadmap's **Execution** row and are what
+  is left of it. A failing expectation names the rule that produced the value,
+  which is the part of a trace you need most often.
+- **Evaluation runs in a worker thread**, one run at a time, with a timeout it
+  cannot outlive. A rule set that loops does not take the editor with it: the run
+  is terminated and reported as an error naming the reason. A dependency cycle
+  among rules is refused before anything is evaluated, and names the rules in
+  it — recursion (§9.10) is not supported.
 - **A test file gets what is about names, not what is about rules.** Quick fixes,
   signature help, the CodeLens counts, links in comments, inlay hints and the
   decision-table preview each answer a question about declarations and rules, and

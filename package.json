@@ -24,7 +24,8 @@
 	"homepage": "https://github.com/igochkov/vscode-regelspraak#readme",
 	"categories": [
 		"Programming Languages",
-		"Linters"
+		"Linters",
+		"Testing"
 	],
 	"keywords": [
 		"regelspraak",
