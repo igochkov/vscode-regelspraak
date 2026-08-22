@@ -1,0 +1,10 @@
+// De Uitlening — wat een Lid leent, en te laat inlevert.
+
+Objecttype de Uitlening (mv: Uitleningen)
+	de uitleendatum           Datum in dagen;
+	de inleverdatum           Datum in dagen;
+	de uiterste inleverdatum  Datum in dagen;
+	de herinneringsdatum      Datum in dagen;
+	de dagen te laat          Numeriek (niet-negatief geheel getal) met eenheid dagen;
+	de boete                  Geldbedrag;
+	verlengd                  Boolean;

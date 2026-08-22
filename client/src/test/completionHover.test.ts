@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, doc, getDocUri, positionOf, setTestContent, waitUntil } from './helper';
 
 suite('Aanvulling en hover (P2, P3)', () => {
-	const docUri = getDocUri('tuincentrum-regels.rgs');
+	const docUri = getDocUri('regels/lidmaatschap.rgs');
 	let original: string;
 
 	suiteSetup(async () => {
@@ -19,7 +19,7 @@ suite('Aanvulling en hover (P2, P3)', () => {
 	});
 
 	test('aanvulling stelt modelsymbolen voor', async () => {
-		const started = `${original}\nRegel proefaanvulling\n\tgeldig altijd\n\t\tDe korting van een K`;
+		const started = `${original}\nRegel proefaanvulling\n\tgeldig altijd\n\t\tDe contributie van een L`;
 		await setTestContent(started);
 
 		const position = doc.positionAt(started.length);
@@ -29,15 +29,15 @@ suite('Aanvulling en hover (P2, P3)', () => {
 				docUri,
 				position
 			);
-			const matches = outcome?.items.filter(item => labelOf(item).includes('Klant')) ?? [];
+			const matches = outcome?.items.filter(item => labelOf(item).includes('Lid')) ?? [];
 			return matches.length > 0 ? matches : undefined;
 		});
 
-		assert.ok(list.length > 0, 'geen aanvulling die Klant voorstelt');
+		assert.ok(list.length > 0, 'geen aanvulling die Lid voorstelt');
 	});
 
 	test('hover toont informatie bij een verwijzing', async () => {
-		const position = positionOf('korting');
+		const position = positionOf('lidmaatschapsduur van een');
 		const hovers = await waitUntil('een hover', async () => {
 			const outcome = await vscode.commands.executeCommand<vscode.Hover[] | undefined>(
 				'vscode.executeHoverProvider',
@@ -53,7 +53,7 @@ suite('Aanvulling en hover (P2, P3)', () => {
 			.join('\n');
 
 		assert.ok(text.trim().length > 0, 'hover leverde lege inhoud op');
-		assert.ok(text.includes('korting'), `hover noemt het symbool niet: ${text}`);
+		assert.ok(text.includes('lidmaatschapsduur'), `hover noemt het symbool niet: ${text}`);
 	});
 });
 

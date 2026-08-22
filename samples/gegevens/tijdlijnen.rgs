@@ -1,0 +1,15 @@
+// Tijdlijnen (§13.3.6), in elke startpuntvorm die de taal kent. Een tijdlijn met
+// een variabel startpunt heeft een regel nodig die dat startpunt bepaalt —
+// regels/startpunten.rgs — anders heeft zij geen tijdvakken (RS702).
+
+Tijdlijn de spaartermijn heeft tijdvakken van een kwartaal met variabel startpunt;
+
+Tijdlijn het abonnementsjaar heeft tijdvakken van 6 maanden startend op 01-01-2027;
+
+Tijdlijn de leesmaand heeft tijdvakken van een maand startend op dag 1 van de maand;
+
+Tijdlijn het boekjaar heeft tijdvakken van een jaar startend op dag 1 van maand 1;
+
+Tijdlijn de leesweek heeft tijdvakken van een week startend op 04-01-2027;
+
+Tijdlijn het spaarkwartaal heeft tijdvakken van een kwartaal startend op dag 1 van maand 1, 4, 7 en 10;

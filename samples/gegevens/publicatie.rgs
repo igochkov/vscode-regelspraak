@@ -1,0 +1,15 @@
+// De Publicatie en de Bundel — twee soorten werk. De Bundel staat hier omdat
+// zij de tweede verzameling is in de uniciteitscontrole van regels/consistentie.rgs.
+
+Objecttype de Publicatie (mv: Publicaties)
+	de titel (mv: titels)               Tekst;
+	het uitgavejaar (mv: uitgavejaren)  Numeriek (geheel getal);
+	het jaar uit druk                   Numeriek (geheel getal);
+	het drukjaar                        Numeriek (geheel getal);
+	het genre                           Genre;
+	de genrekorting                     Percentage (geheel getal) met eenheid %;
+	het fictiewerk                      kenmerk;
+
+Objecttype de Bundel (mv: Bundels)
+	de titel (mv: titels)               Tekst;
+	het uitgavejaar (mv: uitgavejaren)  Numeriek (geheel getal);

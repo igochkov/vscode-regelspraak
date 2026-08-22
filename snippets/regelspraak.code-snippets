@@ -102,6 +102,13 @@
 			"Eén ${2} ${5:heeft} één ${2}"
 		]
 	},
+	"Regelgroep": {
+		"prefix": "regelgroep",
+		"description": "Naam voor de regels van dit bestand (één per bestand)",
+		"body": [
+			"Regelgroep ${1:naam van de regelgroep}"
+		]
+	},
 	"Regel": {
 		"prefix": "regel",
 		"description": "Regel met versie en berekening",
@@ -127,9 +134,9 @@
 		"body": [
 			"Beslistabel ${1:naam}",
 			"\tgeldig altijd",
-			"| | de ${2:uitkomst} van een ${3:objecttypenaam} moet gesteld worden op | indien zijn ${4:attribuut} kleiner is dan |",
-			"| 1 | ${5:eerste waarde} | ${6:grenswaarde} |",
-			"| 2 | ${7:tweede waarde} | n.v.t. |"
+			"\t\t| | de ${2:uitkomst} van een ${3:objecttypenaam} moet gesteld worden op | indien zijn ${4:attribuut} kleiner is dan |",
+			"\t\t| 1 | ${5:eerste waarde} | ${6:grenswaarde} |",
+			"\t\t| 2 | ${7:tweede waarde} | n.v.t. |"
 		]
 	},
 	"Verdeling": {
@@ -168,6 +175,56 @@
 		"description": "Resultaatdeel: startpunt van een tijdlijn bepalen",
 		"body": [
 			"Het startpunt van een ${1:spaartermijn} voor een ${2:objecttypenaam} wordt bepaald door ${3:zijn startdatum}."
+		]
+	},
+	"Testset": {
+		"prefix": "testset",
+		"description": "Testset met rekendatum en een eerste testgeval",
+		"body": [
+			"Testset ${1:naam van de testset}",
+			"Rekendatum ${2:01-01-2026}",
+			"",
+			"Testgeval ${3:naam van het testgeval}",
+			"\tGegeven een ${4:Objecttypenaam} (${5:id}) met",
+			"\t\t${6:attribuutnaam}\t\t${7:0}",
+			"",
+			"\tVerwacht ${5:id} met",
+			"\t\t${8:attribuutnaam}\t\t${9:0}"
+		]
+	},
+	"Testgeval": {
+		"prefix": "testgeval",
+		"description": "Testgeval met een gegeven instantie en een verwachting",
+		"body": [
+			"Testgeval ${1:naam van het testgeval}",
+			"\tGegeven een ${2:Objecttypenaam} (${3:id}) met",
+			"\t\t${4:attribuutnaam}\t\t${5:0}",
+			"",
+			"\tVerwacht ${3:id} met",
+			"\t\t${6:attribuutnaam}\t\t${7:0}"
+		]
+	},
+	"Testinitialisatie": {
+		"prefix": "testinitialisatie",
+		"description": "Herbruikbaar Gegeven-blok, met de regel die het insluit",
+		"body": [
+			"Testinitialisatie ${1:naam}",
+			"\tGegeven een ${2:Objecttypenaam} (${3:id}) met",
+			"\t\t${4:attribuutnaam}\t\t${5:0}"
+		]
+	},
+	"Gegeven feit": {
+		"prefix": "gegeven-feit",
+		"description": "Feit tussen twee instanties, per rol",
+		"body": [
+			"Gegeven het feit ${1:feittypenaam} met ${2:id} als ${3:rol} en ${4:id} als ${5:rol}"
+		]
+	},
+	"Verwacht regelversie": {
+		"prefix": "verwacht-regelversie",
+		"description": "Verwachting over de uitkomst van een regel (§8.1.9)",
+		"body": [
+			"Verwacht regelversie ${1:naam van de regel} is gevuurd"
 		]
 	}
 }

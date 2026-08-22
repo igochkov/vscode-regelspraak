@@ -1,0 +1,9 @@
+// De datums die uit een uitlening volgen (§6.11: datum plus tijdsduur).
+
+Regel bepaal uiterste inleverdatum
+	geldig altijd
+		De uiterste inleverdatum van een Uitlening moet berekend worden als de uitleendatum van de Uitlening plus 21 dagen.
+
+Regel bepaal herinneringsdatum
+	geldig altijd
+		De herinneringsdatum van een Uitlening moet berekend worden als de inleverdatum van de Uitlening min de aanlooptermijn.

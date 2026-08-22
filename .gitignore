@@ -10,7 +10,7 @@ node_modules
 server/
 client/server
 
-# The Extension Development Host opens client/testFixture, so a developer's
+# The Extension Development Host opens samples/, so a developer's
 # "regelspraak.server.path" belongs there (see the README). It names a path on
 # one machine, to a build this repository does not own.
-client/testFixture/.vscode/
+samples/.vscode/

@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { activate, doc, getDocUri, waitUntil } from './helper';
 
 suite('Overzicht en vouwen (P10, P16)', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 
 	suiteSetup(async () => {
 		await activate(docUri);
@@ -19,12 +19,14 @@ suite('Overzicht en vouwen (P10, P16)', () => {
 			return outcome && outcome.length > 0 ? outcome : undefined;
 		});
 
-		const names = symbols.map(s => s.name).join(' | ');
-		for (const expected of ['Klant', 'Bestelling', 'Plant']) {
-			assert.ok(
-				symbols.some(s => s.name.includes(expected)),
-				`${expected} ontbreekt in de outline: ${names}`
-			);
+		// One declaration per file now, so the outline of this one is the object
+		// type with its members under it — which is the nesting the flat
+		// three-types-in-one-file assertion could not check.
+		assert.deepStrictEqual(symbols.map(s => s.name), ['Lid']);
+		const members = symbols[0].children.map(one => one.name);
+		for (const expected of ['pasnummer', 'jeugdlid', 'leestegoed']) {
+			assert.ok(members.includes(expected),
+				`${expected} ontbreekt onder Lid: ${members.join(' | ')}`);
 		}
 	});
 

@@ -1,0 +1,108 @@
+// Voorbeeldtestset (TestSpraak) — de drie uitkomsten die §8.1.9 over een regel
+// kent, en de twee dingen die een testgeval van zijn testset mag overschrijven.
+//
+// Een testset stelt één rekendatum en één set parameters; een testgeval mag
+// beide overrulen. Dat is meer dan gemak: welke *versie* van een regel geldt,
+// hangt aan de rekendatum, dus twee testgevallen met dezelfde invoer en een
+// andere datum zijn de manier om `geldig vanaf … t/m …` te toetsen.
+
+Testset Uitkomsten en overschrijvingen
+Rekendatum 15-06-2027
+
+Parameters
+	de standaardcontributie    50,00 EUR
+	de leenlimiet              10
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+	de aanlooptermijn          3 dagen
+	de startdrempel            100 pt
+	de bonusdrempel            500 pt
+
+Testgeval Op de testsetdatum geldt de eerste versie van de boeteregel
+	Gegeven een Uitlening (Lening) met
+		uitleendatum   01-06-2027
+		inleverdatum   09-06-2027
+		dagen te laat  4 dagen
+
+	// 4 dagen maal 0,25 €/dag, naar beneden afgerond op 0 decimalen.
+	Verwacht Lening met
+		boete  1,00 EUR
+	Verwacht regelversie bepaal boete is gevuurd
+
+Testgeval Een jaar later geldt de tweede versie, met het hogere tarief
+	Rekendatum 15-06-2028
+	Parameters
+		het verhoogde boetetarief  0,40 EUR/dag
+
+	Gegeven een Uitlening (Lening) met
+		uitleendatum   01-06-2028
+		inleverdatum   09-06-2028
+		dagen te laat  4 dagen
+
+	// Dezelfde invoer, een andere versie: 4 maal 0,40 € is 1,60 €. En niet
+	// 2,00 €: de afronding in die regel staat achter `met een maximum van 40 €`
+	// en hoort daar dus bij, niet bij de uitkomst ([D-42] — een postfix bindt aan
+	// de expressie er direct voor). Wie de uitkomst wil afronden, zet haakjes om
+	// de berekening.
+	Verwacht Lening met
+		boete  1,60 EUR
+
+// §12 geeft een beslistabel hetzelfde versiepatroon (§4.2), dus geldt hetzelfde
+// hier: dezelfde publicatie, een andere rekendatum, een ander raster. De oude
+// versie van Genrekorting noemt 'poëzie' niet en geeft die dus 0 %.
+Testgeval Vóór 2027 geldt de oude versie van de beslistabel
+	Rekendatum 15-06-2026
+	Gegeven een Publicatie (Bundel) met
+		titel  "Het lied van de leeszaal"
+		genre  'poëzie'
+
+	Verwacht Bundel met
+		genrekorting  0 %
+	Verwacht regelversie Genrekorting is gevuurd
+
+Testgeval Op de testsetdatum geldt de nieuwe versie van de beslistabel
+	Gegeven een Publicatie (Bundel) met
+		titel  "Het lied van de leeszaal"
+		genre  'poëzie'
+
+	Verwacht Bundel met
+		genrekorting  10 %
+
+Testgeval Een regel die niet vuurt
+	Gegeven een Lid (Sam) met
+		inschrijfdatum  01-02-2019
+		pasnummer       "123456782"
+
+	// §8.1.2 — `leeg` is een bewering over de afwezigheid van een waarde en
+	// hoort daarom onder Verwacht (RS958).
+	Verwacht Sam met
+		laagste tegoed  leeg
+		is geen jeugdlid
+	Verwacht regelversie bepaal lidmaatschapsduur is gevuurd
+	Verwacht regelversie Jeugdlid is niet gevuurd
+
+Testgeval Twee leden met hetzelfde pasnummer maken het model inconsistent
+	// §9.5 — een consistentieregel levert geen waarde op maar een oordeel, en
+	// dat oordeel is de derde uitkomstvorm van §8.1.9.
+	Gegeven een Lid (Noor) met
+		inschrijfdatum  12-03-2025
+		pasnummer       "111222333"
+	Gegeven een Lid (Kim) met
+		inschrijfdatum  01-02-2026
+		pasnummer       "111222333"
+
+	Verwacht regelversie Uniek pasnummer is inconsistent
+
+Testgeval Een parameter die het testgeval zelf stelt
+	Parameters
+		de aanlooptermijn  10 dagen
+
+	Gegeven een Uitlening (Termijn) met
+		uitleendatum  01-06-2027
+		inleverdatum  09-06-2027
+
+	// De herinnering gaat de aanlooptermijn vóór de inleverdatum uit, en die
+	// termijn is hier tien dagen in plaats van de drie van de testset.
+	Verwacht Termijn met
+		herinneringsdatum      30-05-2027
+		uiterste inleverdatum  22-06-2027

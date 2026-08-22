@@ -1,0 +1,10 @@
+// De Bonuspot — wat over de spaarders verdeeld wordt (§9.7).
+
+Objecttype de Bonuspot (mv: Bonuspotten)
+	het totale tegoed (mv: tegoeden)  Numeriek (positief geheel getal) met eenheid pt;
+	het onverdeelde tegoed            Numeriek (niet-negatief geheel getal) met eenheid pt;
+	het deelnemersaantal              Numeriek (geheel getal);
+	de gemiddelde inleg               Numeriek (getal met 2 decimalen) met eenheid pt;
+	de verdeelsleutel                 Numeriek (getal met 1 decimalen) met eenheid pt;
+	de breukfactor                    Numeriek (getal);
+	de ruime pot                      kenmerk;

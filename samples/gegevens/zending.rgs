@@ -1,0 +1,23 @@
+// De Zending — bezorging, met de datum- en tijdstipvormen erbij.
+
+Objecttype de Zending (mv: Zendingen)
+	de bezorgdatum            Datum in dagen;
+	de bezorgmaand            Numeriek (geheel getal);
+	het bezorgjaar            Numeriek (geheel getal);
+	de bezorgdag              Numeriek (geheel getal);
+	het bezorgtijdstip        Datum en tijd in millisecondes;
+	het beloofde tijdstip     Datum en tijd in millisecondes;
+	het bezorgvenster         Numeriek (geheel getal) met eenheid milliseconde;
+	het gewicht               Numeriek (getal met 3 decimalen) met eenheid kg;
+	het weegverschil          Numeriek (getal met 2 decimalen) met eenheid kg;
+	de bezorgtermijn          Numeriek (geheel getal) met eenheid dagen;
+	de beoordeling            Tekst;
+	de vroege zending         kenmerk;
+	de stipte zending         kenmerk;
+	de late zending           kenmerk;
+	de beoordeelbare zending  kenmerk;
+	de onbekende zending      kenmerk;
+	de feestbezorging         kenmerk;
+	de gewone bezorging       kenmerk;
+	het nazendingsgeval       kenmerk;
+	het herbeoordelingsgeval  kenmerk;

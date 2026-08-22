@@ -25,7 +25,7 @@ interface ModelExplorerLike {
 }
 
 suite('Modelverkenner (W1, W2)', () => {
-	const docUri = getDocUri('tuincentrum-gegevens.rgs');
+	const docUri = getDocUri('gegevens/lid.rgs');
 	let explorer: ModelExplorerLike;
 
 	suiteSetup(async () => {
@@ -56,19 +56,19 @@ suite('Modelverkenner (W1, W2)', () => {
 		const objectTypes = (await groups()).find(entry => entry.group!.kind === 'objecttype');
 		assert.ok(objectTypes, 'geen groep objecttypen');
 		const names = (await explorer.getChildren(objectTypes)).map(entry => entry.node!.name);
-		for (const expected of ['Klant', 'Bestelling', 'Plant']) {
+		for (const expected of ['Lid', 'Uitlening', 'Boekerijvestiging']) {
 			assert.ok(names.includes(expected), `${expected} ontbreekt: ${names.join(' | ')}`);
 		}
 	});
 
 	test('hangt de leden onder het objecttype dat ze declareert', async () => {
 		const objectTypes = (await groups()).find(entry => entry.group!.kind === 'objecttype')!;
-		const klant = (await explorer.getChildren(objectTypes))
-			.find(entry => entry.node!.name === 'Klant');
-		assert.ok(klant, 'geen Klant in de boom');
-		const members = (await explorer.getChildren(klant)).map(entry => entry.node!.name);
-		assert.ok(members.includes('klantnummer'), `klantnummer ontbreekt: ${members.join(' | ')}`);
-		assert.ok(members.includes('stamklant'), `stamklant ontbreekt: ${members.join(' | ')}`);
+		const lid = (await explorer.getChildren(objectTypes))
+			.find(entry => entry.node!.name === 'Lid');
+		assert.ok(lid, 'geen Lid in de boom');
+		const members = (await explorer.getChildren(lid)).map(entry => entry.node!.name);
+		assert.ok(members.includes('pasnummer'), `pasnummer ontbreekt: ${members.join(' | ')}`);
+		assert.ok(members.includes('jeugdlid'), `jeugdlid ontbreekt: ${members.join(' | ')}`);
 	});
 
 	test('brengt de regels uit het andere bestand in dezelfde boom', async () => {
@@ -95,6 +95,36 @@ suite('Modelverkenner (W1, W2)', () => {
 		const [first] = await explorer.getChildren(objectTypes);
 		const icon = explorer.getTreeItem(first).iconPath as vscode.ThemeIcon;
 		assert.equal(icon.id, 'symbol-class');
+	});
+
+	// Rules and decision tables share a SymbolKind, so once a Regelgroep adopted
+	// its file's tables they landed in one list looking identical. The icon is the
+	// only thing left telling them apart.
+	test('tekent een beslistabel anders dan een regel', async () => {
+		const rows = await groups();
+		const iconOf = async (kind: string): Promise<string | undefined> => {
+			const group = rows.find(entry => entry.group!.kind === kind);
+			if (!group) {
+				return undefined;
+			}
+			const [first] = await explorer.getChildren(group);
+			return (explorer.getTreeItem(first).iconPath as vscode.ThemeIcon).id;
+		};
+		assert.equal(await iconOf('beslistabel'), 'table');
+		assert.equal(await iconOf('regel'), 'symbol-function');
+	});
+
+	// A rule nested under its Regelgroep keeps its own picture, so the group's
+	// children are still told apart by kind rather than flattened into one.
+	test('houdt in een regelgroep de soort van elk kind zichtbaar', async () => {
+		const groepen = (await groups()).find(entry => entry.group!.kind === 'regelgroep');
+		assert.ok(groepen, 'geen groep regelgroepen');
+		const contributie = (await explorer.getChildren(groepen))
+			.find(entry => entry.node!.name === 'contributie');
+		assert.ok(contributie, 'de regelgroep contributie ontbreekt');
+		const kinds = new Set((await explorer.getChildren(contributie))
+			.map(entry => entry.node!.kind));
+		assert.deepStrictEqual([...kinds].sort(), ['beslistabel', 'regel']);
 	});
 
 	test('kent het commando dat de verkenner naar voren haalt', async () => {

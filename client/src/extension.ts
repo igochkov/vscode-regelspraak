@@ -18,6 +18,11 @@ import {
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
+import { TestExplorer } from './testExplorer';
+import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocument';
+import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
+import { TestRun } from './testExplorer';
+import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
@@ -84,6 +89,26 @@ type FormatState = 'ok' | 'disabled' | 'syntaxError' | 'unknown';
 /** Reveals the Model Explorer (W2), which is FSD §C2's `showModelExplorer`. */
 const SHOW_MODEL_EXPLORER_COMMAND = 'regelspraak.showModelExplorer';
 
+/**
+ * X2a's run lens, and the server writes the same string.
+ *
+ * A lens's `Command` crosses the protocol as plain JSON, so what travels is the
+ * document's URI and — for one case — the testgeval's name, which is the id the
+ * `TestController` already files that item under.
+ */
+const RUN_TESTGEVAL_COMMAND = 'regelspraak.runTestgeval';
+
+/**
+ * X2b's run lens above a rule, and the server writes the same string.
+ *
+ * It carries the rule's document and its name. Only the name is used — the run
+ * is of the active testgeval, so the view's source is that testset and not the
+ * file the lens was pressed in. Which testgeval that is stays deliberately *off*
+ * the wire: it is this side's state, and a lens that named a scenario would go
+ * stale the moment another one is chosen.
+ */
+const RUN_REGEL_COMMAND = 'regelspraak.runRegel';
+
 /** The view id, and so also the id of the `.focus` command VS Code derives. */
 const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
 
@@ -105,6 +130,13 @@ const modelSource = new ModelSource();
 const modelExplorer = new ModelExplorer(modelSource);
 const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
+const testExplorer = new TestExplorer();
+const runDocuments = new RunDocuments();
+/** W3. The panel is what a run opens; the text form is one click away in it. */
+const runPanels = new RunPanels();
+
+/** X2b's, and the only one of these that needs the extension context. */
+let activeScenario: ActiveScenario | undefined;
 
 /** Created on activation, so it can say "starting" before there is a client. */
 let serverStatus: ServerStatus | undefined;
@@ -150,6 +182,8 @@ export interface RegelSpraakApi {
 	modelExplorer: ModelExplorer;
 	serverStatus: ServerStatus;
 	modelSource: ModelSource;
+	testExplorer: TestExplorer;
+	activeScenario: ActiveScenario;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -170,6 +204,9 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		{ dispose: () => void commands.executeCommand('setContext', ACTIVE_CONTEXT, false) },
 		modelExplorer,
 		modelDocuments,
+		testExplorer,
+		runDocuments,
+		runPanels,
 		window.createTreeView(MODEL_EXPLORER_VIEW, {
 			treeDataProvider: modelExplorer,
 			// The declaration a row stands for is what a click opens; selecting
@@ -194,7 +231,19 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(PREVIEW_DECISION_TABLES_COMMAND,
 			(uri?: string, position?: WirePosition) => uri
 				? decisionTablePreviews.show(Uri.parse(uri), position && toPosition(position))
-				: previewActiveDocument(decisionTablePreviews)));
+				: previewActiveDocument(decisionTablePreviews)),
+		// X2a. Handed to the Test Explorer rather than to the request, so a run
+		// from the text and a run from the Testing view are one thing.
+		commands.registerCommand(RUN_TESTGEVAL_COMMAND,
+			(uri: string, caseName?: string) => testExplorer.runFromLens(uri, caseName)),
+		// X4. From the palette, on the testgeval the cursor is in: a second lens
+		// per case would double the noise above every one of them.
+		commands.registerCommand(SHOW_RUN_COMMAND, showRunOutcome),
+		// The panel's own **Als tekst openen**, and its only caller: a trace is
+		// something people paste, and a webview cannot be copied out of.
+		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
+			(uri: string, run: TestRun, focus?: string) =>
+				runDocuments.show(Uri.parse(uri), run, focus)));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).
@@ -221,6 +270,22 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 
 	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
 
+	activeScenario = new ActiveScenario(context, testExplorer);
+	context.subscriptions.push(
+		activeScenario,
+		commands.registerCommand(CHOOSE_SCENARIO_COMMAND, () => activeScenario?.choose()),
+		// X2b. The rule comes from the lens; the scenario is this side's state, and
+		// pressing with none chosen asks for one rather than refusing.
+		commands.registerCommand(RUN_REGEL_COMMAND,
+			(uri: string, ruleName: string) => runRule(uri, ruleName)),
+		// The setting is one of the two layers, so the status item has to follow it:
+		// a default edited in settings.json would otherwise still read as the old one.
+		workspace.onDidChangeConfiguration(event => {
+			if (event.affectsConfiguration(SCENARIO_SETTING)) {
+				activeScenario?.refresh();
+			}
+		}));
+
 	// Re-resolve on change, so pointing the setting at a different server build
 	// takes effect without reloading the window.
 	context.subscriptions.push(
@@ -232,11 +297,67 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus, modelSource };
+	return { modelExplorer, serverStatus, modelSource, testExplorer, activeScenario };
 }
 
 export function deactivate(): Thenable<void> | undefined {
 	return stopClient();
+}
+
+/**
+ * Runs the testgeval the cursor is in and shows what it computed (X4).
+ *
+ * Which case that is comes from the Test Explorer's own tree, whose ranges are
+ * the server's answer — so "which testgeval is this" is decided by the same fact
+ * the Testing view draws with, and not by a second reading of the text on a side
+ * that has no parser for it.
+ */
+async function showRunOutcome(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor) {
+		void window.showInformationMessage('Open eerst een testset (*.test.rgs).');
+		return;
+	}
+	const uri = editor.document.uri.toString();
+	const caseName = caseAtCursor(
+		testExplorer.casesOfDocument(uri), editor.selection.active);
+	if (!caseName) {
+		void window.showInformationMessage(
+			'Zet de cursor in een testgeval waarvan u de uitkomst wilt zien.');
+		return;
+	}
+	const run = await testExplorer.runForDetail(uri, caseName);
+	if (run) {
+		await runPanels.show(editor.document.uri, run);
+	}
+}
+
+/**
+ * Runs the active scenario and shows what one rule did (X2b).
+ *
+ * This *is* a test run — the same request, read as an answer about a rule rather
+ * than about an expectation — because the engine has no way to evaluate one rule
+ * on its own: firing order is dependency-driven over the whole model ([E-7]), and
+ * a rule's inputs are whatever the rules before it derived. So "run this rule"
+ * can only mean run the model and show what this rule did, and a second kind of
+ * run would be a second execution model.
+ */
+async function runRule(_uri: string, ruleName: string): Promise<void> {
+	const scenario = await activeScenario?.require();
+	if (!scenario) {
+		return; // nothing to pick, or the pick was dismissed — both already said so
+	}
+	const run = await testExplorer.runForDetail(scenario.uri, scenario.case);
+	if (run) {
+		// **The testset, not the rule's own document.** The view's source is where
+		// the run came from, and every range in it — each expectation's `Verwacht`
+		// line — is a position in *that* file. Passing the rule's document made
+		// those ranges line numbers in the wrong file, so clicking an expectation
+		// landed wherever that line happened to be in the model. The lens's own
+		// URI is not needed: the panel opens beside whatever is active, and the
+		// jump back to a rule goes through the workspace symbols by name.
+		await runPanels.show(Uri.parse(scenario.uri), run, ruleName);
+	}
 }
 
 async function formatDocument(): Promise<void> {
@@ -335,8 +456,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			`De RegelSpraak-taalserver is niet gevonden op ${serverModule}, bepaald via ${origin}. ` +
 			`Koppel een serverbuild als "server/" in de extensiemap, ` +
 			`of laat "${SERVER_PATH_SETTING}" naar een serverbuild verwijzen (in de instellingen van dít ` +
-			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt). ` +
-			`Zie docs/DEVELOPING.md, "Pointing the extension at a language server".`
+			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt).`
 		);
 		// The notification is dismissed and then the window looks like one where
 		// RegelSpraak simply has no opinions. The status item is what is still
@@ -408,8 +528,13 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	client.onNotification(MODEL_CHANGED_NOTIFICATION, () => {
 		modelExplorer.refresh();
 		modelDocuments.refresh();
+		// The Test Explorer is the third such projection, and it needs the same
+		// notification for a wider reason: a testgeval composes against the whole
+		// model, so a rule edited in another file can change whether one runs.
+		void testExplorer.refresh();
 	});
 	modelSource.setClient(client);
+	testExplorer.setClient(client);
 	modelExplorer.refresh();
 }
 
@@ -419,6 +544,7 @@ async function stopClient(): Promise<void> {
 	client = undefined;
 	watcher = undefined;
 	modelSource.setClient(undefined);
+	testExplorer.setClient(undefined);
 	modelExplorer.refresh();
 	// Only where one was running: a failed start already said something more
 	// useful, and `stopClient` runs on the way into every restart.

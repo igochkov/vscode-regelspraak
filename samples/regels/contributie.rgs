@@ -1,0 +1,60 @@
+// De contributie, in vijf lezingen die elkaar per periode aflossen — en een
+// beslistabel (§12) die hetzelfde attribuut per staffel stelt.
+
+// §13.4.2 #5 — een versie mag ook alleen een einddatum hebben.
+
+// Een regelgroep geeft de regels van dit bestand een naam. Eén per bestand:
+// het bestand is de groep, dus een tweede kop spreekt de eerste tegen (RS614).
+Regelgroep contributie
+
+Regel bepaal oude contributie
+	geldig t/m 2026
+		De contributie van een Lid moet gesteld worden op de standaardcontributie.
+
+// §13.4.9 — initialisatie: een startwaarde die een latere regel mag overschrijven.
+Regel Initialiseer contributie
+	geldig altijd
+		De contributie van een Lid moet geïnitialiseerd worden op de standaardcontributie.
+
+// §13.4.15 #68 — een periodevergelijking als voorwaardendeel, in drie vormen.
+Regel Contributie met overgangsperiode
+	geldig altijd
+		De contributie van een Lid moet gesteld worden op de standaardcontributie
+		van dd. 01-01-2027 tot dd. 01-07-2027.
+
+Regel Contributie nieuwe stijl
+	geldig altijd
+		De contributie van een Lid moet gesteld worden op de standaardcontributie maal 2
+		vanaf dd. 01-07-2027.
+
+// §13.4.15 #68 — de drie overige vormen van de periodevergelijking, elk op een
+// eigen attribuut zodat geen twee regels om dezelfde periode strijden. Let op de
+// spelling: een periode schrijft `tot en met`, waar een geldigheidsbereik `t/m`
+// schrijft — twee tokens, en alleen het eerste hoort hier.
+Regel Proefcontributie tot de omslag
+	geldig altijd
+		De proefcontributie van een Lid moet gesteld worden op 10,00 €
+		tot dd. 01-01-2027.
+
+Regel Najaarscontributie tot en met het jaareinde
+	geldig altijd
+		De najaarscontributie van een Lid moet gesteld worden op 20,00 €
+		tot en met dd. 31-12-2026.
+
+Regel Overgangscontributie in één jaar
+	geldig altijd
+		De overgangscontributie van een Lid moet gesteld worden op 30,00 €
+		van dd. 01-01-2026 tot en met dd. 31-12-2026.
+
+// §13.2 #18 — een percentage als waarde op zichzelf, niet als operator.
+Regel bepaal kortingsfactor
+	geldig altijd
+		De kortingsfactor van een Lid moet gesteld worden op 2,50%.
+
+// §12 — de beslistabel. Kolomtitel en cel vormen samen één zin; welke kolom
+// concludeert, blijkt uit wat die zin zegt en staat nergens als vlag in de tekst.
+Beslistabel Contributiestaffel
+	geldig vanaf 2027
+		|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |
+		| 1 | 25 €                                              | 3 jaar                                       |
+		| 2 | 40 €                                              | n.v.t.                                       |

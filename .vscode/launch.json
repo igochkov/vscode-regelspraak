@@ -13,7 +13,7 @@
 			// `regelspraak.server.path` setting, so the host comes up inert.
 			"args": [
 				"--extensionDevelopmentPath=${workspaceRoot}",
-				"${workspaceRoot}/client/testFixture"
+				"${workspaceRoot}/samples"
 			],
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js",
@@ -46,7 +46,7 @@
 			"args": [
 				"--extensionDevelopmentPath=${workspaceRoot}",
 				"--extensionTestsPath=${workspaceRoot}/client/out/test/index",
-				"${workspaceRoot}/client/testFixture"
+				"${workspaceRoot}/samples"
 			],
 			"outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
 		}

@@ -1,0 +1,109 @@
+// Voorbeeldtestset (TestSpraak) — elke waardevorm die §5.2 kent, en de twee
+// manieren waarop een waarde meer dan één plek heeft: een periode op een
+// tijdlijnattribuut, en een coördinaat op een gedimensioneerd attribuut.
+//
+// Een Gegeven-regel stelt een waarde; een Verwacht-regel toetst er een. Wat
+// een regel afleidt hoort daarom links van de streep niet thuis (RS955), en
+// `leeg` en een `geen`-ontkenning horen alleen rechts (RS958).
+
+Testset Waardevormen
+Rekendatum 01-07-2027
+
+Parameters
+	de standaardcontributie  50,00 EUR
+	de leenlimiet            10
+	het spaarpercentage      5 %
+	het boetetarief          0,25 EUR/dag
+	de aanlooptermijn        3 dagen
+	de eerste kalenderdag    01-01-2027
+	de startdrempel          100 pt
+	de bonusdrempel          500 pt
+	JAARBIJDRAGE             120,00 EUR/jaar
+
+Testgeval Elke literaalvorm op één situatie
+	Gegeven een Zending (Pakket) met
+		bezorgdatum        14-02-2027
+		bezorgtijdstip     dd. 14-02-2027 09:30:00.000
+		beloofde tijdstip  dd. 14-02-2027 10:00:00.000
+		bezorgtermijn      2 dagen
+		gewicht            1,250 kg
+		beoordeling        "op tijd, netjes bezorgd"
+	Gegeven een Publicatie (Roman) met
+		titel          "Het lied van de leeszaal"
+		uitgavejaar    1998
+		jaar uit druk  2004
+		genre          'roman'
+	Gegeven een Uitlening (Lening) met
+		uitleendatum   01-06-2027
+		inleverdatum   09-06-2027
+		dagen te laat  4 dagen
+		verlengd       waar
+	Gegeven een Uitlening (Verlopen) met
+		uitleendatum  01-03-2027
+		inleverdatum  15-03-2027
+		verlengd      onwaar
+	Gegeven een Lid (Noor) met
+		inschrijfdatum  12-03-2010
+		spaarfactor     1/4
+		genrevoorkeur   'poëzie'
+	Gegeven een Boekerijvestiging (Filiaal) met
+		vestigingsnaam    "Filiaal Noord"
+		vestigingsnummer  "V-02"
+		openingsdatum     01-09-1998
+		leesdichtheid     0,75 pt/m^2
+
+	// De datumonderdelen, de tijdsduur in millisecondes en de afrondingen.
+	Verwacht Pakket met
+		bezorgjaar     2027
+		bezorgmaand    2
+		bezorgdag      14
+		bezorgvenster  1800000 milliseconde
+		weegverschil   1,00 kg
+	Verwacht Roman met
+		drukjaar      2004
+		genrekorting  10 %
+	Verwacht Lening met
+		uiterste inleverdatum  22-06-2027
+		herinneringsdatum      06-06-2027
+		boete                  1,00 EUR
+	Verwacht Noor met
+		spaarindex      0
+		kwadraatscore   0,06
+		activatiedatum  01-01-2027
+	Verwacht Filiaal met
+		stelseldatum  01-01-2027
+		peildatum     15-06-2027
+		peiltijdstip  dd. 15-06-2027 08:30:00.000
+
+Testgeval Een maandinleg die per periode verschilt
+	// §5.1.3 — een periode achter de waarde, met `tot` exclusief en beide
+	// einden weglaatbaar. Eén regel per periode.
+	Gegeven een Lid (Noor) met
+		inschrijfdatum  12-03-2010
+		maandinleg      10,00 EUR/maand vanaf 01-01-2027 tot 01-04-2027
+		maandinleg      12,50 EUR/maand vanaf 01-04-2027
+		inhouding       2,00 EUR/maand tot 01-01-2027
+		is geregistreerde lener
+
+	Verwacht Noor met
+		is geen jeugdlid
+
+Testgeval Punten per spaarperiode en per uitvoering
+	// §13.3.7 — een coördinaat staat in de naamkolom, in de vorm die de dimensie
+	// zelf voorschrijft: met haar voorzetsel achter de naam, of bijvoeglijk
+	// ervoor. `gespaarde punten in periode` draagt het zelfstandig naamwoord van
+	// haar dimensie al in de gedeclareerde naam, dus staat `in periode` er twee
+	// keer — getrouw aan het model, niet mooi.
+	Gegeven een Lid (Noor) met
+		inschrijfdatum                                        12-03-2010
+		gespaarde punten in periode in twee periodes geleden  40
+		gespaarde punten in periode in vorige periode         90
+		gespaarde punten in periode in huidige periode        120
+		digitale inkomen per uitvoering in huidige periode    40
+		papieren inkomen per uitvoering in huidige periode    25
+
+	Verwacht Noor met
+		puntentotaal           250
+		recente puntentotaal   130
+		keuzepuntentotaal      250
+		hoogste periodetegoed  120

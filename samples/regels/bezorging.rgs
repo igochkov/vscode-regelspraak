@@ -1,0 +1,84 @@
+// Bezorging: de datum- en tijdstipfuncties (§13.4.17 #18–#32), de vergelijkingen
+// in beide vormen, en een dagsoort als voorwaarde.
+
+// §13.4.16 #38 — "verminderd met" begrenst bij nul, waar "min" dat niet doet.
+Regel bepaal weegverschil
+	geldig altijd
+		Het weegverschil van een Zending moet berekend worden als het gewicht van de Zending verminderd met 0,250 kg richting nul afgerond op 2 decimalen.
+
+// §13.4.17 #18–#24 — de datumonderdelen.
+Regel bepaal bezorgmaand
+	geldig altijd
+		De bezorgmaand van een Zending moet berekend worden als de maand uit (de bezorgdatum van de Zending).
+
+Regel bepaal bezorgjaar
+	geldig altijd
+		Het bezorgjaar van een Zending moet berekend worden als het jaar uit (de bezorgdatum van de Zending).
+
+Regel bepaal bezorgdag
+	geldig altijd
+		De bezorgdag van een Zending moet berekend worden als de dag uit (de bezorgdatum van de Zending).
+
+// §13.4.17 #32 — de absolute tijdsduur, in millisecondes.
+Regel bepaal bezorgvenster
+	geldig altijd
+		Het bezorgvenster van een Zending moet berekend worden als de absolute tijdsduur van het bezorgtijdstip van de Zending tot het beloofde tijdstip van de Zending in millisecondes.
+
+Regel Vroege zending
+	geldig altijd
+		Een Zending is een vroege zending
+		indien de bezorgdatum van de Zending eerder is dan dd. 01-03-2027.
+
+Regel Late zending
+	geldig altijd
+		Een Zending is een late zending
+		indien het bezorgtijdstip van de Zending later is dan het beloofde tijdstip van de Zending.
+
+Regel Beoordeelbare zending
+	geldig altijd
+		Een Zending is een beoordeelbare zending
+		indien de beoordeling van de Zending gevuld is.
+
+Regel Onbekende zending
+	geldig altijd
+		Een Zending is een onbekende zending
+		indien de beoordeling van de Zending leeg is.
+
+// §13.4.14 #1 — "er wordt voldaan aan …", waar geen onderwerp voorop staat.
+Regel Stipte zending
+	geldig altijd
+		Een Zending is een stipte zending
+		indien er aan alle volgende voorwaarden wordt voldaan:
+			• het bezorgtijdstip van de Zending is eerder of gelijk aan het beloofde tijdstip van de Zending
+			• de beoordeling van de Zending is ongelijk aan "afgekeurd".
+
+// §6.11 / §13.4.11 — een dagsoort als voorwaarde, bevestigend en ontkennend.
+Regel Zondagsbezorging
+	geldig altijd
+		Een Zending is een feestbezorging
+		indien de bezorgdatum van de Zending een sluitingsdag is.
+
+Regel Gewone bezorging
+	geldig altijd
+		Een Zending is een gewone bezorging
+		indien de bezorgdatum van de Zending geen sluitingsdag is.
+
+// §13.4.15 #18 — een regelversie als voorwaarde, met en zonder versieaanduiding.
+Regel Nacontrole
+	geldig altijd
+		Een Zending is een nazendingsgeval
+		indien regelversie Controleer bezorgtermijn (altijd) inconsistent is.
+
+Regel Herbeoordeling
+	geldig altijd
+		Een Zending is een herbeoordelingsgeval
+		indien er aan ten minste twee van de volgende voorwaarden wordt voldaan:
+			• regelversie Controleer bezorgtermijn is gevuurd
+			• het gewicht van de Zending is groter dan 10 kg
+			• de bezorgdatum van de Zending is geen sluitingsdag.
+
+// §13.4.13 #4 — de bullet-loze vorm van een samengesteld predicaat ([D-41]).
+Regel Aantal zware zendingen
+	geldig altijd
+		Het aantal zware zendingen van een Lid moet berekend worden als het aantal bezorgde zendingen van het Lid die aan de volgende voorwaarde voldoet:
+			zijn gewicht is groter dan 10 kg.

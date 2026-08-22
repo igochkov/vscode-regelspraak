@@ -1,0 +1,59 @@
+// Consistentieregels (§13.4.8): zij leiden niets af maar keuren goed of af, en
+// uniciteit over een verzameling — desnoods over twee verzamelingen samen.
+
+// §13.4.8 #2–#6 — de enkelvoudige consistentieregel, in vier operatorvormen.
+
+Regelgroep consistentiecontroles
+
+Regel Controleer inschrijfdatum
+	geldig altijd
+		De inschrijfdatum van een Lid moet gevuld zijn.
+
+Regel Controleer bezorgtermijn
+	geldig altijd
+		De bezorgtermijn van een Zending moet kleiner of gelijk zijn aan 5 dagen.
+
+Regel Controleer paslengte
+	geldig altijd
+		Het pasnummer van een Lid moet numeriek zijn met exact 9 cijfers.
+
+Regel Controleer uitleendatum
+	geldig altijd
+		De uitleendatum van een Uitlening moet eerder of gelijk zijn aan de inleverdatum van de Uitlening.
+
+// §13.4.8 #7 — het samengestelde criterium, met een onderwerp ervoor.
+Regel Controleer poteisen
+	geldig altijd
+		Een Bonuspot moet voldoen aan ten minste één van de volgende criteria:
+			• het totale tegoed van de Bonuspot is groter dan 0
+			• de Bonuspot is een ruime pot.
+
+// Dezelfde constructie zonder onderwerp: "Er moet worden voldaan aan …".
+Regel Controleer registratie
+	geldig altijd
+		Er moet worden voldaan aan het volgende criterium:
+			• het vestigingsnummer van een Boekerijvestiging is gevuld.
+
+// §13.4.8 #10 — een genest criterium onder een samengesteld criterium.
+Regel Controleer speciale pot
+	geldig altijd
+		Een Bonuspot moet voldoen aan alle van de volgende criteria:
+			• het totale tegoed van de Bonuspot is groter dan 0
+			• er wordt voldaan aan ten minste één van de volgende criteria:
+				•• de Bonuspot is een ruime pot
+				•• het onverdeelde tegoed van de Bonuspot is gelijk aan 0.
+
+// §13.4.8 #13 — uniciteit over één attribuut van alle exemplaren.
+Regel Uniek pasnummer
+	geldig altijd
+		De pasnummers van alle Leden moeten uniek zijn.
+
+// §13.4.8 #14 — de concatenatie van meerdere attributen, en §13.4.8 #11's
+// "verenigd met", dat twee verzamelingen als één namespace toetst.
+Regel Unieke titelcombinatie
+	geldig altijd
+		De concatenatie van de titels en de uitgavejaren van alle Publicaties verenigd met de concatenatie van de titels en de uitgavejaren van alle Bundels moeten uniek zijn.
+
+Regel Unieke vestigingsnamen
+	geldig altijd
+		De vestigingsnamen van alle Boekerijvestigingen verenigd met de titels van alle Publicaties moeten uniek zijn.

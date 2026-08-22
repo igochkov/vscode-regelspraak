@@ -1,0 +1,39 @@
+// Verdeling (§9.7) in elke vorm: gelijke delen, naar rato, en het meervoudige
+// criterium met rangorde, gelijkspel, maximum en afronding.
+
+// §13.4.10 #2 — verdeling zonder groepen, in gelijke delen en naar rato.
+
+Regelgroep bonusverdeling
+
+Regel Verdeling bonus in gelijke delen
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld in gelijke delen.
+
+Regel Verdeling bonus naar rato
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld naar rato van de spaarfactor.
+
+// §13.4.10 #3–#8 — het meervoudige verdeelcriterium: rangorde, gelijkspel,
+// maximum, afronding, en de onverdeelde rest als tweede zin.
+Regel Verdeling bonus met rangorde
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van toenemende de lidmaatschapsduur,
+			- bij een even groot criterium naar rato van de spaarfactor,
+			- met een maximum van het maximale bonusaandeel,
+			- afgerond op 0 decimalen naar beneden.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
+
+Regel Verdeling bonus aflopend
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van afnemende de spaarfactor,
+			- in gelijke delen.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
+
+Regel Verdeling bonus per groep naar rato
+	geldig altijd
+		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
+			- op volgorde van toenemende de lidmaatschapsduur,
+			- naar rato van de spaarfactor.
+		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.

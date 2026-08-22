@@ -1,0 +1,26 @@
+// De controles op een pasnummer: de elfproef en de cijfercontrole (Tabel 16),
+// elk bevestigend en ontkennend.
+
+// Tabel 16 — de elfproef, bevestigend en ontkennend, en de cijfercontrole.
+Regel Correct pasnummer
+	geldig altijd
+		Een Lid is een correcte pasnummerhouder
+		indien zijn pasnummer aan de elfproef voldoet.
+
+Regel Ongeldig pasnummer
+	geldig altijd
+		Een Lid is een weigeringsgeval
+		indien zijn pasnummer niet aan de elfproef voldoet.
+
+Regel Controleerbaar pasnummer
+	geldig altijd
+		Een Lid is een controleerbare pasnummerhouder
+		indien zijn pasnummer numeriek is met exact 9 cijfers.
+
+// §13.4.14 — "ten hoogste", "ten minste" en "precies" als kwantificatie.
+Regel Verdacht pasnummer
+	geldig altijd
+		Een Lid is een controlegeval
+		indien hij aan ten hoogste één van de volgende voorwaarden voldoet:
+			• zijn pasnummer voldoet aan de elfproef
+			• zijn pasnummer is numeriek met exact 9 cijfers.

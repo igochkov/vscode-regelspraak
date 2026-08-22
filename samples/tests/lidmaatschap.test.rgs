@@ -1,0 +1,57 @@
+// Voorbeeldtestset — verzonnen domein: de Boekerij. Hoort bij gegevens.rgs en
+// regels.rgs; wat hier staat, staat daar gedeclareerd.
+//
+// Dit bestand is opgemaakt zoals de formatter het oplevert: de suite houdt het
+// als vast punt, zodat het voorbeeld en de opmaakregels niet uit elkaar lopen.
+
+Testset Contributie en verlenging
+Rekendatum 15-06-2027
+
+Parameters
+	de leenlimiet            10
+	het boetetarief          0,25 EUR/dag
+	de standaardcontributie  50,00 EUR
+
+Testinitialisatie een vestiging met een lid
+	Gegeven een Boekerijvestiging (Centrum) met
+		vestigingsnaam  "De Boekerij"
+	Gegeven een Lid (Noor) met
+		pasnummer            "111222333"
+		inschrijfdatum       12-03-2025
+		actief lidmaatschap  waar
+	Gegeven het feit lidmaatschap van de boekerij met Centrum als vestiging en Noor als ingeschreven lid
+
+Testgeval Een kort lidmaatschap geeft een jeugdlid met korting
+	Gegeven testinitialisatie een vestiging met een lid
+
+	Verwacht Noor met
+		lidmaatschapsduur  2 jaar
+		contributie        25,00 EUR
+		pasopschrift       "pas van 111222333"
+		is jeugdlid
+	Verwacht regelversie Jeugdlid is gevuurd
+
+Testgeval Een lange inschrijving betaalt het volle bedrag
+	Gegeven een Lid (Sam) met
+		pasnummer            "123456782"
+		inschrijfdatum       01-02-2019
+		actief lidmaatschap  waar
+
+	Verwacht Sam met
+		lidmaatschapsduur  8 jaar
+		contributie        40,00 EUR
+		is geen jeugdlid
+	Verwacht regelversie Jeugdlid is niet gevuurd
+
+Testgeval Een boete over vier dagen te laat
+	Gegeven een Uitlening (Lening) met
+		uitleendatum   01-06-2027
+		inleverdatum   09-06-2027
+		dagen te laat  4 dagen
+
+	Verwacht Lening met
+		boete  1,00 EUR
+
+Testgeval Alleen uitvoeren, zonder verwachtingen
+	Gegeven een Lid (Kim) met
+		inschrijfdatum  01-01-2020

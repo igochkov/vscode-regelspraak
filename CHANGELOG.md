@@ -2,9 +2,234 @@
 
 All notable changes to the RegelSpraak extension are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and versions map to delivered capability phases, through to `1.0.0`. That mapping
-is no longer *phase N to 0.N.0*: the workbench half of phase 6 needs nothing from
-the execution engine, so it ships here as `0.5.0`, ahead of execution.
+and versions run through to `1.0.0`, which is bound to the whole plan rather than
+to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
+of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
+ahead of execution, and each version since is named for what it delivers.
+
+## [0.6.0] — The test language, and running it
+
+A second kind of file: `*.test.rgs`, where you write what a model is supposed to
+produce. A **testset** states the instances, the parameters and the rekendatum a
+run starts from; a **testgeval** says what it expects to come out of them. The
+editor treats it as part of the language rather than as a data file lying beside
+it, because every name in it is a name your GegevensSpraak declarations have
+already given a meaning — and the Test Explorer runs them.
+
+### Added
+
+- **Testsets run, from the Test Explorer.** Every `*.test.rgs` file in the
+  workspace appears in VS Code's Testing view as a testset with its testgevallen
+  under it; running one evaluates the whole model against the situation it
+  describes and checks its `Verwacht` lines. A failure is shown as a diff —
+  expected against actual, in RegelSpraak's own notation, with the rule that
+  derived the value named and the message placed on the line that expected it.
+  Values are compared by *value*, so `1,00 EUR`, `1 EUR` and `1,000 euro` all
+  match one amount.
+
+  Three states rather than two, because they mean different things. A testgeval
+  that **cannot be composed** — an id nothing declares, no rekendatum — carries
+  that finding on the item before you press anything, with the same code the
+  editor underlines it with. A run that **could not proceed** is reported as an
+  error rather than a failure: the model produced no answer, which is not the
+  same as producing a wrong one. And a testgeval with no `Verwacht` lines is
+  labelled *alleen uitvoeren*: it is a legitimate thing to write and running it
+  proves the model does not fault on that situation, but a pass means less.
+- **`Regelgroep <naam>`** gives the rules of a file a name, which the outline and
+  the Model Explorer then show. One per file — the file *is* the group, so a
+  second header contradicts the first and says so (`RS614`) — and optional: a
+  file without one is a file of rules belonging to no group, which is what every
+  model was until now.
+
+  **This is an extension beyond RegelSpraak v2.3.0** — the one *construct* this
+  extension adds to the language. §9.10 of the specification has the rule group
+  as a concept and gives it no way to write one down; naming one is useful now,
+  and the qualifier that would mark a group *recursive* is deferred until
+  recursion itself is built. A model that uses it is not portable to a tool that
+  implements v2.3.0 strictly, so it is worth knowing you are opting in. (`//`
+  comments are the other thing the specification does not define, and have been
+  accepted since the first release — a file convention rather than a construct.)
+- **Testsets are written in the model's own vocabulary, and checked against it.**
+  A `Gegeven` line names an object type and gives its attributes values; a
+  `Verwacht` line names those same attributes, or a kenmerk, or a rule whose
+  firing it expects. All of it resolves against the declarations in your `.rgs`
+  files, so a name you get wrong is reported where you wrote it rather than when
+  something eventually runs.
+- **Colour, outline, breadcrumbs and folding**, as for a model. Every name is
+  coloured by what your declarations say it is; an instance id and a
+  testinitialisatie name are local to their file and coloured as such. The
+  outline gives you the testset with each testgeval and each block beneath it,
+  and folding follows the same shape.
+- **Formatting** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>) that lines up the
+  value column of every `Gegeven`, `Verwacht` and `Parameters` block — on the
+  same terms as everywhere else, which is that only whitespace ever changes.
+- **Completion that knows which position you are in**: attribute names and
+  kenmerk forms inside a `met` block, instance ids after `Verwacht` and in the
+  role list of a `Gegeven het feit` line, parameter names in a `Parameters`
+  block, and testinitialisatie names after `Gegeven testinitialisatie`. A kenmerk
+  completes in the form its own declaration prescribes — `is jeugdlid` where it
+  is bijvoeglijk, `heeft het recht op verlenging` where it is bezittelijk.
+- **Hover**: an instance id hovers as the object type it stands for, and a name
+  from the model hovers in a test file exactly as it does in the model.
+- **Navigation and rename cross between a testset and the model it tests.**
+  <kbd>F12</kbd> on a name in a testset goes to its declaration. Renaming an
+  attribute (<kbd>F2</kbd>) in the model rewrites the `Verwacht` lines that name
+  it, in every testset — a rename that stopped at the model's own files would
+  leave a testgeval expecting something nobody declares any more. An instance id
+  renames within its own file, which is the only place it means anything.
+
+  A testset **reads** the model and never derives anything in it. So a testgeval
+  is never an answer to *"which rule derives this?"*, and expecting a value does
+  not make a testset the thing that produces it.
+- **Eight checks of its own**, in Dutch and with stable codes, beside the
+  reference codes `RS101`, `RS102`, `RS106` and `RS107`, which keep their
+  meanings here:
+
+  | Code | | What it reports |
+  | --- | --- | --- |
+  | `RS951` | Error | The same instance id twice in one testgeval. |
+  | `RS952` | Error | An id nothing declares — in a role, a `Verwacht` block or an include. |
+  | `RS953` | Error | A value the attribute's declaration cannot hold: another datatype, another unit, or a period on an attribute that has no timeline. |
+  | `RS954` | Warning | A `Verwacht` on something no rule derives — the expectation is testing your input against itself. |
+  | `RS955` | Error | A `Gegeven` value on something a rule derives, which a run would overwrite. |
+  | `RS956` | Error | An unknown or duplicated testinitialisatie, two testgevallen with one name, or an include cycle. |
+  | `RS957` | Error | No rekendatum, in neither the testset nor the testgeval — and no run is defined without one. |
+  | `RS958` | Error | `leeg` or an `is geen …` under `Gegeven` instead of under `Verwacht`. Both are assertions; there is no such thing as handing an attribute the value “empty”. |
+
+  Units are compared by meaning rather than by spelling here too, so `1,00 EUR`,
+  `1 EUR` and `1,000 euro` are one value and none of them is an `RS953`. And the
+  same restraint holds as everywhere else: where the model cannot work out what
+  something is, nothing is reported.
+- **Five snippets** — `testset`, `testgeval`, `testinitialisatie`,
+  `gegeven-feit` and `verwacht-regelversie` — each body validated against the
+  test grammar on every build, as the model snippets are against the model
+  grammar.
+- **Run from the text.** Above every testset there is an **alle testgevallen
+  uitvoeren** link and above every testgeval an **uitvoeren** link. They hand the
+  work to the same Test Explorer the Testing view drives, so a run started in the
+  text and a run started in the view are one run with one result — the item turns
+  green or red either way. A testgeval that cannot be composed keeps its link:
+  pressing it reports the finding with the code that caused it, which is worth
+  more than a missing link.
+- **What a run computed, as a panel.** **Uitkomst van dit testgeval tonen**
+  opens a read-only view beside the testset for the testgeval your cursor is in:
+  every expectation with what it actually got, the rekendatum, the values you
+  gave and the values the model derived, the characteristics it concluded, the
+  faults and the inconsistencies, and the **derivation trace** — one line per
+  write, in the order the writes happened, naming the rule that made it and the
+  operands it read. A value that varies over time is listed per period rather
+  than as one number.
+
+  Everything in it is written in RegelSpraak's own notation, because it is
+  computed on the server: amounts carry their unit, a fraction is a fraction and
+  a date is a date. Nothing in this view calculates anything — it is the state of
+  one run, and re-running is how it changes.
+
+  Three things make it a panel rather than a page of text. A passing and a
+  failing expectation are **coloured** apart rather than marked apart, in your
+  theme's own colours — this extension ships none of its own. Every derived value,
+  every characteristic and every trace line **names the rule that wrote it and
+  clicks through to it**, wherever that rule lives; an expectation clicks through
+  to its own `Verwacht` line. And a write's operands — what it was computed out of
+  — sit in a **chain you can fold**, so the one value you are chasing opens and
+  the other forty stay out of the way. **Als tekst openen** at the top gives you
+  the same thing as text, for the times you want to paste a trace into a ticket.
+
+  Where a value was written more than once in a run — an initialisation and then
+  the rule that supersedes it — the rule you are offered is the **last** one,
+  because that is the write the value in front of you came from.
+
+  **A consistency rule that was not satisfied says why.** *Inconsistent bevonden*
+  lists each criterion the check evaluated with a tick or a cross, so you can see
+  which one failed rather than only that one did, and beneath them the values the
+  check read. Shown without being asked, because a finding that hides its reason
+  is a report you have to interrogate. The list stops where the check stopped: an
+  `alle van de volgende criteria` gives up at the first criterion that fails, so
+  that criterion is the last one listed — and the ones after it are genuinely not
+  evaluated, which is why they are not shown. A rule with a single criterion lists
+  none: it *is* its criterion, and the rule already says it.
+- **Run a rule against a testgeval.** Above every `Regel` and every
+  `Beslistabel` there is now an **uitvoeren** link, which runs the *active
+  testgeval* and opens the same view focused on that rule: what it wrote, for
+  which instances, out of which operands — and, when it did not fire, that it did
+  not fire, which is an answer rather than an empty screen.
+
+  It runs the whole model, deliberately. Firing order follows the dependencies
+  between rules, and a rule's inputs are whatever the rules before it derived, so
+  a rule evaluated in isolation is not a defined thing. "Run this rule" therefore
+  means run the model and show what this rule did.
+
+  Which testgeval is *active* has two layers.
+  `regelspraak.execution.defaultScenario` is the shared default — written as
+  `tests/lidmaatschap.test.rgs#Een kort lidmaatschap`, meant to be committed, so
+  a team shares the scenario its model is usually demonstrated against — and
+  **Actief testgeval kiezen** overrides it for your window without touching the
+  setting, so a local choice is not a diff. The same picker clears a choice
+  again, which puts you back to being asked on the next run. Pressing
+  **uitvoeren** with nothing chosen asks rather than refusing.
+- **Both status items are in the status bar**, beside a `.rgs` file and nowhere
+  else: which testgeval a run will use, and whether the language server is up.
+  They were language status items — folded behind the `{}` icon, invisible until
+  hovered — which for the active testgeval defeated the point of showing it at
+  all: a run made against a scenario you chose days ago is the mistake it exists
+  to prevent. Click the first to choose or clear a testgeval, the second to open
+  the server's log. Both are coloured when they need you: no testgeval chosen,
+  or a server that is not running.
+
+### Fixed
+
+- **A decision table may have more than one `geldig` period.** §12 gives a
+  `Beslistabel` the same version pattern as a `Regel` — one *or more* versions,
+  each with its own validity period, the periods not overlapping, the rekendatum
+  choosing which applies — and only one was accepted. A table with two of them was
+  reported as a syntax error, and a file with a syntax error in it gets no colour,
+  outline, folding, checks or formatting at all, so the workaround was to write two
+  tables under different names.
+
+  Now each `geldig` line carries its own grid, and the two need not look alike: a
+  new version may weigh a condition the old one never mentioned, or state a
+  different conclusion. Everything that was true of a rule's versions is true of a
+  table's — overlapping periods are reported (`RS601`), `regelversie <naam>
+  (<geldigheid>) gevuurd is` can ask about a particular one, and running against a
+  rekendatum evaluates the version that covers it. The Beslistabel preview draws
+  every version as its own grid under its own `geldig …`, and each version folds on
+  its own where a table has more than one.
+
+  **Two formatting changes come with it**, because a table's rows now belong to
+  their version the way a rule's sentence belongs to its `geldig` line: the rows are
+  indented one level further, and each version's pipes are aligned within that
+  version instead of across the whole table. Running **Document opmaken** over an
+  existing file will make both changes at once.
+- **The plural form the `RS613` quick fix offers.** It guessed with “ends in a
+  vowel takes `'s`, anything else takes `en`”, which is wrong for most of the
+  Dutch nouns a model actually declares: it proposed *Werkgeveren*, *Bonuspoten*
+  and *Kluisen* where the forms are *Werkgevers*, *Bonuspotten* and *Kluizen*. It
+  now applies the regularities that cover them — `-heid` becoming `-heden`, an
+  unstressed `-el`/`-em`/`-en`/`-er` taking `s`, and a stem that changes as the
+  syllable opens, so *Kluis* gives *Kluizen* and *Bonuspot* gives *Bonuspotten*.
+
+### Notes
+
+- **What running does not yet include.** Every run starts from a testgeval —
+  there is no way to run a model against a situation you have not written down,
+  because the situation *is* the testset and writing it is the point. And a run
+  is a run of the whole model: firing order follows the dependencies between
+  rules, so a rule evaluated on its own is not a defined thing and no gesture
+  offers it.
+- **Evaluation runs in a worker thread**, one run at a time, with a timeout it
+  cannot outlive. A rule set that loops does not take the editor with it: the run
+  is terminated and reported as an error naming the reason. A dependency cycle
+  among rules is refused before anything is evaluated, and names the rules in
+  it — recursion (§9.10) is not supported.
+- **A test file gets what is about names, not what is about rules.** Quick fixes,
+  signature help, the CodeLens counts, links in comments, inlay hints and the
+  decision-table preview each answer a question about declarations and rules, and
+  a testset has neither — so in a test file they are absent rather than empty.
+- **`*.test.rgs` is the same language as `.rgs`**, and is recognised as such
+  because it ends in it.
+  Your `[regelspraak]` editor settings, the soft wrapping, `//` comment toggling
+  and bracket matching all apply unchanged, and so does every
+  `regelspraak.validation.*` setting.
 
 ## [0.5.0] — The workbench
 
@@ -417,5 +642,5 @@ below from that shared model rather than from pattern matching.
   model can decide the answer, so a correct file stays clean. The rest of the
   catalogue — type compatibility, unit convertibility, rounding, empty-value
   policy, timelines, distribution and decision tables — arrives with the
-  validation release. See the Roadmap in the README.
+  validation release. See the [roadmap](docs/ROADMAP.md).
 - The language server runs locally and sends nothing over the network.

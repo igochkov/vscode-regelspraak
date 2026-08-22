@@ -23,6 +23,12 @@
 //     result part across the title cell and a data cell, and the text shows the
 //     halves in different places on the screen and never the whole.
 //
+// **A table is a list of versions** (§12 → §4.2), each its own grid, and each is
+// drawn under its own `geldig …`. All of them, not the one a rekendatum selects:
+// a rekendatum belongs to a scenario, so the server has no such question to
+// answer, and picking one here would be this view inventing a reading of the
+// text. With one version — the ordinary table — it reads exactly as it did.
+//
 // **Nothing here parses RegelSpraak.** The grid, the cell ranges, the column
 // roles and whether a column's sentence takes the case's value all come from
 // `regelspraak/decisionTables`; the per-cell errors are the diagnostics the
@@ -45,14 +51,27 @@ import { DecisionTable, ModelSource, WireRange } from './model';
  */
 export const PREVIEW_DECISION_TABLES_COMMAND = 'regelspraak.previewBeslistabel';
 
-/** What the preview can ask for, which is only ever to be shown a place. */
+/**
+ * What the preview can ask for, which is only ever to be shown a place.
+ *
+ * Every gesture names a **version** as well as a table: §12 gives a table the
+ * versions §4.2 states, each its own grid, so a row index means nothing until it
+ * is said which grid it counts against.
+ */
 export type PreviewGesture =
-	| { kind: 'reveal'; table: number; row: number; cell: number }
+	| { kind: 'reveal'; table: number; version: number; row: number; cell: number }
+	| { kind: 'revealVersion'; table: number; version: number }
 	| { kind: 'revealTable'; table: number };
 
-/** Where in a document's tables a line falls; `row` is -1 for no case row. */
+/**
+ * Where in a document's tables a line falls; `row` is -1 for no case row.
+ *
+ * `version` is -1 for a line inside the declaration that is in no version — the
+ * name line, and the blank between two grids.
+ */
 export interface Spot {
 	table: number;
+	version: number;
 	row: number;
 }
 
@@ -75,30 +94,48 @@ export function rangeOfGesture(
 	if (gesture.kind === 'revealTable') {
 		return table.nameRange;
 	}
+	const version = table.versions[gesture.version];
+	if (!version) {
+		return undefined;
+	}
+	if (gesture.kind === 'revealVersion') {
+		return version.validityRange ?? table.nameRange;
+	}
 	return gesture.row < 0
-		? table.columns[gesture.cell]?.range
-		: table.rows[gesture.row]?.cells[gesture.cell]?.range;
+		? version.columns[gesture.cell]?.range
+		: version.rows[gesture.row]?.cells[gesture.cell]?.range;
 }
 
 /**
- * Which table and case a document line is in — the other half of the jump.
+ * Which table, version and case a document line is in — the other half of the
+ * jump.
  *
  * By line rather than by full position because a row *is* a line (`beslistabelRij`
  * ends at the NL, [D-2]), so the column adds nothing: a cursor anywhere on a case
- * is on that case. `row` is -1 for a line inside the declaration that is not a
- * case — its name, its `geldig` line, its title row — because the table is still
- * worth highlighting there even though no case is.
+ * is on that case. `row` is -1 for a line inside a version that is not a case —
+ * its `geldig` line, its title row — and `version` is -1 for a line inside the
+ * declaration that is in no version at all, because the table is still worth
+ * highlighting there even though no grid is.
  */
 export function caseAt(tables: readonly DecisionTable[], line: number): Spot | undefined {
+	const within = (range: WireRange): boolean =>
+		range.start.line <= line && line <= range.end.line;
 	for (let table = 0; table < tables.length; table++) {
-		const { range, rows } = tables[table];
-		if (line < range.start.line || line > range.end.line) {
+		const { range, versions } = tables[table];
+		if (!within(range)) {
 			continue;
 		}
-		return {
-			table,
-			row: rows.findIndex(row => row.range.start.line <= line && line <= row.range.end.line)
-		};
+		for (let version = 0; version < versions.length; version++) {
+			const { headerRange, rows, validityRange } = versions[version];
+			const row = rows.findIndex(one => within(one.range));
+			if (row >= 0) {
+				return { table, version, row };
+			}
+			if ((headerRange && within(headerRange)) || (validityRange && within(validityRange))) {
+				return { table, version, row: -1 };
+			}
+		}
+		return { table, version: -1, row: -1 };
 	}
 	return undefined;
 }
@@ -316,10 +353,10 @@ function debounce(run: () => void, delay: number): { (): void; cancel(): void } 
 /**
  * The server's diagnostics, placed on the cells they fall in.
  *
- * Keyed by `table:row:cell` so the webview needs no ranges of its own. A
- * diagnostic that covers no cell — one about the table as a whole, RS901 —
- * lands on the table under the key `table`, which is where a reader looks for
- * "something is wrong with this table" rather than with one value.
+ * Keyed by `table:version:row:cell` so the webview needs no ranges of its own.
+ * A diagnostic that covers no cell — one about a whole grid, RS901 — lands on
+ * the table under the key `table`, which is where a reader looks for "something
+ * is wrong with this table" rather than with one value.
  */
 function problems(uri: Uri, tables: readonly DecisionTable[]): Record<string, string> {
 	const found: Record<string, string> = {};
@@ -337,18 +374,21 @@ function problems(uri: Uri, tables: readonly DecisionTable[]): Record<string, st
 				return;
 			}
 			let placed = false;
-			table.rows.forEach((row, r) => {
-				// Only as far as the view actually draws. A row may hold **more** cells
-				// than the title row has columns — that is RS903's case, and the view
-				// lays out `table.columns` — so a diagnostic filed against cell 3 of a
-				// three-column table went to a key nothing reads, and marked itself
-				// placed on the way, which took the table-level fallback away too. It
-				// vanished from the one view that could not draw the problem it was about.
-				row.cells.slice(0, table.columns.length).forEach((cell, c) => {
-					if (overlaps(diagnostic.range, toRange(cell.range))) {
-						note(`${t}:${r}:${c}`, diagnostic);
-						placed = true;
-					}
+			table.versions.forEach((version, v) => {
+				version.rows.forEach((row, r) => {
+					// Only as far as the view actually draws. A row may hold **more**
+					// cells than the title row has columns — that is RS903's case, and
+					// the view lays out `version.columns` — so a diagnostic filed against
+					// cell 3 of a three-column table went to a key nothing reads, and
+					// marked itself placed on the way, which took the table-level fallback
+					// away too. It vanished from the one view that could not draw the
+					// problem it was about.
+					row.cells.slice(0, version.columns.length).forEach((cell, c) => {
+						if (overlaps(diagnostic.range, toRange(cell.range))) {
+							note(`${t}:${v}:${r}:${c}`, diagnostic);
+							placed = true;
+						}
+					});
 				});
 			});
 			if (!placed) {
@@ -409,7 +449,16 @@ function page(cspSource: string, scriptNonce: string): string {
 	h1 { font-size: 1.1rem; margin: 0 0 .25rem; }
 	h2 { font-size: 1rem; margin: 2rem 0 .25rem; }
 	.hint { color: var(--vscode-descriptionForeground); font-size: .85rem; margin: 0 0 1rem; }
-	.validity { color: var(--vscode-descriptionForeground); font-size: .85rem; margin: 0 0 .5rem; }
+	.validity {
+		color: var(--vscode-descriptionForeground);
+		font-size: .85rem;
+		margin: 0 0 .5rem;
+		cursor: pointer;
+	}
+	.validity:hover { color: var(--vscode-textLink-activeForeground); }
+	/* Only where there is more than one grid under a name: then the caption is a
+	   separator as well, and the space above it says which grid it belongs to. */
+	.validity.versie { margin-top: 1.25rem; font-weight: 600; }
 	table { border-collapse: collapse; width: 100%; }
 	th, td {
 		border: 1px solid var(--vscode-panel-border);
@@ -454,8 +503,9 @@ function page(cspSource: string, scriptNonce: string): string {
 <body>
 <h1>Beslistabellen</h1>
 <p class="hint">Een leesweergave van de beslistabellen in dit bestand; al het andere staat in de tekst.
-Klik op een cel om er in de tekst heen te gaan — bewerken doet u daar. Onder elke tabel staat wat het
-geval waar de cursor in staat concludeert.</p>
+Klik op een cel om er in de tekst heen te gaan — bewerken doet u daar. Onder elk raster staat wat het
+geval waar de cursor in staat concludeert. Een tabel met meer dan één geldigheidsperiode heeft per
+periode een eigen raster; de rekendatum van het gekozen testgeval bepaalt welke geldt.</p>
 <div id="content"></div>
 <script nonce="${scriptNonce}">
 const vscode = acquireVsCodeApi();
@@ -484,8 +534,8 @@ window.addEventListener('message', event => {
  * whoever is reading a long table in the file being typed in.
  */
 function shapeOf(tables) {
-	return JSON.stringify(tables.map(t =>
-		[t.name, t.validity, t.columns.map(c => c.header + '|' + c.role + '|' + !!c.composed), t.rows.length]));
+	return JSON.stringify(tables.map(t => [t.name, t.versions.map(v =>
+		[v.validity, v.columns.map(c => c.header + '|' + c.role + '|' + !!c.composed), v.rows.length])]));
 }
 
 function draw(tables, problems) {
@@ -516,68 +566,81 @@ function build(tables) {
 			vscode.postMessage({ kind: 'revealTable', table: t }));
 		content.appendChild(heading);
 
-		if (table.validity) {
-			const validity = document.createElement('p');
-			validity.className = 'validity';
-			validity.textContent = table.validity;
-			content.appendChild(validity);
-		}
-
 		const failure = document.createElement('p');
 		failure.className = 'table-problem';
 		failure.id = 'table-problem-' + t;
 		content.appendChild(failure);
 
-		const grid = document.createElement('table');
-		const titles = document.createElement('tr');
-		table.columns.forEach((column, c) => {
-			const th = document.createElement('th');
-			if (column.role === 'conclusie') { th.className = 'conclusie'; }
-			th.appendChild(document.createTextNode(column.header || '\\u00a0'));
-			const role = document.createElement('span');
-			role.className = 'role';
-			role.textContent = column.header ? column.role : '';
-			th.appendChild(role);
-			th.title = 'Naar deze kolomtitel in de tekst';
-			th.addEventListener('click', () =>
-				vscode.postMessage({ kind: 'reveal', table: t, row: -1, cell: c }));
-			titles.appendChild(th);
-		});
-		grid.appendChild(titles);
-
-		table.rows.forEach((row, r) => {
-			const tr = document.createElement('tr');
-			tr.id = 'row-' + t + '-' + r;
-			table.columns.forEach((_, c) => {
-				const td = document.createElement('td');
-				td.id = 'cell-' + t + '-' + r + '-' + c;
-				td.addEventListener('click', () =>
-					vscode.postMessage({ kind: 'reveal', table: t, row: r, cell: c }));
-				tr.appendChild(td);
-			});
-			grid.appendChild(tr);
-		});
-		content.appendChild(grid);
-
-		const sentence = document.createElement('p');
-		sentence.className = 'sentence';
-		sentence.id = 'sentence-' + t;
-		content.appendChild(sentence);
+		// One grid per version (§12 → §4.2). The geldigheid above each one is the
+		// only thing that tells two grids of one table apart, so it is a caption
+		// and not a footnote — and with one version it reads exactly as before.
+		table.versions.forEach((version, v) => buildVersion(table, t, version, v));
 	});
+}
+
+function buildVersion(table, t, version, v) {
+	if (version.validity) {
+		const validity = document.createElement('p');
+		validity.className = 'validity';
+		validity.textContent = version.validity;
+		if (table.versions.length > 1) { validity.className += ' versie'; }
+		validity.title = 'Naar deze geldigheidsregel in de tekst';
+		validity.addEventListener('click', () =>
+			vscode.postMessage({ kind: 'revealVersion', table: t, version: v }));
+		content.appendChild(validity);
+	}
+
+	const grid = document.createElement('table');
+	const titles = document.createElement('tr');
+	version.columns.forEach((column, c) => {
+		const th = document.createElement('th');
+		if (column.role === 'conclusie') { th.className = 'conclusie'; }
+		th.appendChild(document.createTextNode(column.header || '\\u00a0'));
+		const role = document.createElement('span');
+		role.className = 'role';
+		role.textContent = column.header ? column.role : '';
+		th.appendChild(role);
+		th.title = 'Naar deze kolomtitel in de tekst';
+		th.addEventListener('click', () =>
+			vscode.postMessage({ kind: 'reveal', table: t, version: v, row: -1, cell: c }));
+		titles.appendChild(th);
+	});
+	grid.appendChild(titles);
+
+	version.rows.forEach((row, r) => {
+		const tr = document.createElement('tr');
+		tr.id = 'row-' + t + '-' + v + '-' + r;
+		version.columns.forEach((_, c) => {
+			const td = document.createElement('td');
+			td.id = 'cell-' + t + '-' + v + '-' + r + '-' + c;
+			td.addEventListener('click', () =>
+				vscode.postMessage({ kind: 'reveal', table: t, version: v, row: r, cell: c }));
+			tr.appendChild(td);
+		});
+		grid.appendChild(tr);
+	});
+	content.appendChild(grid);
+
+	const sentence = document.createElement('p');
+	sentence.className = 'sentence';
+	sentence.id = 'sentence-' + t + '-' + v;
+	content.appendChild(sentence);
 }
 
 function update(tables, problems) {
 	tables.forEach((table, t) => {
 		const failure = document.getElementById('table-problem-' + t);
 		if (failure) { failure.textContent = problems[String(t)] || ''; }
-		table.rows.forEach((row, r) => {
-			table.columns.forEach((_, c) => {
-				const td = document.getElementById('cell-' + t + '-' + r + '-' + c);
-				if (!td) { return; }
-				td.textContent = (row.cells[c] || {}).text || '';
-				const problem = problems[t + ':' + r + ':' + c];
-				td.className = problem ? 'problem' : '';
-				td.title = problem || 'Naar deze cel in de tekst';
+		table.versions.forEach((version, v) => {
+			version.rows.forEach((row, r) => {
+				version.columns.forEach((_, c) => {
+					const td = document.getElementById('cell-' + t + '-' + v + '-' + r + '-' + c);
+					if (!td) { return; }
+					td.textContent = (row.cells[c] || {}).text || '';
+					const problem = problems[t + ':' + v + ':' + r + ':' + c];
+					td.className = problem ? 'problem' : '';
+					td.title = problem || 'Naar deze cel in de tekst';
+				});
 			});
 		});
 	});
@@ -592,11 +655,11 @@ function update(tables, problems) {
  * server's answer (\`composed\`) and never a guess made here: appending
  * \`onwaar\` to \`een Lid is jeugdlid\` would state the opposite of the case.
  */
-function conclusionsOf(table, r) {
-	const row = table.rows[r];
+function conclusionsOf(version, r) {
+	const row = version.rows[r];
 	if (!row) { return ''; }
 	const lines = [];
-	table.columns.forEach((column, c) => {
+	version.columns.forEach((column, c) => {
 		if (column.role !== 'conclusie' || !column.header) { return; }
 		const value = ((row.cells[c] || {}).text || '').trim();
 		if (column.composed) {
@@ -613,15 +676,17 @@ function highlight(spot) {
 		row.className = '';
 	}
 	drawn.forEach((table, t) => {
-		const sentence = document.getElementById('sentence-' + t);
-		if (!sentence) { return; }
-		if (!spot || spot.table !== t || spot.row < 0) {
-			sentence.textContent = '';
-			return;
-		}
-		const row = document.getElementById('row-' + t + '-' + spot.row);
-		if (row) { row.className = 'here'; }
-		sentence.textContent = conclusionsOf(table, spot.row);
+		table.versions.forEach((version, v) => {
+			const sentence = document.getElementById('sentence-' + t + '-' + v);
+			if (!sentence) { return; }
+			if (!spot || spot.table !== t || spot.version !== v || spot.row < 0) {
+				sentence.textContent = '';
+				return;
+			}
+			const row = document.getElementById('row-' + t + '-' + v + '-' + spot.row);
+			if (row) { row.className = 'here'; }
+			sentence.textContent = conclusionsOf(version, spot.row);
+		});
 	});
 }
 </script>

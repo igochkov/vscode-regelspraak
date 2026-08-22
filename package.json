@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -24,7 +24,8 @@
 	"homepage": "https://github.com/igochkov/vscode-regelspraak#readme",
 	"categories": [
 		"Programming Languages",
-		"Linters"
+		"Linters",
+		"Testing"
 	],
 	"keywords": [
 		"regelspraak",
@@ -88,6 +89,16 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.showUitkomst",
+				"title": "Uitkomst van dit testgeval tonen",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.kiesTestgeval",
+				"title": "Actief testgeval kiezen",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.showServerLog",
 				"title": "Logboek van de taalserver tonen",
 				"category": "RegelSpraak"
@@ -110,6 +121,10 @@
 				},
 				{
 					"command": "regelspraak.previewBeslistabel",
+					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.showUitkomst",
 					"when": "editorLangId == regelspraak"
 				}
 			],
@@ -281,6 +296,12 @@
 			"type": "object",
 			"title": "RegelSpraak",
 			"properties": {
+				"regelspraak.execution.defaultScenario": {
+					"scope": "window",
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Het testgeval waartegen **Regel uitvoeren** een regel uitvoert, als `pad/naar/bestand.test.rgs#naam van het testgeval` — het pad relatief ten opzichte van de eerste werkmap. Dit is de gedeelde standaard, bedoeld om mee te committen; **RegelSpraak: Actief testgeval kiezen** overschrijft hem voor dit venster zonder de instelling te wijzigen. Welke van de twee geldt, staat bij de taalstatus van een `.rgs`-bestand."
+				},
 				"regelspraak.server.path": {
 					"scope": "machine-overridable",
 					"type": "string",

@@ -1,0 +1,15 @@
+// Welke dag welke dagsoort is (§13.4.11). `de dag` is hier het onderwerp van de
+// voorwaarde, niet een attribuut.
+
+// §13.4.11 — een dagsoortdefinitie: "de dag" is het onderwerp van de voorwaarde.
+Regel Inventarisdag
+	geldig altijd
+		Een dag is een inventarisdag
+		indien de dag aan alle volgende voorwaarden voldoet:
+			• de maand uit (de dag) is gelijk aan 1
+			• de dag uit (de dag) is gelijk aan 2.
+
+Regel Sluitingsdag
+	geldig altijd
+		Een dag is een sluitingsdag
+		indien de dag een inventarisdag is.

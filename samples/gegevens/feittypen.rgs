@@ -1,0 +1,32 @@
+// Feittypen (§13.3.9) — de relaties waarlangs een onderwerpketen loopt. De
+// kardinaliteitsregel onderaan elk blok is vrije tekst op de naam van de rol na.
+
+Feittype lidmaatschap van de boekerij
+	de vestiging                                   Boekerijvestiging
+	het ingeschreven lid (mv: ingeschreven leden)  Lid
+	Eén vestiging telt meerdere ingeschreven leden
+
+Feittype beheer van bonuspotten
+	de beherende vestiging                           Boekerijvestiging
+	de beheerde bonuspot (mv: beheerde bonuspotten)  Bonuspot
+	Eén beherende vestiging beheert meerdere beheerde bonuspotten
+
+Feittype verdeling van de bonuspot
+	de te verdelen bonuspot                                            Bonuspot
+	de spaarder met recht op bonus (mv: spaarders met recht op bonus)  Lid
+	Eén te verdelen bonuspot wordt uitgekeerd aan meerdere spaarders met recht op bonus
+
+Feittype toekenning van bonuspotten
+	de toegekende bonuspot (mv: toegekende bonuspotten)  Bonuspot
+	de ontvanger (mv: ontvangers)                        Lid
+	Eén ontvanger spaart in meerdere toegekende bonuspotten
+
+Feittype bezorging van reserveringen
+	de bezorgde zending (mv: bezorgde zendingen)  Zending
+	de aanvrager                                  Lid
+	Eén aanvrager ontvangt meerdere bezorgde zendingen
+
+// §13.3.9 — één rol, want beide kanten van de relatie zijn hetzelfde soort.
+Wederkerig feittype leesduo
+	de leespartner (mv: leespartners)  Lid
+	Eén leespartner heeft één leespartner;

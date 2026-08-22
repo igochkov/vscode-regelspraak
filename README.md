@@ -4,96 +4,53 @@ Write, read and review RegelSpraak models with the editor support you expect fro
 
 [RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
 
-The extension activates on `.rgs` files. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
+The extension activates on `.rgs` files — models, and the `*.test.rgs` testsets that go with them. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
 
-> **Status: preview.** Everything under [Features](#features) works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — checks it, and lets you navigate, restructure and format it, but does not yet execute it. See the [Roadmap](#roadmap).
+> **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets**, showing the derivation trace behind every result. What is next is in the [roadmap](docs/ROADMAP.md).
+
+## The extension in two minutes
+
+[![Completion proposing the four-word name "dagen te laat" with its datatype, after two letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e)
+
+Writing with completion, three kinds of mistake caught, a testset running with the
+derivation trace behind every value, navigation and rename that cross between a
+model and the testset that tests it, the formatter, the decision-table preview,
+and the whole workspace in one tree — over the model in [samples/](samples).
+[The film](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e) plays in the browser: two minutes and twenty, with Dutch
+captions (mp4, 5 MB).
 
 ## Features
 
-- **Semantic highlighting.** Every name in RegelSpraak is an ordinary Dutch phrase, so only a parser plus a model of your declarations can tell an object type from an attribute from a role. Each name is coloured by what it *is*, and multi-word phrases are segmented by meaning: in `de dagen te laat van de Uitlening` the attribute and the object type colour separately.
-- **Diagnostics while you type**, in Dutch, each with a stable code (`RS001`–`RS903`) — the full catalogue. Names and structure, and, since the validation release, what your expressions *mean*: datatype compatibility, unit convertibility, precision and rounding, empty-value hazards, timeline granularity, distributions and decision tables.
-- **A type model behind those checks.** Every value has a datatype, a sign and precision, a unit and a timeline period, and the checks read all four. Units compare by meaning rather than spelling — `€`, `EUR` and `euro` are one unit — and conversions you declare with `= 1000 g` are followed, so `kg` beside `g` is convertible while `pt` beside `€` is not.
-- **Quick fixes** (<kbd>Ctrl</kbd>+<kbd>.</kbd>) for the checks with an obvious repair: declare a missing object type or domain, add a missing attribute or plural form, insert a mandatory rounding, swap the wrong quotation marks, add a `Startpuntbepaling` or an `onverdeelde rest`. Each action states exactly what it will insert, and one that would have to edit another file is not offered rather than written into the wrong one.
-- **Signature help** for the constructs with named slots: the labelled `de datum met jaar: …, maand: … en dag: …`, the clauses of a distribution, and the columns of a decision table — where it shows the title row, which is the thing a cell three lines below it cannot tell you.
-- **Completion** proposing only what fits the position: declaration keywords at top level, datatypes and domains inside an object type, your declared units after `met eenheid`, result phrases after `moet`, object types and roles in subject position, parameters and members of the subject's type in expressions. Multi-word names complete as one item.
-- **Hover** showing a name's kind, its datatype or domain, its owning object type, and the `//` comment block above its declaration.
-- **Navigation**: go to definition (<kbd>F12</kbd>) and type definition, *"which rule derives this?"* (decision tables included), find all references (<kbd>Shift</kbd>+<kbd>F12</kbd>), occurrence highlighting that separates writes from reads, and workspace symbol search (<kbd>Ctrl</kbd>+<kbd>T</kbd>) built for Dutch multi-word names — `laat`, `dagen laat` and `dtl` all find `de dagen te laat`.
-- **Rename** (<kbd>F2</kbd>) across every file, replacing a multi-word name as a whole. It refuses a name already taken in the same scope, refuses a position that resolves more than one way, and reports what it deliberately left alone.
-- **Formatting** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>, a selection, or while you type) that indents by the structure of the model rather than by a guess at the line, lines up the columns of every object type, unit system and fact type, and lines up a decision table's pipes. **Only whitespace ever changes**: a name in RegelSpraak is a run of ordinary words and a rule's name is free text, so respacing inside one would rename it — the formatter edits the gaps between words and never a word, and never joins or splits a line. A file that does not parse is left exactly as it is, and *"RegelSpraak: Document opmaken"* tells you so rather than doing nothing.
-- **Counts above a declaration** (CodeLens): how often an object type, a rule or a decision table is named elsewhere, and — above an object type — how many rules derive something it declares. Clicking one opens the list.
-- **Inlay hints** for what the model works out and the text does not say: the datatype and unit a rule derives, the same for each `Daarbij geldt:` variable, and — set to `all` — the object type a `zijn` or `hij` refers to. Where the model is not sure, nothing is shown.
-- **Smart selection expansion** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>→</kbd>) along the sentence: word, whole name, subject chain, expression, sentence, rule version, rule. Names are several words, so the editor's word-by-word expansion had little to offer here.
-- **Links in comments**: a URL, and the name of another `.rgs` file of the model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
-- **A Model Explorer** in its own activity-bar container: every declaration in the workspace in one tree, grouped by kind, with members underneath — including the ones an `Extensie van objecttype` block in another file adds. Click a row and the declaration opens; the tree follows what you type.
-- **Call hierarchy over rule dependencies** (**Show Call Hierarchy**): incoming is the rules that read what this rule derives, outgoing is the rules that derive what it reads, and a rule named directly with `regelversie <naam> gevuurd is` counts in both. **Type hierarchy** shows an object type with the `Extensie van objecttype` blocks that re-open it.
-- **A model view of a file** (read-only): the declarations the language server sees in it, in the order the file writes them, with their members and declared datatypes.
-- **A preview for decision tables**, opened from the CodeLens above a `Beslistabel`: the table as a grid of cases and columns, beside the text. It shows what the source cannot — which column concludes and which conditions, the errors on the cell each one is about, and what the case your cursor is in concludes, written out as one sentence. Read-only, and it navigates: click a cell to go to it in the text, and moving the cursor there highlights the case. A model is edited as text — that is the point of this extension — so the preview never writes.
-- **The language server's status** beside the language mode of a `.rgs` file, so a server that failed to start is not mistaken for one with nothing to report; clicking it opens the log.
-- **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware — declarations, rule versions, koptekst sections, `Daarbij geldt:` blocks and compound-condition bullets — and honours `//#region` markers.
-- **Snippets** for every frequent construct, each body validated against the language grammar in CI, plus bracket, quote and guillemet (`«»`) matching, `//` comment toggling, indentation rules and bullet-list continuation.
-- **RegelSpraak in Markdown**: a fenced code block marked `regelspraak` (or `rgs`) is highlighted inside any `.md` file, so a model reads properly in documentation and design notes. Syntax only — a Markdown file is not a model, so a block is coloured but not analysed.
+- **Colour by meaning.** Every name in RegelSpraak is an ordinary Dutch phrase, so only a parser plus a model of your declarations can tell an object type from an attribute from a role. Multi-word names are segmented by what each part means.
+- **The whole diagnostics catalogue** (`RS001`–`RS958`), in Dutch, while you type: names, structure, and what your expressions *mean* — datatypes, unit convertibility, precision and rounding, empty-value hazards, timelines, distributions, decision tables. **Where the model cannot be sure, it says nothing.**
+- **Help while writing**: completion that proposes only what fits the position, snippets for every frequent construct, signature help for the constructs with named slots, and quick fixes (<kbd>Ctrl</kbd>+<kbd>.</kbd>) for the checks with an obvious repair.
+- **Navigation and rename across every file.** Definition and type definition (<kbd>F12</kbd>), *"which rule derives this?"*, references (<kbd>Shift</kbd>+<kbd>F12</kbd>), symbol search built for Dutch multi-word names, call and type hierarchy, and a rename (<kbd>F2</kbd>) that replaces a multi-word name as a whole and reports what it left alone.
+- **Formatting that only ever changes whitespace** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>): indentation from the structure of the model, aligned columns, aligned decision-table pipes — and never a word, because respacing inside a name would rename it.
+- **What the text does not say, shown beside it**: hover with the declaration's `//` comment, inlay hints for the datatype and unit a rule derives, reference and derivation counts above a declaration, a grammar-aware outline and folding, and sentence-wise selection expansion.
+- **The model seen whole**: a Model Explorer over every declaration in the workspace, a read-only model view of one file, and a preview for a `Beslistabel` that shows what the source cannot — which column concludes, and what the case your cursor is in concludes as one sentence.
+- **Testsets that run.** A `*.test.rgs` testset is part of the language — same colour, checks, formatting and rename, crossing into the model in both directions — and it *runs*: in the Testing view with failures as diffs, or from a link in the text, one testgeval or one rule at a time, with the values, the characteristics, the faults and the derivation trace in a panel beside the model.
 
-Validation is deliberately conservative, and one rule runs through all of it: **where the model cannot be sure, it says nothing.** An unresolvable name, an ambiguous phrase, a precision a division leaves open — none of these produce a report, because a false warning on a correct sentence costs more than a missed one. The checks are measured against the sample models and the language's conformance corpus on every build, and none of them may report anything there.
+Each of these in full, with the reasoning behind the shape it takes, is in
+[docs/FEATURES.md](docs/FEATURES.md). Per-release detail is in the
+[CHANGELOG](CHANGELOG.md).
 
-All of it resolves **across files**: rules in one file are coloured, checked, navigated and renamed against the GegevensSpraak declarations in another. Per-release detail — including the full list of diagnostic codes — is in the [CHANGELOG](CHANGELOG.md).
+## Good to know
 
-The language server runs locally as a child process. Nothing is sent to a network service, and your `.rgs` files never leave your machine.
+- **All of it resolves across files.** Rules in one file are coloured, checked, navigated and renamed against the GegevensSpraak declarations in another.
+- **Nothing leaves your machine.** The language server runs locally as a child process; there is no network service.
+- **`Regelgroep <naam>` is the one construct added beyond RegelSpraak v2.3.0.** §9.10 has the rule group as a concept and gives it no written form, so a model that uses it is not portable to a strict v2.3.0 tool — worth knowing you are opting in. It is optional. (`//` comments are the other thing the specification does not define, and have been accepted since the first release.)
+- **Interface language is Dutch throughout**, matching the language itself; there is no English UI mode.
+- **Settings, and the line wrapping the extension turns on** for `.rgs` files (a RegelSpraak sentence cannot be broken across lines): [docs/SETTINGS.md](docs/SETTINGS.md).
+- **Laying out a model** — how to name and arrange its files, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/](samples) is the worked example.
 
-## Settings
+## Issues
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `regelspraak.validation.enable` | `true` | Turns semantic validation on or off. |
-| `regelspraak.validation.runOn` | `type` | Re-validate while typing, or only on save. |
-| `regelspraak.validation.scope` | `openFiles` | Report diagnostics for open files, or the whole workspace. |
-| `regelspraak.validation.strictPrecision` | `true` | Reports rounding and precision judgements (`RS401`–`RS403`, and the rate-conversion warning `RS306`). |
-| `regelspraak.validation.emptyValueHazards` | `true` | Reports places where an empty value causes a run-time error (`RS501`–`RS505`). |
-| `regelspraak.semanticHighlighting.enable` | `true` | Colours names by what the model knows about them. Off leaves the keyword-level TextMate colouring. |
-| `regelspraak.format.enable` | `true` | Formats `.rgs` files. Off leaves the layout entirely to you. |
-| `regelspraak.inlayHints.enable` | `types` | `off`, `types` (inferred datatypes and units) or `all` (also the object type behind a `zijn`/`hij`). |
-| `regelspraak.server.path` | *(empty)* | Path to a language server build. Empty uses the bundled server. |
-| `regelspraakLanguageServer.trace.server` | `off` | Traces LSP communication into the output channel. |
-
-`strictPrecision` and `emptyValueHazards` quiet whole families rather than filter their output: a family that is off is never run. They exist because `RS4xx` and `RS5xx` report a *judgement* — that a precision is unclear, that a value might be empty — rather than an error of fact.
-
-### Line wrapping
-
-A RegelSpraak sentence cannot be broken across lines. The specification makes the newline significant (§13.1.8) and gives it a job — it ends a rule's name, separates versions, bullets and variables — so a result sentence stays on one line however long it grows. The extension therefore turns **soft** wrapping on for `.rgs` files, which changes the display and never the file:
-
-| Setting | Default here | What it does |
-| --- | --- | --- |
-| `editor.wordWrap` | `bounded` | Wraps at the column below, or the width of the editor, whichever is narrower. |
-| `editor.wordWrapColumn` | `100` | Around a tenth of the lines in a typical model reach it. |
-| `editor.wrappingIndent` | `deepIndent` | Indents a continuation two levels, so it reads as part of the sentence above rather than a new one. |
-
-Override any of them for yourself in user or workspace settings, and they win over these:
-
-```json
-"[regelspraak]": {
-	"editor.wordWrap": "off"
-}
-```
-
-`Alt+Z` toggles wrapping for the current editor without changing any setting. No ruler ships with this: a ruler marks a width you are meant to keep to by breaking the line, which is the one thing you cannot do here.
-
-## Roadmap
-
-| | Release | What it adds |
-| --- | --- | --- |
-| ✅ | **Preview** | Semantic colour, live diagnostics, completion, hover, outline, folding, snippets |
-| ✅ | **Navigation** | Go to definition and type definition · Find all references · Highlight occurrences · Workspace symbol search · Safe cross-file rename of multi-word names · "Which rule derives this attribute?" |
-| ✅ | **Validation** | The full diagnostics catalogue — type compatibility, unit convertibility, rounding and precision, empty-value (`leeg`) policy, timeline granularity, distribution and decision-table rules — with quick fixes, plus signature help |
-| ✅ | **Formatting & ergonomics** | Formatting that changes whitespace and nothing else · CodeLens reference and derivation counts · Inlay hints for inferred datatypes and units · Smart selection expansion · Links in comments |
-| ✅ | **Workbench** (current) | A RegelSpraak view container with a Model Explorer tree · Call hierarchy over rule dependencies · Type hierarchy over object types and their extensions · A read-only model view of a file · A preview for decision tables · Language server status in the status bar |
-| ⬅ | **Execution** (next) | Run rules and decision tables against scenario data · Results and derivation traces in-editor · Scenarios as tests in the Test Explorer |
-| | **Optional extras** | Scenario notebooks · Task provider, file decorations, index caching — each still to be decided on |
-
-Interface language is Dutch throughout, matching the language itself; there is no English UI mode.
-
-## Contributing
-
-Architecture, building, pointing the extension at a language server, debugging
-and testing: [docs/DEVELOPING.md](docs/DEVELOPING.md).
+Bug reports and feature requests are welcome; the templates ask the few things
+that make one actionable. One thing worth knowing before cloning: this
+repository is the extension client, and the language server it drives is
+developed and released separately, so a fresh clone compiles and lints but
+cannot exercise any language feature until a server build is linked in — see
+[NOTICE](NOTICE).
 
 ## License and third-party notices
 

@@ -1,0 +1,22 @@
+// Parameters (§13.3.8): waarden die niet bij één object horen. Een testgeval
+// stelt ze; zonder waarde is een parameter leeg.
+
+Parameter de leenlimiet : Numeriek (niet-negatief geheel getal)
+
+Parameter de standaardcontributie : Geldbedrag voor elk jaar;
+
+Parameter de bonusdrempel : Numeriek (geheel getal) met eenheid pt
+
+Parameter de startdrempel : Numeriek (geheel getal) met eenheid pt
+
+Parameter het spaarpercentage : Percentage (geheel getal) met eenheid %
+
+Parameter de eerste kalenderdag : Datum in dagen
+
+Parameter de aanlooptermijn : Numeriek (geheel getal) met eenheid dagen
+
+Parameter het boetetarief : Geldbedrag met eenheid €/dag
+
+Parameter het verhoogde boetetarief : Geldbedrag met eenheid €/dag
+
+Parameter JAARBIJDRAGE : Geldbedrag met eenheid €/jaar

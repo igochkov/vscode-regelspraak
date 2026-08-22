@@ -7,7 +7,7 @@ const codesOf = (uri: vscode.Uri) =>
 	vscode.languages.getDiagnostics(uri).map(d => String(d.code));
 
 suite('Diagnostiek (P1)', () => {
-	const docUri = getDocUri('tuincentrum-regels.rgs');
+	const docUri = getDocUri('regels/contributie.rgs');
 	let original: string;
 
 	suiteSetup(async () => {
@@ -29,9 +29,9 @@ suite('Diagnostiek (P1)', () => {
 	test('een verwijzing naar een onbekend objecttype levert RS101', async () => {
 		await setTestContent(
 			`${original}\n` +
-			'Regel bepaal onbekende korting\n' +
+			'Regel bepaal onbekende contributie\n' +
 			'\tgeldig altijd\n' +
-			'\t\tDe korting van een Tuinkabouter moet berekend worden als 1 €.\n'
+			'\t\tDe contributie van een Boekenkabouter moet berekend worden als 1 €.\n'
 		);
 
 		const codes = await waitUntil('RS101', () => {
@@ -45,9 +45,9 @@ suite('Diagnostiek (P1)', () => {
 	test('de melding verdwijnt weer zodra de fout weg is', async () => {
 		await setTestContent(
 			`${original}\n` +
-			'Regel bepaal onbekende korting\n' +
+			'Regel bepaal onbekende contributie\n' +
 			'\tgeldig altijd\n' +
-			'\t\tDe korting van een Tuinkabouter moet berekend worden als 1 €.\n'
+			'\t\tDe contributie van een Boekenkabouter moet berekend worden als 1 €.\n'
 		);
 		await waitUntil('RS101', () => codesOf(docUri).includes('RS101') || undefined);
 
