@@ -8,9 +8,16 @@ The extension activates on `.rgs` files — models, and the `*.test.rgs` testset
 
 > **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets**, showing the derivation trace behind every result. What is next is in the [roadmap](docs/ROADMAP.md).
 
-<!-- Demo: upload the recording to a release or an issue comment and paste the URL
-     on its own line here, without these comment markers. GitHub renders an mp4
-     as a player; the Marketplace page renders images only, so it needs the GIF. -->
+## The extension in two minutes
+
+[![RegelSpraak in Visual Studio Code: completion, the checks, a testset running, navigation and rename across files, formatting, and the decision-table preview](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.gif)](https://github.com/igochkov/vscode-regelspraak/blob/main/images/regelspraak-demo.mp4)
+
+Writing with completion, three kinds of mistake caught, a testset running with the
+derivation trace behind every value, navigation and rename that cross between a
+model and the testset that tests it, the formatter, the decision-table preview,
+and the whole workspace in one tree — over the model in [samples/](samples). The
+picture above is the film; [the mp4](https://github.com/igochkov/vscode-regelspraak/blob/main/images/regelspraak-demo.mp4) is sharper and
+can be paused.
 
 ## Features
 
