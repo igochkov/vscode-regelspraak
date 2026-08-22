@@ -19,12 +19,11 @@ scripts/**
 docs/**
 samples/**
 images/icon.svg
-# The demo, which the README shows by URL and not out of the package: the
-# Marketplace resolves a README image over https, so shipping these would add
-# 15 MB to every download for nothing. Named one by one — images/ also holds the
-# icons, and those must ship.
-images/regelspraak-demo.mp4
-images/regelspraak-demo.gif
+# The demo still, which the README shows by URL and not out of the package: the
+# Marketplace resolves a README image over https, so shipping it would be weight
+# nothing in here reads. The film itself is a release asset and was never in the
+# tree. Named on its own — images/ also holds the icons, and those must ship.
+images/regelspraak-demo.png
 
 # --- Dependencies -----------------------------------------------------------
 # Neither tree ships. Both halves are bundled with their dependencies inlined:
