@@ -178,6 +178,28 @@ already given a meaning — and the Test Explorer runs them.
 
 ### Fixed
 
+- **A decision table may have more than one `geldig` period.** §12 gives a
+  `Beslistabel` the same version pattern as a `Regel` — one *or more* versions,
+  each with its own validity period, the periods not overlapping, the rekendatum
+  choosing which applies — and only one was accepted. A table with two of them was
+  reported as a syntax error, and a file with a syntax error in it gets no colour,
+  outline, folding, checks or formatting at all, so the workaround was to write two
+  tables under different names.
+
+  Now each `geldig` line carries its own grid, and the two need not look alike: a
+  new version may weigh a condition the old one never mentioned, or state a
+  different conclusion. Everything that was true of a rule's versions is true of a
+  table's — overlapping periods are reported (`RS601`), `regelversie <naam>
+  (<geldigheid>) gevuurd is` can ask about a particular one, and running against a
+  rekendatum evaluates the version that covers it. The Beslistabel preview draws
+  every version as its own grid under its own `geldig …`, and each version folds on
+  its own where a table has more than one.
+
+  **Two formatting changes come with it**, because a table's rows now belong to
+  their version the way a rule's sentence belongs to its `geldig` line: the rows are
+  indented one level further, and each version's pipes are aligned within that
+  version instead of across the whole table. Running **Document opmaken** over an
+  existing file will make both changes at once.
 - **The plural form the `RS613` quick fix offers.** It guessed with “ends in a
   vowel takes `'s`, anything else takes `en`”, which is wrong for most of the
   Dutch nouns a model actually declares: it proposed *Werkgeveren*, *Bonuspoten*
@@ -188,14 +210,6 @@ already given a meaning — and the Test Explorer runs them.
 
 ### Notes
 
-- **A decision table takes one `geldig` period, and the specification allows
-  several.** §12 gives a `Beslistabel` the same version pattern as a `Regel`, and a
-  rule may carry any number of versions with non-overlapping validity periods — but
-  a table with two of them is currently reported as a syntax error, and a file with
-  a syntax error in it gets no colour, outline, folding or checks at all. If you
-  need a table to change on a date, write two tables with different names and a
-  `geldig` period each; that parses and evaluates correctly. A fix is the next
-  thing on the list.
 - **What running does not yet include.** Every run starts from a testgeval —
   there is no way to run a model against a situation you have not written down,
   because the situation *is* the testset and writing it is the point. And a run

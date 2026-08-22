@@ -44,12 +44,26 @@ export interface ModelTree {
 
 export const EMPTY: ModelTree = { groups: [] };
 
-/** One beslistabel as a grid (W4). Mirrors the server's `protocol.ts`. */
+/** One beslistabel as a grid per version (W4). Mirrors the server's `protocol.ts`. */
 export interface DecisionTable {
 	name: string;
 	nameRange: WireRange;
 	range: WireRange;
+	/**
+	 * One or more (§12 → §4.2), each its own grid.
+	 *
+	 * Every version travels rather than the one a rekendatum selects: a rekendatum
+	 * belongs to a scenario, which is this side's state and not the document's, so
+	 * the server has no such question to answer — and that a table *has* two
+	 * versions is exactly what a reader of the pipes has to scroll to find out.
+	 */
+	versions: DecisionVersion[];
+}
+
+export interface DecisionVersion {
+	/** The `geldig …` text — the part of a version a grid cannot show. */
 	validity?: string;
+	validityRange?: WireRange;
 	columns: DecisionColumn[];
 	headerRange?: WireRange;
 	rows: DecisionRow[];

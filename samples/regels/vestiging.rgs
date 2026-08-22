@@ -62,10 +62,10 @@ Regel Aantal actieve leden
 // als bezittelijke verwijzing, maar geen vrouwelijke tegenhanger.
 Beslistabel Openingsuren
 	geldig altijd
-	|   | de openingsuren van een Boekerijvestiging moet gesteld worden op | indien het bezoekersaantal van de Boekerijvestiging groter is dan | indien het uitleenaantal van de Boekerijvestiging groter is dan |
-	| 1 | 12 uur                                                           | 1000                                                              | 500                                                             |
-	| 2 | 8 uur                                                            | 1000                                                              | n.v.t.                                                          |
-	| 3 | 4 uur                                                            | n.v.t.                                                            | n.v.t.                                                          |
+		|   | de openingsuren van een Boekerijvestiging moet gesteld worden op | indien het bezoekersaantal van de Boekerijvestiging groter is dan | indien het uitleenaantal van de Boekerijvestiging groter is dan |
+		| 1 | 12 uur                                                           | 1000                                                              | 500                                                             |
+		| 2 | 8 uur                                                            | 1000                                                              | n.v.t.                                                          |
+		| 3 | 4 uur                                                            | n.v.t.                                                            | n.v.t.                                                          |
 
 // Een kenmerktoekenning als conclusie: de kolomtitel schrijft het onderwerp en
 // het kenmerk, de cel de waarde. §12 laat de conclusie zo over twee cellen
@@ -73,5 +73,5 @@ Beslistabel Openingsuren
 // afmaakt in plaats van hem te herhalen, is wat de server meestuurt.
 Beslistabel Leeszaalvestiging
 	geldig altijd
-	|   | een Boekerijvestiging is een leeszaalvestiging | indien de openingsuren van de Boekerijvestiging groter is dan |
-	| 1 | waar                                           | 8 uur                                                         |
+		|   | een Boekerijvestiging is een leeszaalvestiging | indien de openingsuren van de Boekerijvestiging groter is dan |
+		| 1 | waar                                           | 8 uur                                                         |

@@ -134,9 +134,9 @@
 		"body": [
 			"Beslistabel ${1:naam}",
 			"\tgeldig altijd",
-			"| | de ${2:uitkomst} van een ${3:objecttypenaam} moet gesteld worden op | indien zijn ${4:attribuut} kleiner is dan |",
-			"| 1 | ${5:eerste waarde} | ${6:grenswaarde} |",
-			"| 2 | ${7:tweede waarde} | n.v.t. |"
+			"\t\t| | de ${2:uitkomst} van een ${3:objecttypenaam} moet gesteld worden op | indien zijn ${4:attribuut} kleiner is dan |",
+			"\t\t| 1 | ${5:eerste waarde} | ${6:grenswaarde} |",
+			"\t\t| 2 | ${7:tweede waarde} | n.v.t. |"
 		]
 	},
 	"Verdeling": {

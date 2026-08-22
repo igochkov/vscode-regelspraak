@@ -13,8 +13,17 @@ Regel Fictiewerk
 		Een Publicatie is een fictiewerk
 		indien het genre van de Publicatie gelijk is aan 'roman' of 'strip'.
 
+// §12 verwijst voor het versiepatroon naar §4.2: een beslistabel heeft één of
+// meer `geldig`-regels, elk met een eigen raster — precies zoals een regel
+// versies heeft. De korting ging per 1 januari 2027 omhoog, en de nieuwe versie
+// kent een genre dat de oude niet noemde; welke van de twee geldt, kiest de
+// rekendatum, en RS601 bewaakt dat de perioden elkaar niet overlappen.
 Beslistabel Genrekorting
-	geldig altijd
-	|   | de genrekorting van een Publicatie moet gesteld worden op | indien het genre van de Publicatie gelijk is aan |
-	| 1 | 10%                                                       | 'roman', 'strip' of 'poëzie'                     |
-	| 2 | 0%                                                        | n.v.t.                                           |
+	geldig t/m 31-12-2026
+		|   | de genrekorting van een Publicatie moet gesteld worden op | indien het genre van de Publicatie gelijk is aan |
+		| 1 | 5%                                                        | 'roman' of 'strip'                               |
+		| 2 | 0%                                                        | n.v.t.                                           |
+	geldig vanaf 01-01-2027
+		|   | de genrekorting van een Publicatie moet gesteld worden op | indien het genre van de Publicatie gelijk is aan |
+		| 1 | 10%                                                       | 'roman', 'strip' of 'poëzie'                     |
+		| 2 | 0%                                                        | n.v.t.                                           |

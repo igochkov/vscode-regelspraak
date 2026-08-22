@@ -71,10 +71,14 @@ suite('Beslistabelvoorbeeld (W4)', () => {
 	test('leest de tabel van de fixture, met de rol van elke kolom', async () => {
 		const [table] = await tables();
 		assert.equal(table.name, 'Contributiestaffel');
-		assert.equal(table.validity, 'geldig vanaf 2027');
-		assert.deepEqual(table.columns.map(column => column.role),
+		// Eén versie: §4.2's "één of meer" is er ook één, en dan leest het als
+		// altijd — één raster onder één geldigheid.
+		assert.equal(table.versions.length, 1);
+		const [version] = table.versions;
+		assert.equal(version.validity, 'geldig vanaf 2027');
+		assert.deepEqual(version.columns.map(column => column.role),
 			['conditie', 'conclusie', 'conditie']);
-		assert.deepEqual(table.rows.map(row => row.cells.map(cell => cell.text)),
+		assert.deepEqual(version.rows.map(row => row.cells.map(cell => cell.text)),
 			[['1', '25 €', '3 jaar'], ['2', '40 €', 'n.v.t.']]);
 	});
 
@@ -82,24 +86,54 @@ suite('Beslistabelvoorbeeld (W4)', () => {
 	// kolomtitel en een cel. Of de waarde de zin afmaakt, is het antwoord van de
 	// server — hier wordt alleen vastgelegd dat het meekomt.
 	test('zegt van de conclusiekolom dat de waarde de zin afmaakt', async () => {
-		const [table] = await tables();
-		assert.equal(table.columns[1].composed, true);
+		const [version] = (await tables())[0].versions;
+		assert.equal(version.columns[1].composed, true);
 		// En zegt er niets over waar er niets te zeggen valt.
-		assert.equal(table.columns[0].composed, undefined);
-		assert.equal(table.columns[2].composed, undefined);
+		assert.equal(version.columns[0].composed, undefined);
+		assert.equal(version.columns[2].composed, undefined);
+	});
+
+	// §12 geeft een tabel het versiepatroon van §4.2, en `samples/` demonstreert
+	// het op de Genrekorting: twee rasters onder één naam, elk met een eigen
+	// geldigheid. Alle versies komen mee — welke de rekendatum kiest, weet de
+	// server niet, want een rekendatum hoort bij een scenario.
+	test('levert elke versie van een tabel als een eigen raster', async () => {
+		const genre = getDocUri('regels/publicatie.rgs');
+		const found = await waitUntil('de beslistabel van publicatie.rgs', async () => {
+			const answer = await source.decisionTables(genre.toString());
+			return answer.length > 0 ? answer : undefined;
+		});
+		const [table] = found;
+		assert.equal(table.name, 'Genrekorting');
+		assert.deepEqual(table.versions.map(version => version.validity),
+			['geldig t/m 31-12-2026', 'geldig vanaf 01-01-2027']);
+		// Elk raster heeft zijn eigen gevallen, en zijn eigen conclusiekolom.
+		assert.deepEqual(table.versions.map(version => version.rows[0].cells[1].text),
+			['5%', '10%']);
+		for (const version of table.versions) {
+			assert.deepEqual(version.columns.map(column => column.role),
+				['conditie', 'conclusie', 'conditie']);
+		}
+		// En elke geldigheidsregel wijst haar eigen plek in de tekst aan.
+		const first = rangeOfGesture(found, { kind: 'revealVersion', table: 0, version: 0 });
+		const second = rangeOfGesture(found, { kind: 'revealVersion', table: 0, version: 1 });
+		assert.notDeepEqual(first, second);
+		assert.deepEqual(first, table.versions[0].validityRange);
 	});
 
 	suite('de sprong van het voorbeeld naar de tekst', () => {
 		test('wijst een cel aan op precies het bereik van die cel', async () => {
 			const found = await tables();
-			const range = rangeOfGesture(found, { kind: 'reveal', table: 0, row: 0, cell: 1 });
-			assert.deepEqual(range, found[0].rows[0].cells[1].range);
+			const range = rangeOfGesture(found,
+				{ kind: 'reveal', table: 0, version: 0, row: 0, cell: 1 });
+			assert.deepEqual(range, found[0].versions[0].rows[0].cells[1].range);
 		});
 
 		test('wijst een kolomtitel aan met rij -1, want de titelrij is geen geval', async () => {
 			const found = await tables();
-			const range = rangeOfGesture(found, { kind: 'reveal', table: 0, row: -1, cell: 1 });
-			assert.deepEqual(range, found[0].columns[1].range);
+			const range = rangeOfGesture(found,
+				{ kind: 'reveal', table: 0, version: 0, row: -1, cell: 1 });
+			assert.deepEqual(range, found[0].versions[0].columns[1].range);
 		});
 
 		test('wijst de tabel zelf op haar naam aan', async () => {
@@ -110,29 +144,39 @@ suite('Beslistabelvoorbeeld (W4)', () => {
 
 		// Het voorbeeld kan een toetsaanslag achterlopen; een gebaar over een rij
 		// die er niet meer is, wijst nergens heen in plaats van ergens verkeerd.
-		test('wijst nergens heen waar de tabel of de rij niet bestaat', async () => {
+		test('wijst nergens heen waar de tabel, de versie of de rij niet bestaat', async () => {
 			const found = await tables();
-			assert.equal(rangeOfGesture(found, { kind: 'reveal', table: 9, row: 0, cell: 0 }),
-				undefined);
-			assert.equal(rangeOfGesture(found, { kind: 'reveal', table: 0, row: 9, cell: 0 }),
-				undefined);
-			assert.equal(rangeOfGesture(found, { kind: 'reveal', table: 0, row: 0, cell: 9 }),
-				undefined);
+			const nowhere = (gesture: Parameters<typeof rangeOfGesture>[1]): void =>
+				assert.equal(rangeOfGesture(found, gesture), undefined);
+			nowhere({ kind: 'reveal', table: 9, version: 0, row: 0, cell: 0 });
+			nowhere({ kind: 'reveal', table: 0, version: 9, row: 0, cell: 0 });
+			nowhere({ kind: 'reveal', table: 0, version: 0, row: 9, cell: 0 });
+			nowhere({ kind: 'reveal', table: 0, version: 0, row: 0, cell: 9 });
+			nowhere({ kind: 'revealVersion', table: 0, version: 9 });
 		});
 	});
 
 	suite('de sprong van de tekst naar het voorbeeld', () => {
 		test('vindt het geval waar de cursor in staat', async () => {
 			const found = await tables();
-			assert.deepEqual(caseAt(found, found[0].rows[1].range.start.line),
-				{ table: 0, row: 1 });
+			assert.deepEqual(caseAt(found, found[0].versions[0].rows[1].range.start.line),
+				{ table: 0, version: 0, row: 1 });
 		});
 
-		// Een regel binnen de declaratie die geen geval is — de naam, de
-		// geldigheid, de titelrij — hoort wel bij de tabel en niet bij een geval.
-		test('noemt de tabel maar geen geval op een regel die er geen is', async () => {
+		// Een regel binnen een versie die geen geval is — haar geldigheid, haar
+		// titelrij — hoort wel bij die versie en niet bij een geval.
+		test('noemt de versie maar geen geval op een regel die er geen is', async () => {
 			const found = await tables();
-			assert.deepEqual(caseAt(found, found[0].nameRange.start.line), { table: 0, row: -1 });
+			assert.deepEqual(caseAt(found, found[0].versions[0].headerRange!.start.line),
+				{ table: 0, version: 0, row: -1 });
+		});
+
+		// En de naamregel hoort bij de tabel en bij geen enkele versie: daar staat
+		// geen raster, dus is er ook geen raster om te markeren.
+		test('noemt de tabel maar geen versie op de naamregel', async () => {
+			const found = await tables();
+			assert.deepEqual(caseAt(found, found[0].nameRange.start.line),
+				{ table: 0, version: -1, row: -1 });
 		});
 
 		test('vindt niets buiten elke tabel', async () => {

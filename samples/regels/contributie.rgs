@@ -55,6 +55,6 @@ Regel bepaal kortingsfactor
 // concludeert, blijkt uit wat die zin zegt en staat nergens als vlag in de tekst.
 Beslistabel Contributiestaffel
 	geldig vanaf 2027
-	|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |
-	| 1 | 25 €                                              | 3 jaar                                       |
-	| 2 | 40 €                                              | n.v.t.                                       |
+		|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |
+		| 1 | 25 €                                              | 3 jaar                                       |
+		| 2 | 40 €                                              | n.v.t.                                       |

@@ -47,6 +47,27 @@ Testgeval Een jaar later geldt de tweede versie, met het hogere tarief
 	Verwacht Lening met
 		boete  1,60 EUR
 
+// §12 geeft een beslistabel hetzelfde versiepatroon (§4.2), dus geldt hetzelfde
+// hier: dezelfde publicatie, een andere rekendatum, een ander raster. De oude
+// versie van Genrekorting noemt 'poëzie' niet en geeft die dus 0 %.
+Testgeval Vóór 2027 geldt de oude versie van de beslistabel
+	Rekendatum 15-06-2026
+	Gegeven een Publicatie (Bundel) met
+		titel  "Het lied van de leeszaal"
+		genre  'poëzie'
+
+	Verwacht Bundel met
+		genrekorting  0 %
+	Verwacht regelversie Genrekorting is gevuurd
+
+Testgeval Op de testsetdatum geldt de nieuwe versie van de beslistabel
+	Gegeven een Publicatie (Bundel) met
+		titel  "Het lied van de leeszaal"
+		genre  'poëzie'
+
+	Verwacht Bundel met
+		genrekorting  10 %
+
 Testgeval Een regel die niet vuurt
 	Gegeven een Lid (Sam) met
 		inschrijfdatum  01-02-2019
