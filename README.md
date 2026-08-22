@@ -10,13 +10,14 @@ The extension activates on `.rgs` files — models, and the `*.test.rgs` testset
 
 ## The extension in two minutes
 
-[![Completion proposing the four-word name "dagen te laat" with its datatype, after two letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/igochkov/vscode-regelspraak/releases/latest/download/regelspraak-demo.mp4)
+[![Completion proposing the four-word name "dagen te laat" with its datatype, after two letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e)
 
 Writing with completion, three kinds of mistake caught, a testset running with the
 derivation trace behind every value, navigation and rename that cross between a
 model and the testset that tests it, the formatter, the decision-table preview,
 and the whole workspace in one tree — over the model in [samples/](samples).
-[The film](https://github.com/igochkov/vscode-regelspraak/releases/latest/download/regelspraak-demo.mp4) is two minutes and twenty, with Dutch captions (mp4, 5 MB).
+[The film](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e) plays in the browser: two minutes and twenty, with Dutch
+captions (mp4, 5 MB).
 
 ## Features
 
