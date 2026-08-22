@@ -456,8 +456,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			`De RegelSpraak-taalserver is niet gevonden op ${serverModule}, bepaald via ${origin}. ` +
 			`Koppel een serverbuild als "server/" in de extensiemap, ` +
 			`of laat "${SERVER_PATH_SETTING}" naar een serverbuild verwijzen (in de instellingen van dít ` +
-			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt). ` +
-			`Zie docs/DEVELOPING.md, "Pointing the extension at a language server".`
+			`venster — bij debuggen is dat de Extension Development Host, niet het venster waarin op F5 is gedrukt).`
 		);
 		// The notification is dismissed and then the window looks like one where
 		// RegelSpraak simply has no opinions. The status item is what is still

@@ -47,8 +47,7 @@ interface ServerStatusLike {
 const NO_SERVER =
 	'Er draait geen RegelSpraak-taalserver, dus deze suite kan niet slagen. Deze ' +
 	'repository bevat er zelf geen: koppel een serverbuild als "server/" in de ' +
-	'extensiemap, of laat "regelspraak.server.path" ernaar verwijzen. Zie ' +
-	'docs/DEVELOPING.md, "Pointing the extension at a language server".';
+	'extensiemap, of laat "regelspraak.server.path" ernaar verwijzen.';
 
 /**
  * Polls `poll` until it yields a value, and fails with what it was waiting

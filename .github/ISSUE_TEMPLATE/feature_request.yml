@@ -5,8 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before filing, it is worth checking the **Roadmap** section of the
-        README — a good deal is already planned and sequenced (navigation and
+        Before filing, it is worth checking the
+        [roadmap](https://github.com/igochkov/vscode-regelspraak/blob/main/docs/ROADMAP.md)
+        — a good deal is already planned and sequenced (navigation and
         rename, the full validation catalogue, formatting, running rules
         against scenario data). Saying that a planned item matters to you is
         genuinely useful; it influences the order.

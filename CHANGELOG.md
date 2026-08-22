@@ -642,5 +642,5 @@ below from that shared model rather than from pattern matching.
   model can decide the answer, so a correct file stays clean. The rest of the
   catalogue — type compatibility, unit convertibility, rounding, empty-value
   policy, timelines, distribution and decision tables — arrives with the
-  validation release. See the Roadmap in the README.
+  validation release. See the [roadmap](docs/ROADMAP.md).
 - The language server runs locally and sends nothing over the network.
