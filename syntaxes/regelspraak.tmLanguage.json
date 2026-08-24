@@ -124,7 +124,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner of gelijk zijn aan|eerder of gelijk zijn aan|groter of gelijk zijn aan|kleiner of gelijk is aan|later of gelijk zijn aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:moet berekend worden als)(?![\\p{L}\\p{N}-])",
@@ -136,7 +136,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:eerder of gelijk is aan|groter of gelijk is aan|tijdsevenredig deel per|absolute tijdsduur van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:het volgende criterium)(?![\\p{L}\\p{N}-])",
@@ -144,7 +144,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:later of gelijk is aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:met variabel startpunt)(?![\\p{L}\\p{N}-])",
@@ -156,7 +156,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner of gelijk aan|als die er niet zijn|eerder of gelijk aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:er wordt voldaan aan|even groot criterium)(?![\\p{L}\\p{N}-])",
@@ -164,7 +164,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:groter of gelijk aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:heeft tijdvakken van)(?![\\p{L}\\p{N}-])",
@@ -180,7 +180,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:absolute waarde van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:gedimensioneerd met)(?![\\p{L}\\p{N}-])",
@@ -188,7 +188,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:later of gelijk aan|maximale waarde van|met een maximum van|met een minimum van|minimale waarde van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:volgende voorwaarde|wordt verdeeld over)(?![\\p{L}\\p{N}-])",
@@ -196,7 +196,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:eerste paasdag van|en een maximum van|gedeeld door \\(ABS\\))(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:wordt bepaald door)(?![\\p{L}\\p{N}-])",
@@ -212,7 +212,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:ongelijk zijn aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:testinitialisatie)(?![\\p{L}\\p{N}-])",
@@ -228,7 +228,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:concatenatie van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:in gelijke delen)(?![\\p{L}\\p{N}-])",
@@ -236,7 +236,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner zijn dan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:moet voldoen aan)(?![\\p{L}\\p{N}-])",
@@ -244,7 +244,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:aan de elfproef|aantal dagen in)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:de gehele maand)(?![\\p{L}\\p{N}-])",
@@ -252,7 +252,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:eerder zijn dan|gelijk zijn aan|groter zijn dan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:het gehele jaar)(?![\\p{L}\\p{N}-])",
@@ -264,7 +264,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:ongelijk is aan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:op volgorde van)(?![\\p{L}\\p{N}-])",
@@ -280,7 +280,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner is dan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:laatstgenoemde)(?![\\p{L}\\p{N}-])",
@@ -288,7 +288,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:later zijn dan|verminderd met)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:Daarbij geldt)(?![\\p{L}\\p{N}-])",
@@ -296,7 +296,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:datumtijd met|eerder is dan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:eerstgenoemde)(?![\\p{L}\\p{N}-])",
@@ -304,7 +304,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:gelijk is aan|groter is dan)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:naar rato van)(?![\\p{L}\\p{N}-])",
@@ -316,7 +316,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:tijdsduur van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:wordt voldaan)(?![\\p{L}\\p{N}-])",
@@ -324,7 +324,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:gedeeld door)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:geheel getal)(?![\\p{L}\\p{N}-])",
@@ -336,7 +336,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:later is dan|naar beneden|ongelijk aan|richting nul|tot de macht)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:verenigd met|Beslistabel)(?![\\p{L}\\p{N}-])",
@@ -344,7 +344,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:afgerond op)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:bezittelijk|bijvoeglijk)(?![\\p{L}\\p{N}-])",
@@ -352,7 +352,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:kleiner dan|laatste van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:met eenheid)(?![\\p{L}\\p{N}-])",
@@ -364,7 +364,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:rekenkundig)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:startend op)(?![\\p{L}\\p{N}-])",
@@ -376,7 +376,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:weg van nul)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:Enumeratie|Objecttype|Parameters)(?![\\p{L}\\p{N}-])",
@@ -396,7 +396,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:eerder dan|eerste van|gelijk aan|groter dan|naar boven)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:ten minste|tenhoogste)(?![\\p{L}\\p{N}-])",
@@ -408,7 +408,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:totaal van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:uniek zijn)(?![\\p{L}\\p{N}-])",
@@ -416,7 +416,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:wortel van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:Parameter)(?![\\p{L}\\p{N}-])",
@@ -436,7 +436,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:datum met)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:decimalen)(?![\\p{L}\\p{N}-])",
@@ -452,7 +452,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:later dan|met exact)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:startpunt)(?![\\p{L}\\p{N}-])",
@@ -484,7 +484,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:numeriek)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:positief|Boolean)(?![\\p{L}\\p{N}-])",
@@ -496,7 +496,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:cijfers)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:gevuurd)(?![\\p{L}\\p{N}-])",
@@ -512,7 +512,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:som van)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:voldoen|voldoet)(?![\\p{L}\\p{N}-])",
@@ -528,7 +528,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:aantal)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:altijd|geldig)(?![\\p{L}\\p{N}-])",
@@ -536,7 +536,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:gevuld)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:indien|moeten)(?![\\p{L}\\p{N}-])",
@@ -564,7 +564,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:hele|leeg|maal)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:moet)(?![\\p{L}\\p{N}-])",
@@ -576,7 +576,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:plus)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:waar)(?![\\p{L}\\p{N}-])",
@@ -588,7 +588,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:min)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.operator.word.regelspraak"
+			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:t\\/m|tot)(?![\\p{L}\\p{N}-])",
