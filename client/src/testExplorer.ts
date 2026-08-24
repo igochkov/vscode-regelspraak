@@ -48,7 +48,13 @@ interface TestAssertion {
 	rule?: string;
 }
 
-interface TestFault { rule: string; instance?: string; message: string }
+interface TestFault {
+	rule: string;
+	instance?: string;
+	message: string;
+	/** `modelfout`: the model said something the engine could not resolve. */
+	kind: 'fout' | 'modelfout';
+}
 
 /**
  * What a run computed (X4) — see the server's `protocol.ts`, which defines it.
@@ -380,9 +386,18 @@ export class TestExplorer {
 	 *
 	 * A refusal is `errored`, not `failed`: the model did not produce a wrong
 	 * answer, it produced none, and the two read differently in the Test Explorer
-	 * for good reason. A fault is neither — the run carried on ([E-29]) — so it is
-	 * appended to the output rather than turned into a failure the engine did not
-	 * report.
+	 * for good reason.
+	 *
+	 * **A fault depends on which kind it is** (24 August 2026). Every fault still
+	 * reaches the output, since the run carried on ([E-29]). But the two kinds are
+	 * not the same news: a `fout` is the specification's own run-time error on a
+	 * model that is correct — §6.5's leeg divisor, which the conformance corpus
+	 * contains deliberately — and a test asserting around it is right to be green,
+	 * while a **`modelfout`** means the model said something the engine could not
+	 * make sense of, so the run derived less than the model asked for and a test
+	 * that passes anyway passed by luck. That one fails the item, with the fault as
+	 * its message. Before this the two were one shape and both were treated as the
+	 * first, so a green suite could hide a model that resolved nothing.
 	 */
 	private report(
 		run: vscode.TestRun,
@@ -403,8 +418,18 @@ export class TestExplorer {
 			return;
 		}
 		const failed = outcome.assertions.filter(one => !one.passed);
-		if (failed.length === 0) {
+		const broken = outcome.faults.filter(one => one.kind === 'modelfout');
+		if (failed.length === 0 && broken.length === 0) {
 			run.passed(item, duration);
+			return;
+		}
+		if (failed.length === 0) {
+			// Nothing asserted went wrong, but the run could not do what the model
+			// asked. Reported as a failure of the *run* rather than of an
+			// expectation, so it has no diff and no location: there is no
+			// expectation to point at, which is exactly the problem.
+			run.failed(item, broken.map(one => new vscode.TestMessage(
+				`${one.rule}${one.instance ? ` · ${one.instance}` : ''}: ${one.message}`)), duration);
 			return;
 		}
 		run.failed(item, failed.map(one => {
