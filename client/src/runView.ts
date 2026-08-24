@@ -230,7 +230,7 @@ export function buildView(fileName: string, run: TestRun, focus?: string): RunVi
 	if (detail.trace.length > 0) {
 		view.sections.push({
 			title: 'Trace, in de volgorde waarin geschreven werd',
-			rows: detail.trace.map(one => writeRow(one, true))
+			rows: detail.trace.map(one => writeRow(one, true, producedBy(detail)))
 		});
 	}
 
@@ -324,7 +324,7 @@ function focusSections(focus: string, detail: RunDetail): RunSection[] {
 				? [{ kind: 'note', label: '(niets — deze regel vuurde niet in dit testgeval)' }]
 				// Unattributed: the heading already names the rule, so putting it on
 				// every row would be the section title once per line.
-				: wrote.map(one => writeRow(one, false))
+				: wrote.map(one => writeRow(one, false, producedBy(detail)))
 		},
 		{
 			title: 'Vuurde',
@@ -340,23 +340,96 @@ function focusSections(focus: string, detail: RunDetail): RunSection[] {
 }
 
 /**
- * One write, with the operands it read as its children.
+ * One write, with the operands it read as its children — **and their operands**,
+ * as far back as the run can say (§X7 stage 2).
  *
  * `attributed` names the rule beside the value, which the trace wants and a
  * section already headed by that rule does not.
+ *
+ * The recursion is what the whole stage was for: `Verwacht 5000 €` tells you a
+ * number is wrong and nothing about how it came to be, and the answer is a chain
+ * — this rule read that value, which that rule wrote out of these. Before the
+ * operands carried a `source` the only way to follow it was to scan the trace
+ * for an entry whose target *text* matched an operand's label, which is a string
+ * match on display names; now the operand names the rule and the walk is a
+ * lookup.
+ *
+ * **It fails closed.** An operand nests only where the trace holds an entry for
+ * exactly this instance, rule and label; anything else stays the leaf it is
+ * today, so a chain that cannot be followed is short rather than wrong.
  */
-function writeRow(one: RunDetail['trace'][number], attributed: boolean): RunRow {
+function writeRow(
+	one: RunDetail['trace'][number],
+	attributed: boolean,
+	produced?: Map<string, RunDetail['trace'][number]>,
+	seen: readonly string[] = []
+): RunRow {
 	return {
 		kind: 'write',
 		label: withInstance(target(one.target, one.coordinates), one.instance, true),
 		value: one.value,
 		...(attributed ? { rule: one.rule, ruleAt: 'beside' as const } : {}),
-		children: one.operands.map((operand): RunRow => ({
-			kind: 'operand',
-			label: withInstance(operand.label, operand.instance, true),
-			value: operand.value
-		}))
+		children: one.operands.map(operand => operandRow(operand, produced, seen))
 	};
+}
+
+/**
+ * One operand, carrying where its value came from — and the derivation behind it.
+ *
+ * The source is *shown* as well as followed: `← <regel>` beside a derived value
+ * is the same attribution a written value carries in Afgeleid, and `invoer` or
+ * `parameter` in the note column says the chain ends here rather than leaving a
+ * reader to wonder whether it was cut short.
+ */
+function operandRow(
+	operand: RunDetail['trace'][number]['operands'][number],
+	produced: Map<string, RunDetail['trace'][number]> | undefined,
+	seen: readonly string[]
+): RunRow {
+	const row: RunRow = {
+		kind: 'operand',
+		label: withInstance(operand.label, operand.instance, true),
+		value: operand.value
+	};
+	const source = operand.source;
+	if (!source) {
+		return row;
+	}
+	if (source.kind !== 'regel') {
+		return { ...row, note: source.kind };
+	}
+	const attributed = { ...row, rule: source.rule, ruleAt: 'beside' as const };
+	const key = traceKey(operand.instance, source.rule, operand.label);
+	const behind = produced?.get(key);
+	// A cycle cannot arise from a run — the engine refuses one before it starts
+	// ([E-3]) — but the guard costs a line and a renderer that hangs on data it
+	// was handed is worse than one that stops early.
+	if (!behind || seen.includes(key)) {
+		return attributed;
+	}
+	return {
+		...attributed,
+		children: behind.operands.map(each => operandRow(each, produced, [...seen, key]))
+	};
+}
+
+/**
+ * Every write, by the place it wrote — so an operand can find the one behind it.
+ *
+ * Keyed on instance, rule *and* target together: one rule routinely writes
+ * several attributes for one instance, so a coarser key would attach the wrong
+ * derivation under an operand and read as fact.
+ */
+function producedBy(detail: RunDetail): Map<string, RunDetail['trace'][number]> {
+	const found = new Map<string, RunDetail['trace'][number]>();
+	for (const one of detail.trace) {
+		found.set(traceKey(one.instance, one.rule, target(one.target, one.coordinates)), one);
+	}
+	return found;
+}
+
+function traceKey(instance: string | undefined, rule: string, what: string): string {
+	return `${instance ?? ''} · ${rule} · ${what}`;
 }
 
 /**

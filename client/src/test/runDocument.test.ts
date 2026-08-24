@@ -287,6 +287,74 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(rows[0].open, undefined);
 		});
 
+		// X7 fase 2 — de trace is terugloopbaar. Een operand die zijn schrijvende
+		// regel noemt is een schakel, en die volgen ís het antwoord op 'waarom is
+		// deze waarde wat hij is'. Vóór `source` was de enige weg terug zoeken naar
+		// een traceregel wier doeltekst op het label van de operand leek.
+		test('een operand vouwt open naar de afleiding erachter', () => {
+			const rows = view(ran({
+				trace: [
+					{
+						instance: 'Noor', target: 'korting', rule: 'bepaal korting',
+						value: '5 euro',
+						operands: [{
+							label: 'contributie', instance: 'Noor', value: '40 euro',
+							source: { kind: 'regel', rule: 'bepaal contributie' }
+						}]
+					},
+					{
+						instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+						value: '40 euro',
+						operands: [
+							{ label: 'basisbedrag', value: '35 euro', source: { kind: 'parameter' } },
+							{ label: 'leeftijd', instance: 'Noor', value: '30 jaar', source: { kind: 'invoer' } }
+						]
+					}
+				]
+			})).get('Trace, in de volgorde waarin geschreven werd')!.rows;
+
+			const korting = rows[0];
+			const operand = korting.children![0];
+			// De operand noemt de regel ernaast, net als een geschreven waarde doet.
+			assert.equal(operand.rule, 'bepaal contributie');
+			assert.equal(operand.ruleAt, 'beside');
+			// En draagt de afleiding erachter als kinderen.
+			assert.deepEqual(operand.children?.map(one => [one.label, one.note]), [
+				['basisbedrag', 'parameter'],
+				['Noor · leeftijd', 'invoer']
+			]);
+		});
+
+		test('laat een operand zonder herkomst een blad', () => {
+			const rows = view(ran({
+				trace: [{
+					instance: 'Noor', target: 'korting', rule: 'bepaal korting', value: '5 euro',
+					operands: [{ label: 'contributie', instance: 'Noor', value: '40 euro' }]
+				}]
+			})).get('Trace, in de volgorde waarin geschreven werd')!.rows;
+			const operand = rows[0].children![0];
+			assert.equal(operand.children, undefined);
+			assert.equal(operand.rule, undefined);
+			assert.equal(operand.note, undefined);
+		});
+
+		// Faalt dicht: nest alleen waar de trace precies deze instantie, regel en
+		// dit label kent. Een keten die niet te volgen is wordt kort, niet fout.
+		test('nest niet waar de trace de schrijvende regel niet heeft', () => {
+			const rows = view(ran({
+				trace: [{
+					instance: 'Noor', target: 'korting', rule: 'bepaal korting', value: '5 euro',
+					operands: [{
+						label: 'contributie', instance: 'Noor', value: '40 euro',
+						source: { kind: 'regel', rule: 'een regel die niet in de trace staat' }
+					}]
+				}]
+			})).get('Trace, in de volgorde waarin geschreven werd')!.rows;
+			const operand = rows[0].children![0];
+			assert.equal(operand.rule, 'een regel die niet in de trace staat');
+			assert.equal(operand.children, undefined);
+		});
+
 		test('een traceregel springt op de regelnaam ernaast, met of zonder operanden', () => {
 			const rows = view(ran({
 				trace: [

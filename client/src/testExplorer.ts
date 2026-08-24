@@ -92,6 +92,16 @@ export interface RunOperand {
 	label: string;
 	instance?: string;
 	value: string;
+	/**
+	 * Where the value came from — see the server's `protocol.ts`.
+	 *
+	 * `regel` names the trace entry to expand under this operand, which is what
+	 * makes the derivation walkable; `invoer` and `parameter` are where it ends.
+	 */
+	source?:
+		| { kind: 'regel'; rule: string }
+		| { kind: 'invoer' }
+		| { kind: 'parameter' };
 }
 
 export interface RunValue {
