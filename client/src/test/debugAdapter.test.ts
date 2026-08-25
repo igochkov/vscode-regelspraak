@@ -10,7 +10,7 @@
 
 import * as assert from 'assert';
 
-import { launchConfiguration, statedCase } from '../debugAdapter';
+import { launchConfiguration, statedCase, stopsOnEntry } from '../debugAdapter';
 
 suite('Debug-launchconfiguratie (X5 deel C)', () => {
 	test('vult aan wat F5 zonder launch.json niet meestuurt', () => {
@@ -37,6 +37,18 @@ suite('Debug-launchconfiguratie (X5 deel C)', () => {
 		assert.strictEqual(statedCase({ case: '' }), undefined);
 		assert.strictEqual(statedCase({ case: '   ' }), undefined);
 		assert.strictEqual(statedCase({ case: '  001  ' }), '001');
+	});
+
+	// De twee gevallen willen tegengestelde antwoorden. Zonder breekpunten is de
+	// sessie voorbij voordat iemand hem zag; mét breekpunten heeft de lezer al
+	// gezegd waar hij wil staan, en stoppen bij de eerste regel leest dan als een
+	// breekpunt dat genegeerd werd — precies de melding die dit vond.
+	test('stopt bij de eerste regel alleen als er geen breekpunten zijn', () => {
+		assert.strictEqual(stopsOnEntry(undefined, 0), true);
+		assert.strictEqual(stopsOnEntry(undefined, 1), false);
+		// Wat de configuratie zelf zegt, wint van allebei.
+		assert.strictEqual(stopsOnEntry(true, 3), true);
+		assert.strictEqual(stopsOnEntry(false, 0), false);
 	});
 
 	test('houdt type en request van zichzelf, wat er ook binnenkomt', () => {

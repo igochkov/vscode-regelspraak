@@ -74,6 +74,8 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	/** Held between `launch` and `configurationDone` — see the launch case. */
 	private pending: LaunchArguments | undefined;
 	private started = false;
+	/** How many breakpoints landed on a rule, which decides the entry stop. */
+	private marks = 0;
 
 	constructor(
 		private readonly client: LanguageClient,
@@ -203,6 +205,7 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					lines: lines.map(one => one - 1)
 				});
 				const landed = new Set((state.marks ?? []).map(one => one.line));
+				this.marks = landed.size;
 				this.reply(request, {
 					breakpoints: lines.map(line => ({ verified: landed.has(line - 1), line }))
 				});
@@ -229,11 +232,7 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					return;
 				}
 				this.stopped = state.at;
-				// A session always starts standing before the first rule. Unless the
-				// configuration says otherwise it stays there, which is the right
-				// default for a tool whose job is exploring: the alternative is a run
-				// that is over before anyone saw it, for a model with no breakpoints.
-				if (args.stopOnEntry === false) {
+				if (!stopsOnEntry(args.stopOnEntry, this.marks)) {
 					await this.ask({ kind: 'resume' });
 					return;
 				}
@@ -386,6 +385,20 @@ export function statedCase(config: Record<string, unknown>): string | undefined 
 	}
 	const trimmed = stated.trim();
 	return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
+ * Whether to stand before the first rule, or run on to the first breakpoint.
+ *
+ * **The two cases want opposite answers, so the default follows the
+ * breakpoints.** With none set, running on means the session is over before
+ * anyone saw it — useless for a tool whose job is exploring. With some set, the
+ * reader has already said where they want to be, and stopping at the first rule
+ * instead reads as the breakpoint having been ignored. An explicit
+ * `stopOnEntry` still wins over both.
+ */
+export function stopsOnEntry(stated: boolean | undefined, marks: number): boolean {
+	return stated ?? marks === 0;
 }
 
 /**
