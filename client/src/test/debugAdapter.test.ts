@@ -10,7 +10,7 @@
 
 import * as assert from 'assert';
 
-import { launchConfiguration } from '../debugAdapter';
+import { launchConfiguration, statedCase } from '../debugAdapter';
 
 suite('Debug-launchconfiguratie (X5 deel C)', () => {
 	test('vult aan wat F5 zonder launch.json niet meestuurt', () => {
@@ -27,6 +27,16 @@ suite('Debug-launchconfiguratie (X5 deel C)', () => {
 		const config = launchConfiguration(
 			{ name: 'Mijn sessie' }, 'd:/model/boekerij.test.rgs', '001');
 		assert.strictEqual(config.name, 'Mijn sessie');
+	});
+
+	// Een gegenereerde launch.json draagt `"case": ""` als plaatshouder, en `??`
+	// houdt een lege string vast — de start faalde dan met "noemt een testgeval"
+	// op een configuratie die VS Code zelf net had geschreven.
+	test('een lege of blanke case telt niet als een naam', () => {
+		assert.strictEqual(statedCase({}), undefined);
+		assert.strictEqual(statedCase({ case: '' }), undefined);
+		assert.strictEqual(statedCase({ case: '   ' }), undefined);
+		assert.strictEqual(statedCase({ case: '  001  ' }), '001');
 	});
 
 	test('houdt type en request van zichzelf, wat er ook binnenkomt', () => {

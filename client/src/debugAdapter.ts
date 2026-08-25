@@ -286,6 +286,24 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 }
 
 /**
+ * The testgeval a configuration names, if it names one.
+ *
+ * **A blank is not a name.** A generated `launch.json` carries `"case": ""` as
+ * a placeholder, and `??` keeps an empty string — so the launch failed with
+ * "noemt een testgeval" on a configuration VS Code had just written itself, and
+ * the fix looked like editing a file that appeared correct. Trimmed for the same
+ * reason: a name typed with a stray space is a blank a reader cannot see.
+ */
+export function statedCase(config: Record<string, unknown>): string | undefined {
+	const stated = config.case;
+	if (typeof stated !== 'string') {
+		return undefined;
+	}
+	const trimmed = stated.trim();
+	return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
  * A launch configuration VS Code will actually launch.
  *
  * **Exported because it is the half that decides anything**, and a session
@@ -386,6 +404,16 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 			 * the resolver completes a configuration VS Code already decided to
 			 * launch, and this one is what it shows when there is nothing to decide
 			 * from. Without it the panel has nothing to offer for a `.test.rgs` file.
+			 *
+			 * **The only source of defaults.** `initialConfigurations` in the manifest
+			 * does the same job, and VS Code uses *both* — which wrote the same entry
+			 * into `launch.json` twice. That one is gone; this one is kept because it
+			 * can grow (one entry per testgeval in the file, say) where a manifest
+			 * literal cannot.
+			 *
+			 * It deliberately omits `case`, so a generated configuration asks which
+			 * testgeval at launch rather than shipping a placeholder that has to be
+			 * filled in before F5 does anything.
 			 */
 			provideDebugConfigurations() {
 				return [{
@@ -422,7 +450,7 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 						'Open een testset (*.test.rgs) om een testgeval stap voor stap uit te voeren.');
 					return undefined;
 				}
-				const chosen = (config as LaunchArguments).case
+				const chosen = statedCase(config as unknown as Record<string, unknown>)
 					?? await pickCase(clientOf(), program);
 				if (!chosen) {
 					// Cancelled, or the file has no runnable case. `undefined` ends the
