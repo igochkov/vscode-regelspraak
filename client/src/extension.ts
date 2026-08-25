@@ -18,6 +18,7 @@ import {
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
+import { registerDebugging } from './debugAdapter';
 import { TestExplorer } from './testExplorer';
 import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocument';
 import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
@@ -244,6 +245,13 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
 			(uri: string, run: TestRun, focus?: string) =>
 				runDocuments.show(Uri.parse(uri), run, focus)));
+
+	// X5. The adapter is inline — no second process, and no
+	// `@vscode/debugadapter` dependency, so the bundle stays the size it is. It
+	// is also the only module on either side that knows about DAP: the server
+	// exposes five operations behind one method, and the mismatches between the
+	// protocol and a rule engine (no call stack, no `stepIn`) stop here.
+	context.subscriptions.push(...registerDebugging(() => client));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).

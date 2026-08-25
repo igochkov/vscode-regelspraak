@@ -397,7 +397,62 @@
 				"editor.wordWrapColumn": 100,
 				"editor.wrappingIndent": "deepIndent"
 			}
-		}
+		},
+		"breakpoints": [
+			{
+				"language": "regelspraak"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "regelspraak",
+				"label": "RegelSpraak",
+				"languages": [
+					"regelspraak"
+				],
+				"configurationAttributes": {
+					"launch": {
+						"required": [
+							"program",
+							"case"
+						],
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "De testset (*.test.rgs) waarvan een testgeval stap voor stap wordt uitgevoerd.",
+								"default": "${file}"
+							},
+							"case": {
+								"type": "string",
+								"description": "De naam van het testgeval."
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "regelspraak",
+						"request": "launch",
+						"name": "Testgeval stap voor stap",
+						"program": "${file}",
+						"case": ""
+					}
+				],
+				"configurationSnippets": [
+					{
+						"label": "RegelSpraak: testgeval stap voor stap",
+						"description": "Voert één testgeval regel voor regel uit.",
+						"body": {
+							"type": "regelspraak",
+							"request": "launch",
+							"name": "${1:Testgeval stap voor stap}",
+							"program": "^\"\\${file}\"",
+							"case": "${2:001}"
+						}
+					}
+				]
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile && npm run bundle",
