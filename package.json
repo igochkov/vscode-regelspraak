@@ -407,6 +407,7 @@
 			{
 				"type": "regelspraak",
 				"label": "RegelSpraak",
+				"conditionDescription": "De naam van één instantie, bijvoorbeeld 'Alice' — de regel stopt dan alleen voor die instantie. Laat leeg om bij elke instantie te stoppen.",
 				"languages": [
 					"regelspraak"
 				],

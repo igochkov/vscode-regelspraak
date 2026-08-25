@@ -25,13 +25,16 @@ interface DebugStop {
 	location?: { uri: string; range: { start: { line: number; character: number } } };
 	values: { instance: string; attribute: string; value?: string; derived: boolean }[];
 	kenmerken: { instance: string; kenmerk: string; present: boolean }[];
+	parameters: { name: string; value: string }[];
+	rekendatum: string;
+	variables: string[];
 }
 
 interface DebugState {
 	session: boolean;
 	at?: DebugStop;
 	reason?: string;
-	marks?: { line: number; rule: string }[];
+	marks?: { line: number; rule: string; instance?: string }[];
 	answer?: string;
 	expression?: {
 		text: string;
@@ -196,7 +199,14 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				// while paused would be a second place a situation is authored.
 				this.reply(request, {
 					supportsConfigurationDoneRequest: true,
-					supportsConditionalBreakpoints: false,
+					// **A condition is an instance name, not an expression.** A rule
+					// fires per instance, so a breakpoint over ten thousand of them
+					// stops ten thousand times, and "only for Alice" is the question
+					// that raises. RegelSpraak has no expression that answers "which
+					// instance am I", so a general condition would have nothing to
+					// say here — and the narrow reading is stated in the manifest's
+					// `conditionDescription`, which VS Code shows in the edit box.
+					supportsConditionalBreakpoints: true,
 					// Watch, the Debug Console **and** a hover. The ranges this needs are
 					// the server's — `EvaluatableExpressionProvider` below fetches them —
 					// because the word under the cursor is half a RegelSpraak name.
@@ -229,7 +239,7 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 			case 'setBreakpoints': {
 				const args = (request.arguments ?? {}) as {
 					source?: { path?: string };
-					breakpoints?: { line: number }[];
+					breakpoints?: { line: number; condition?: string }[];
 				};
 				const lines = (args.breakpoints ?? []).map(one => one.line);
 				if (!args.source?.path) {
@@ -243,7 +253,10 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				const state = await this.ask({
 					kind: 'breakpoints',
 					textDocument: { uri: vscode.Uri.file(args.source.path).toString() },
-					lines: lines.map(one => one - 1)
+					points: (args.breakpoints ?? []).map(one => ({
+						line: one.line - 1,
+						...(one.condition ? { condition: one.condition } : {})
+					}))
 				});
 				const landed = new Set((state.marks ?? []).map(one => one.line));
 				this.marksBySource.set(args.source.path, landed.size);
@@ -415,8 +428,33 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				value: one.present ? 'waar' : 'onwaar',
 				variablesReference: 0
 			}))
+		].sort((a, b) => a.name.localeCompare(b.name, 'nl'));
+		// **Unsorted and in front**, because these are not more of the same list.
+		// The rekendatum decides which rule version fired (§4.2) and a parameter is
+		// global input neither the rule text nor the instance shows — a reader
+		// standing in a rule needs both to read what is in front of them, and
+		// sorting them into a wall of instance rows is where they would be lost.
+		const context = [
+			{ name: 'rekendatum', value: at.rekendatum, variablesReference: 0 },
+			...at.parameters
+				.slice()
+				.sort((a, b) => a.name.localeCompare(b.name, 'nl'))
+				.map(one => ({
+					name: one.name,
+					value: `${one.value}  (parameter)`,
+					variablesReference: 0
+				}))
 		];
-		return rows.sort((a, b) => a.name.localeCompare(b.name, 'nl'));
+		// **Named, never valued.** The stop is before the rule and §11.1 makes a
+		// variable lazy, so there is nothing to show; leaving them out entirely
+		// hid that the rule has them at all. Watch computes one on request, which
+		// is the laziness kept rather than worked around.
+		const variables = at.variables.map(name => ({
+			name,
+			value: 'nog niet berekend',
+			variablesReference: 0
+		}));
+		return [...context, ...variables, ...rows];
 	}
 }
 
