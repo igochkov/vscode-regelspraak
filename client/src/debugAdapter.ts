@@ -48,6 +48,12 @@ interface LaunchArguments {
 	case?: string;
 }
 
+/** Just enough of `regelspraak/tests` to offer a choice — see W7's own copy. */
+const TESTS = 'regelspraak/tests';
+interface TestCases {
+	testsets: { uri: string; name: string; cases: { name: string; testable: boolean }[] }[];
+}
+
 /**
  * One session's worth of DAP, over the server's five operations.
  *
@@ -280,6 +286,76 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 }
 
 /**
+ * A launch configuration VS Code will actually launch.
+ *
+ * **Exported because it is the half that decides anything**, and a session
+ * cannot be driven from a test — the same reason W4's `rangeOfGesture` and X2's
+ * `statusFor` live where a test can import them. It earned that the hard way:
+ * the first cut returned `{...config, program}`, which resolved without error
+ * and launched nothing at all, because with no `launch.json` VS Code hands the
+ * resolver an *empty* object and silently drops anything lacking `type`,
+ * `request` and `name`.
+ */
+export function launchConfiguration(
+	config: Record<string, unknown>,
+	program: string,
+	caseName: string
+): vscode.DebugConfiguration {
+	// Spread first, then fill: a `launch.json` may say anything else it likes,
+	// but the type and the request are what this provider *is*.
+	return {
+		...config,
+		type: 'regelspraak',
+		request: 'launch',
+		name: (config.name as string | undefined) || `${caseName} stap voor stap`,
+		program,
+		case: caseName
+	} as vscode.DebugConfiguration;
+}
+
+/**
+ * Which testgeval to step through — the one the cursor is in, or a choice.
+ *
+ * Asked of the server rather than parsed here: `regelspraak/tests` is already
+ * the one answer to "what testgevallen are there", and a second reading of the
+ * same file on this side would be a second answer that could disagree with the
+ * Testing view about what exists.
+ */
+async function pickCase(
+	client: LanguageClient | undefined,
+	program: string
+): Promise<string | undefined> {
+	if (!client) {
+		void vscode.window.showErrorMessage('De taalserver draait niet.');
+		return undefined;
+	}
+	// Compared as file paths, not as URI strings: the two sides spell a
+	// Windows drive letter differently often enough to be worth not relying on.
+	const wanted = vscode.Uri.file(program).fsPath;
+	let answer: TestCases;
+	try {
+		answer = await client.sendRequest<TestCases>(TESTS, {});
+	} catch {
+		return undefined;
+	}
+	const cases = answer.testsets
+		.filter(one => vscode.Uri.parse(one.uri).fsPath === wanted)
+		.flatMap(one => one.cases);
+	if (cases.length === 0) {
+		void vscode.window.showErrorMessage('Deze testset heeft geen testgeval om uit te voeren.');
+		return undefined;
+	}
+	// One case needs no question: asking would be ceremony over the only answer.
+	if (cases.length === 1) {
+		return cases[0].name;
+	}
+	// The cursor's own testgeval first, since that is usually the one meant.
+	return await vscode.window.showQuickPick(cases.map(one => one.name), {
+		title: 'Welk testgeval wil je stap voor stap uitvoeren?'
+	});
+}
+
+/**
  * Registers the adapter and the one launch configuration it understands.
  *
  * The client is passed as a **getter**, not a value: the extension registers
@@ -303,22 +379,58 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 		}),
 		vscode.debug.registerDebugConfigurationProvider('regelspraak', {
 			/**
-			 * F5 with no `launch.json`: run the testgeval the cursor is in.
+			 * What **Run and Debug** offers, and what a generated `launch.json`
+			 * starts from.
 			 *
-			 * Filled here rather than being demanded of the user, because the
-			 * alternative is an error on the first keystroke anyone tries.
+			 * Registered beside the resolver because the two cover different ways in:
+			 * the resolver completes a configuration VS Code already decided to
+			 * launch, and this one is what it shows when there is nothing to decide
+			 * from. Without it the panel has nothing to offer for a `.test.rgs` file.
 			 */
-			resolveDebugConfiguration(_folder, config) {
-				if (config.program) {
-					return config;
-				}
+			provideDebugConfigurations() {
+				return [{
+					type: 'regelspraak',
+					request: 'launch',
+					name: 'Testgeval stap voor stap',
+					program: '${file}'
+				}];
+			},
+			/**
+			 * F5 with no `launch.json`.
+			 *
+			 * **A complete configuration, not a patched one.** With no `launch.json`
+			 * VS Code hands the resolver an *empty* object — no `type`, no `request`,
+			 * no `name` — and silently does nothing with what comes back unless all
+			 * three are there. Returning `{...config, program}` therefore looked
+			 * right, resolved without error and launched nothing at all, which is
+			 * the worst shape a failure can take.
+			 *
+			 * The testgeval is **asked for** rather than demanded: it is the one
+			 * thing the editor cannot infer — a file holds several — and an error
+			 * saying `case` is missing would be true and useless. This is the same
+			 * reading §X2 takes of the run commands, where what a person invokes is
+			 * the lens above the thing they mean.
+			 */
+			async resolveDebugConfiguration(_folder, config) {
 				const editor = vscode.window.activeTextEditor;
-				if (!editor || !editor.document.fileName.endsWith('.test.rgs')) {
+				const program = (config as LaunchArguments).program
+					?? (editor?.document.fileName.endsWith('.test.rgs')
+						? editor.document.fileName
+						: undefined);
+				if (!program) {
 					void vscode.window.showErrorMessage(
 						'Open een testset (*.test.rgs) om een testgeval stap voor stap uit te voeren.');
 					return undefined;
 				}
-				return { ...config, program: editor.document.fileName };
+				const chosen = (config as LaunchArguments).case
+					?? await pickCase(clientOf(), program);
+				if (!chosen) {
+					// Cancelled, or the file has no runnable case. `undefined` ends the
+					// launch quietly, which is right for a Quick Pick someone dismissed.
+					return undefined;
+				}
+				return launchConfiguration(
+					config as unknown as Record<string, unknown>, program, chosen);
 			}
 		})
 	];
