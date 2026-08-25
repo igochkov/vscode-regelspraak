@@ -54,6 +54,17 @@
 			}
 		},
 		{
+			"match": "(?<![\\p{L}\\p{N}-])(Testset|Testgeval|[Tt]estinitialisatie)(?![\\p{L}\\p{N}-])[ \t]+([^\r\n]+)",
+			"captures": {
+				"1": {
+					"name": "keyword.declaration.regelspraak"
+				},
+				"2": {
+					"name": "entity.name.function.regelspraak"
+				}
+			}
+		},
+		{
 			"match": "(?<![\\p{L}\\p{N}-])(Objecttype|Extensie van objecttype|Wederkerig feittype|Feittype|Domein|Eenheidsysteem|Dimensie|Tijdlijn|Parameter|Dagsoort)(?![\\p{L}\\p{N}-])[ \\t]+((?:de |het |een )?)(.*?)(?=\\s*(?:[(;:,]|heeft tijdvakken van|is van het type|bestaande uit de|$))",
 			"captures": {
 				"1": {

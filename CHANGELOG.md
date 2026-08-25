@@ -141,6 +141,10 @@ model, teaching one, asking what happens if.
   plain text — `indien`, `moet gesteld worden op`, `kleiner is dan`, `n.v.t.`,
   the amounts, even the pipes. Only names showed, which made it look like a few
   missing keywords rather than a table with no highlighting at all.
+- **A testset's and testgeval's name reads as one name.** The label had no colour
+  of its own, so whichever words inside it happened to be keywords lit up on
+  their own — `Testgeval Een pasnummer **dat** de elfproef **niet** haalt`. It now
+  gets the same treatment a rule name has always had.
 - **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
   numbers in the same sentence. Same cause as the operators above: the scope name
   was one no theme has a rule for. A date now takes the colour your theme gives a
