@@ -82,7 +82,7 @@ model, teaching one, asking what happens if.
   a test whose run hit one now **fails**, rather than passing on a run that derived
   less than the model asked for.
 
-- **Five checks for mistakes that used to cost a run-time fault and nothing in
+- **Six checks for mistakes that used to cost a run-time fault and nothing in
   the editor.**
   - `RS114` — the possessive `haar`, which RegelSpraak does not have: `zijn` is
     the one spelling whatever the referent. Raised only where dropping the pronoun
@@ -93,6 +93,10 @@ model, teaching one, asking what happens if.
     on both declarations, since which one to rename is yours to choose.
   - `RS116` — `<onderwerp> een X is` where X names no characteristic, role or day
     type of the subject.
+  - `RS117` — `voor elke <naam>` naming a timeline nothing declares. The name was
+    not collected at all, so it had no colour, no hover and no <kbd>F12</kbd> —
+    and renaming the `Tijdlijn` left every attribute naming the old one and
+    silently without the timeline it says it has.
   - `RS615` — a `Feittype` whose cardinality line names a role that does not
     exist, so the cardinality was silently not recorded at all.
   - `RS101` and `RS102` now reach a **decision table's columns**. The identical
