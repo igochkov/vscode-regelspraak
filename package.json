@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -25,14 +25,16 @@
 	"categories": [
 		"Programming Languages",
 		"Linters",
-		"Testing"
+		"Testing",
+		"Debuggers"
 	],
 	"keywords": [
 		"regelspraak",
 		"rules as code",
 		"belastingdienst",
 		"rules engine",
-		"dutch"
+		"dutch",
+		"debugger"
 	],
 	"engines": {
 		"vscode": "^1.101.0"
