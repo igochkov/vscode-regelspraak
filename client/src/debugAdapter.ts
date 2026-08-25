@@ -72,7 +72,8 @@ interface TestCases {
  * `send` is the only place a message is shaped, so a reply and an event cannot
  * disagree about the envelope.
  */
-class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
+/** Exported for the ordering test below `handleMessage`; nothing else builds one. */
+export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	private readonly sent = new vscode.EventEmitter<vscode.DebugProtocolMessage>();
 	readonly onDidSendMessage = this.sent.event;
 	private sequence = 1;
@@ -81,8 +82,23 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	/** Held between `launch` and `configurationDone` — see the launch case. */
 	private pending: LaunchArguments | undefined;
 	private started = false;
-	/** How many breakpoints landed on a rule, which decides the entry stop. */
-	private marks = 0;
+	/**
+	 * How many breakpoints landed on a rule, per source — which decides the entry
+	 * stop.
+	 *
+	 * Per source and summed, because VS Code sends one `setBreakpoints` per file:
+	 * a single counter is overwritten by whichever file is sent last, so marks in
+	 * the testset were forgotten the moment a rule file was sent after it.
+	 */
+	private readonly marksBySource = new Map<string, number>();
+
+	private get marks(): number {
+		let total = 0;
+		for (const count of this.marksBySource.values()) {
+			total += count;
+		}
+		return total;
+	}
 
 	constructor(
 		private readonly client: LanguageClient,
@@ -102,8 +118,25 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 		this.sent.dispose();
 	}
 
+	/**
+	 * One request at a time, in the order they arrived.
+	 *
+	 * **DAP requests are ordered and handling them concurrently is a race.** The
+	 * one that bit: `setBreakpoints` awaits a round trip to the server, and
+	 * `configurationDone` — which arrives right behind it and decides whether to
+	 * stand before the first rule — read the breakpoint count while that trip was
+	 * still out. So F5 stopped on entry as though nothing were marked, and
+	 * pressing Continue then went straight to the breakpoint, which is what makes
+	 * it read as "the first stop is spurious" rather than as a race.
+	 *
+	 * It surfaced when the server's answer got slower, not when it became wrong;
+	 * chaining is the fix, because every other pair has the same hazard latent.
+	 */
+	private tail: Promise<void> = Promise.resolve();
+
 	handleMessage(message: vscode.DebugProtocolMessage): void {
-		void this.dispatch(message as { seq: number; type: string; command: string; arguments?: unknown });
+		const request = message as { seq: number; type: string; command: string; arguments?: unknown };
+		this.tail = this.tail.then(() => this.dispatch(request)).catch(() => undefined);
 	}
 
 	// -----------------------------------------------------------------------
@@ -213,7 +246,7 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					lines: lines.map(one => one - 1)
 				});
 				const landed = new Set((state.marks ?? []).map(one => one.line));
-				this.marks = landed.size;
+				this.marksBySource.set(args.source.path, landed.size);
 				this.reply(request, {
 					// **A grey dot says why.** DAP's `message` is what VS Code shows when
 					// a breakpoint could not be verified, and without it the only signal

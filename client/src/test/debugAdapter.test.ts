@@ -10,7 +10,12 @@
 
 import * as assert from 'assert';
 
-import { launchConfiguration, statedCase, stopsOnEntry } from '../debugAdapter';
+import { LanguageClient } from 'vscode-languageclient/node';
+import * as vscode from 'vscode';
+
+import {
+	RegelSpraakDebugAdapter, launchConfiguration, statedCase, stopsOnEntry
+} from '../debugAdapter';
 
 suite('Debug-launchconfiguratie (X5 deel C)', () => {
 	test('vult aan wat F5 zonder launch.json niet meestuurt', () => {
@@ -58,5 +63,52 @@ suite('Debug-launchconfiguratie (X5 deel C)', () => {
 			{ type: 'node', request: 'attach' }, 'd:/model/boekerij.test.rgs', '001');
 		assert.strictEqual(config.type, 'regelspraak');
 		assert.strictEqual(config.request, 'launch');
+	});
+});
+
+suite('Debug-adapter: volgorde (X5 deel E)', () => {
+	test('behandelt één verzoek tegelijk, in de volgorde van binnenkomst', async () => {
+		// **DAP-verzoeken zijn geordend; ze tegelijk afhandelen is een race.** Die
+		// die beet: `setBreakpoints` wacht op een rondje naar de server, en
+		// `configurationDone` — dat er vlak achteraan komt en beslist of de run
+		// vóór de eerste regel blijft staan — las de breekpuntentelling terwijl dat
+		// rondje nog onderweg was. F5 stopte dan bij de eerste regel alsof er niets
+		// gemarkeerd was, en Continue ging vervolgens meteen naar het breekpunt —
+		// wat het laat lezen als "die eerste stop is overbodig" in plaats van als
+		// een race. Hij kwam boven toen het antwoord van de server tráger werd, niet
+		// toen het fout werd.
+		const seen: string[] = [];
+		let delay = 30;
+		const client = {
+			// The adapter subscribes to `regelspraak/debugStopped` on construction.
+			onNotification: (): { dispose(): void } => ({ dispose: (): void => undefined }),
+			sendRequest: async (): Promise<unknown> => {
+				const mine = delay;
+				delay = 0;
+				await new Promise(resolve => setTimeout(resolve, mine));
+				return { session: false, marks: [] };
+			}
+		} as unknown as LanguageClient;
+		const adapter = new RegelSpraakDebugAdapter(client, {} as vscode.DebugSession);
+		adapter.onDidSendMessage(message => {
+			const reply = message as { command?: string };
+			if (reply.command) {
+				seen.push(reply.command);
+			}
+		});
+
+		// Het eerste verzoek is traag, het tweede niet. Zonder ketening antwoordt
+		// het tweede eerst.
+		adapter.handleMessage({
+			seq: 1, type: 'request', command: 'setBreakpoints',
+			arguments: { source: { path: 'd:/m/a.test.rgs' }, breakpoints: [{ line: 21 }] }
+		} as vscode.DebugProtocolMessage);
+		adapter.handleMessage({
+			seq: 2, type: 'request', command: 'threads'
+		} as vscode.DebugProtocolMessage);
+
+		await new Promise(resolve => setTimeout(resolve, 200));
+		assert.deepStrictEqual(seen, ['setBreakpoints', 'threads']);
+		adapter.dispose();
 	});
 });
