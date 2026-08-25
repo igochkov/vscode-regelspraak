@@ -46,7 +46,7 @@
 			"match": "(?<![\\p{L}\\p{N}-])(Regel|Beslistabel)(?![\\p{L}\\p{N}-])[ \\t]+([^\\r\\n]+)",
 			"captures": {
 				"1": {
-					"name": "keyword.control.regelspraak"
+					"name": "keyword.declaration.regelspraak"
 				},
 				"2": {
 					"name": "entity.name.function.regelspraak"
@@ -355,8 +355,12 @@
 			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}-])(?:verenigd met|Beslistabel)(?![\\p{L}\\p{N}-])",
+			"match": "(?<![\\p{L}\\p{N}-])(?:verenigd met)(?![\\p{L}\\p{N}-])",
 			"name": "keyword.control.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}-])(?:Beslistabel)(?![\\p{L}\\p{N}-])",
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:afgerond op)(?![\\p{L}\\p{N}-])",
@@ -564,7 +568,7 @@
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:Regel)(?![\\p{L}\\p{N}-])",
-			"name": "keyword.control.regelspraak"
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}-])(?:Tekst|getal)(?![\\p{L}\\p{N}-])",
