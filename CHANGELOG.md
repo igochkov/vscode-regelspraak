@@ -137,6 +137,10 @@ model, teaching one, asking what happens if.
   the rule's own subject, so resolving them the ordinary way gave a confidently
   wrong answer instead of no answer. Found by a sweep over every name in every
   model this project ships; what remains uncovered is deliberate.
+- **A decision table's rows are highlighted.** Everything inside one rendered as
+  plain text — `indien`, `moet gesteld worden op`, `kleiner is dan`, `n.v.t.`,
+  the amounts, even the pipes. Only names showed, which made it look like a few
+  missing keywords rather than a table with no highlighting at all.
 - **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
   numbers in the same sentence. Same cause as the operators above: the scope name
   was one no theme has a rule for. A date now takes the colour your theme gives a

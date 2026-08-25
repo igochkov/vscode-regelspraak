@@ -89,7 +89,12 @@
 			"name": "punctuation.definition.list.dash.regelspraak"
 		},
 		{
-			"begin": "^(?=[ \\t]*\\|)",
+			"begin": "^[ \\t]*(\\|)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.separator.table.regelspraak"
+				}
+			},
 			"end": "$",
 			"name": "meta.table.beslistabel.regelspraak",
 			"patterns": [
