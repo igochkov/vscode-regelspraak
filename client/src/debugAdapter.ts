@@ -33,6 +33,13 @@ interface DebugState {
 	reason?: string;
 	marks?: { line: number; rule: string }[];
 	answer?: string;
+	expression?: {
+		text: string;
+		range: {
+			start: { line: number; character: number };
+			end: { line: number; character: number };
+		};
+	};
 }
 
 const DEBUG = 'regelspraak/debug';
@@ -157,9 +164,10 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				this.reply(request, {
 					supportsConfigurationDoneRequest: true,
 					supportsConditionalBreakpoints: false,
-					// Watch and the Debug Console; a hover would need ranges this side
-					// does not have, so it is left off rather than answered wrongly.
-					supportsEvaluateForHovers: false,
+					// Watch, the Debug Console **and** a hover. The ranges this needs are
+					// the server's — `EvaluatableExpressionProvider` below fetches them —
+					// because the word under the cursor is half a RegelSpraak name.
+					supportsEvaluateForHovers: true,
 					supportsStepBack: false,
 					supportsSetVariable: false,
 					supportsRestartRequest: false,
@@ -485,6 +493,47 @@ async function pickCase(
  */
 export function registerDebugging(clientOf: () => LanguageClient | undefined): vscode.Disposable[] {
 	return [
+		/**
+		 * What a hover while stopped is *about* (§X5 part F).
+		 *
+		 * Without this VS Code guesses, and its guess is the word under the
+		 * cursor: `pensioengrondslag` out of `zijn pensioengrondslag`, which is a
+		 * different phrase and — a name being greedy and multi-word ([D-12]) —
+		 * frequently not one the model knows at all. The server answers with the
+		 * range the builder stamped on the reference, so the thing that lights up
+		 * under the pointer is the thing the model believes is one reference.
+		 *
+		 * Registered for the language rather than inside the adapter because VS
+		 * Code asks *before* a session has anything to say, and it asks the editor,
+		 * not the debuggee. Returning nothing lets the ordinary hover through,
+		 * which is what happens everywhere except the rule the run stands at.
+		 */
+		vscode.languages.registerEvaluatableExpressionProvider('regelspraak', {
+			async provideEvaluatableExpression(document, position) {
+				const client = clientOf();
+				if (!client || vscode.debug.activeDebugSession?.type !== 'regelspraak') {
+					return undefined;
+				}
+				const state = await client.sendRequest<DebugState>(DEBUG, {
+					kind: 'expressionAt',
+					textDocument: { uri: document.uri.toString() },
+					position: { line: position.line, character: position.character }
+				});
+				const found = state.expression;
+				if (!found) {
+					return undefined;
+				}
+				// The text travels as well as the range: the range is what VS Code
+				// underlines, and the text is what it sends back as `evaluate` — and
+				// re-reading the range here would be a second reader of the same
+				// phrase, free to disagree with the one that chose it.
+				return new vscode.EvaluatableExpression(
+					new vscode.Range(
+						found.range.start.line, found.range.start.character,
+						found.range.end.line, found.range.end.character),
+					found.text);
+			}
+		}),
 		vscode.debug.registerDebugAdapterDescriptorFactory('regelspraak', {
 			createDebugAdapterDescriptor(session) {
 				const client = clientOf();
