@@ -285,6 +285,11 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	}
 }
 
+/** One comparable form of a file path, case-folded where the platform is. */
+function pathKey(uri: vscode.Uri): string {
+	return process.platform === 'win32' ? uri.fsPath.toLowerCase() : uri.fsPath;
+}
+
 /**
  * The testgeval a configuration names, if it names one.
  *
@@ -347,9 +352,10 @@ async function pickCase(
 		void vscode.window.showErrorMessage('De taalserver draait niet.');
 		return undefined;
 	}
-	// Compared as file paths, not as URI strings: the two sides spell a
-	// Windows drive letter differently often enough to be worth not relying on.
-	const wanted = vscode.Uri.file(program).fsPath;
+	// Compared as file paths and not as URI strings: the two sides percent-encode
+	// a space differently, and a drive letter's case is not a difference on the
+	// platform that has drive letters.
+	const wanted = pathKey(vscode.Uri.file(program));
 	let answer: TestCases;
 	try {
 		answer = await client.sendRequest<TestCases>(TESTS, {});
@@ -357,10 +363,13 @@ async function pickCase(
 		return undefined;
 	}
 	const cases = answer.testsets
-		.filter(one => vscode.Uri.parse(one.uri).fsPath === wanted)
+		.filter(one => pathKey(vscode.Uri.parse(one.uri)) === wanted)
 		.flatMap(one => one.cases);
 	if (cases.length === 0) {
-		void vscode.window.showErrorMessage('Deze testset heeft geen testgeval om uit te voeren.');
+		// The file is named, because the two ways to get here read identically
+		// otherwise: a testset with no testgeval, and a path that matched none.
+		void vscode.window.showErrorMessage(
+			`Geen testgeval gevonden in '${vscode.Uri.file(program).fsPath}'.`);
 		return undefined;
 	}
 	// One case needs no question: asking would be ceremony over the only answer.
@@ -439,7 +448,21 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 			 * reading §X2 takes of the run commands, where what a person invokes is
 			 * the lens above the thing they mean.
 			 */
-			async resolveDebugConfiguration(_folder, config) {
+			/**
+			 * The half that needs no path.
+			 *
+			 * **Variables are *not* substituted yet here** — `program` is still the
+			 * literal `${file}` a generated `launch.json` writes. Looking a testset
+			 * up by that path found nothing and reported "deze testset heeft geen
+			 * testgeval", which is a true sentence about a path that does not exist
+			 * and tells the reader nothing. So this hook only fills in what is
+			 * knowable without one.
+			 *
+			 * A complete configuration all the same: with no `launch.json` VS Code
+			 * hands this an empty object and silently drops anything lacking `type`,
+			 * `request` and `name`.
+			 */
+			resolveDebugConfiguration(_folder, config) {
 				const editor = vscode.window.activeTextEditor;
 				const program = (config as LaunchArguments).program
 					?? (editor?.document.fileName.endsWith('.test.rgs')
@@ -448,6 +471,29 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 				if (!program) {
 					void vscode.window.showErrorMessage(
 						'Open een testset (*.test.rgs) om een testgeval stap voor stap uit te voeren.');
+					return undefined;
+				}
+				return {
+					...config,
+					type: 'regelspraak',
+					request: 'launch',
+					name: config.name || 'Testgeval stap voor stap',
+					program
+				};
+			},
+
+			/**
+			 * The half that needs the path, which by now is a real one.
+			 *
+			 * Called directly after the hook above with every variable substituted,
+			 * so this is the first point at which the testset can be looked up and
+			 * the testgeval asked for.
+			 */
+			async resolveDebugConfigurationWithSubstitutedVariables(_folder, config) {
+				const program = (config as LaunchArguments).program;
+				if (!program?.endsWith('.test.rgs')) {
+					void vscode.window.showErrorMessage(
+						`'${program ?? ''}' is geen testset (*.test.rgs).`);
 					return undefined;
 				}
 				const chosen = statedCase(config as unknown as Record<string, unknown>)
