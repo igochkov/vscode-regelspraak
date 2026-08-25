@@ -115,6 +115,13 @@ model, teaching one, asking what happens if.
   them. They were emitted under a scope name themes do not know, and now use the
   one themes list beside `instanceof` and `typeof`. No colour is imposed — which
   colour it is remains your theme's business.
+- **Every unit is coloured, not only the ones your model declares.** A unit was
+  coloured if and only if an `Eenheidsysteem` in the workspace declared it — so
+  `kg` and `pt` were, while `jaar`, `uur`, `dag` and `%` were not, and a compound
+  like `€/dag` or `kg/uur` coloured its left half and left the right half plain.
+  The built-in units come with §3.7 and are never declared by anyone; so does a
+  standard currency code the model has not declared. An unknown unit still gets
+  no colour, which is what `RS106` is for.
 - **Unknown-name diagnostics wait for the first workspace scan to finish.** A file
   opened during it was told its references were unknown and told otherwise a
   second later.
