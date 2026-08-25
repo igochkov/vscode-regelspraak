@@ -119,6 +119,13 @@ model, teaching one, asking what happens if.
   them. They were emitted under a scope name themes do not know, and now use the
   one themes list beside `instanceof` and `typeof`. No colour is imposed — which
   colour it is remains your theme's business.
+- **Three more names the editor knew and never showed.** The unit a conversion
+  converts to (`= 1000 g`), the timeline in `voor elke <naam>`, and the object
+  type a decision table's conclusion is about (`een Lid is jeugdlid` coloured
+  `jeugdlid` and not `Lid`). Each was recorded by the model and read by nobody, so
+  none of them had colour, hover, **Go to Definition** or — the part that cost —
+  **rename**: renaming what they name left them behind, pointing at something that
+  no longer exists.
 - **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
   numbers in the same sentence. Same cause as the operators above: the scope name
   was one no theme has a rule for. A date now takes the colour your theme gives a
