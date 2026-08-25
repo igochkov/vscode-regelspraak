@@ -215,7 +215,22 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				const landed = new Set((state.marks ?? []).map(one => one.line));
 				this.marks = landed.size;
 				this.reply(request, {
-					breakpoints: lines.map(line => ({ verified: landed.has(line - 1), line }))
+					// **A grey dot says why.** DAP's `message` is what VS Code shows when
+					// a breakpoint could not be verified, and without it the only signal
+					// is the hollow circle — which reads as "nothing happened" rather
+					// than "nothing here to stop at". One sentence for both file kinds,
+					// because which kind this is belongs to the server (`isTestUri` is
+					// asked exactly once, by the index) and a tooltip is no reason for
+					// this side to learn it.
+					breakpoints: lines.map(line => landed.has(line - 1)
+						? { verified: true, line }
+						: {
+							verified: false,
+							line,
+							message: 'Hier is geen regel om bij stil te staan. Zet een breekpunt'
+								+ ' op een Regel of Beslistabel, of op een Verwacht-regel waarvan'
+								+ ' het model de waarde afleidt.'
+						})
 				});
 				return;
 			}
