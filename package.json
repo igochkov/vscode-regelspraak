@@ -424,6 +424,11 @@
 							"case": {
 								"type": "string",
 								"description": "De naam van het testgeval. Weglaten om er bij het starten een te kiezen."
+							},
+							"stopOnEntry": {
+								"type": "boolean",
+								"description": "Stilstaan vóór de eerste regel. Zet op false om door te lopen tot het eerste breekpunt.",
+								"default": true
 							}
 						}
 					}

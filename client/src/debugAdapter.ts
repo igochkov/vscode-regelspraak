@@ -31,6 +31,7 @@ interface DebugState {
 	session: boolean;
 	at?: DebugStop;
 	reason?: string;
+	marks?: { line: number; rule: string }[];
 }
 
 const DEBUG = 'regelspraak/debug';
@@ -46,6 +47,8 @@ interface LaunchArguments {
 	program?: string;
 	/** The testgeval to run. */
 	case?: string;
+	/** Stand before the first rule, rather than running to the first breakpoint. */
+	stopOnEntry?: boolean;
 }
 
 /** Just enough of `regelspraak/tests` to offer a choice — see W7's own copy. */
@@ -67,6 +70,9 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	private sequence = 1;
 	private stopped: DebugStop | undefined;
 	private listener: vscode.Disposable | undefined;
+	/** Held between `launch` and `configurationDone` — see the launch case. */
+	private pending: LaunchArguments | undefined;
+	private started = false;
 
 	constructor(
 		private readonly client: LanguageClient,
@@ -130,7 +136,9 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 			return;
 		}
 		if (state.at) {
-			this.event('stopped', { reason: 'step', threadId: THREAD, allThreadsStopped: true });
+			this.event('stopped', {
+				reason: 'breakpoint', threadId: THREAD, allThreadsStopped: true
+			});
 		}
 	}
 
@@ -145,6 +153,7 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				// while paused would be a second place a situation is authored.
 				this.reply(request, {
 					supportsConfigurationDoneRequest: true,
+					supportsConditionalBreakpoints: false,
 					supportsStepBack: false,
 					supportsSetVariable: false,
 					supportsRestartRequest: false,
@@ -159,27 +168,74 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					this.fail(request, 'Een launch-configuratie noemt een testset en een testgeval.');
 					return;
 				}
+				// **Held, not started.** DAP sends `setBreakpoints` between `launch`
+				// and `configurationDone`, so a session started here would already be
+				// standing before the first rule with no breakpoints set — and since
+				// the run is synchronous, ones arriving later cannot reach it before
+				// it has passed them. Starting at `configurationDone` is what makes a
+				// breakpoint on the first rule work at all.
+				this.pending = args;
+				this.reply(request);
+				return;
+			}
+
+			case 'setBreakpoints': {
+				const args = (request.arguments ?? {}) as {
+					source?: { path?: string };
+					breakpoints?: { line: number }[];
+				};
+				const lines = (args.breakpoints ?? []).map(one => one.line);
+				if (!args.source?.path) {
+					this.reply(request, { breakpoints: lines.map(() => ({ verified: false })) });
+					return;
+				}
+				// Lines in, rules out: which rule a line is inside is a question
+				// about the model, so the server answers it and this side never
+				// parses anything to place a breakpoint. DAP counts in 1-based lines
+				// and everything below the wire is 0-based.
+				const state = await this.ask({
+					kind: 'breakpoints',
+					textDocument: { uri: vscode.Uri.file(args.source.path).toString() },
+					lines: lines.map(one => one - 1)
+				});
+				const landed = new Set((state.marks ?? []).map(one => one.line));
+				this.reply(request, {
+					breakpoints: lines.map(line => ({ verified: landed.has(line - 1), line }))
+				});
+				return;
+			}
+
+			case 'configurationDone': {
+				this.reply(request);
+				const args = this.pending;
+				this.pending = undefined;
+				if (!args?.program || !args.case || this.started) {
+					return;
+				}
+				this.started = true;
 				const state = await this.ask({
 					kind: 'start',
 					textDocument: { uri: vscode.Uri.file(args.program).toString() },
 					case: args.case
 				});
 				if (!state.session) {
-					this.fail(request, state.reason ?? 'De sessie kon niet worden gestart.');
+					void vscode.window.showErrorMessage(
+						state.reason ?? 'De sessie kon niet worden gestart.');
 					this.event('terminated');
 					return;
 				}
 				this.stopped = state.at;
-				this.reply(request);
-				// A session starts standing before the first rule, so the first
-				// thing the UI hears is a stop rather than a run it has to catch.
+				// A session always starts standing before the first rule. Unless the
+				// configuration says otherwise it stays there, which is the right
+				// default for a tool whose job is exploring: the alternative is a run
+				// that is over before anyone saw it, for a model with no breakpoints.
+				if (args.stopOnEntry === false) {
+					await this.ask({ kind: 'resume' });
+					return;
+				}
 				this.event('stopped', { reason: 'entry', threadId: THREAD, allThreadsStopped: true });
 				return;
 			}
-
-			case 'configurationDone':
-				this.reply(request);
-				return;
 
 			case 'threads':
 				this.reply(request, {
