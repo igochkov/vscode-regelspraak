@@ -32,6 +32,7 @@ interface DebugState {
 	at?: DebugStop;
 	reason?: string;
 	marks?: { line: number; rule: string }[];
+	answer?: string;
 }
 
 const DEBUG = 'regelspraak/debug';
@@ -154,6 +155,9 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				this.reply(request, {
 					supportsConfigurationDoneRequest: true,
 					supportsConditionalBreakpoints: false,
+					// Watch and the Debug Console; a hover would need ranges this side
+					// does not have, so it is left off rather than answered wrongly.
+					supportsEvaluateForHovers: false,
 					supportsStepBack: false,
 					supportsSetVariable: false,
 					supportsRestartRequest: false,
@@ -278,6 +282,26 @@ class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 			case 'variables':
 				this.reply(request, { variables: this.situation() });
 				return;
+
+			case 'evaluate': {
+				// Watch, the Debug Console and a hover all arrive here. The
+				// expression is evaluated **where the run stands**, in that
+				// instance's scope, and comes back already rendered — this side has
+				// no arithmetic and no unit algebra, and a Watch box showing a second
+				// notation is the divergence §X4's one-renderer rule exists to
+				// prevent.
+				const args = (request.arguments ?? {}) as { expression?: string };
+				if (!args.expression) {
+					this.reply(request, { result: '', variablesReference: 0 });
+					return;
+				}
+				const state = await this.ask({ kind: 'evaluate', expression: args.expression });
+				this.reply(request, {
+					result: state.answer ?? '',
+					variablesReference: 0
+				});
+				return;
+			}
 
 			case 'continue':
 				await this.ask({ kind: 'resume' });
