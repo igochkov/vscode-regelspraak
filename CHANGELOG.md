@@ -119,13 +119,24 @@ model, teaching one, asking what happens if.
   them. They were emitted under a scope name themes do not know, and now use the
   one themes list beside `instanceof` and `typeof`. No colour is imposed — which
   colour it is remains your theme's business.
-- **Three more names the editor knew and never showed.** The unit a conversion
-  converts to (`= 1000 g`), the timeline in `voor elke <naam>`, and the object
-  type a decision table's conclusion is about (`een Lid is jeugdlid` coloured
-  `jeugdlid` and not `Lid`). Each was recorded by the model and read by nobody, so
-  none of them had colour, hover, **Go to Definition** or — the part that cost —
-  **rename**: renaming what they name left them behind, pointing at something that
-  no longer exists.
+- **Names the editor knew and never showed.** Seven positions, each recorded by
+  the model and read by nobody — so none had colour, hover, **Go to Definition**
+  or, the part that cost, **rename**: renaming what they name left them behind,
+  pointing at something that no longer exists.
+
+  The unit a conversion converts to (`= 1000 g`); the timeline in `voor elke
+  <naam>`; the object type a decision table's conclusion is about (`een Lid is
+  jeugdlid` coloured `jeugdlid` and not `Lid`); a unit inside an expression (`… in
+  millisecondes`, and a literal's suffix); the attributes a uniqueness rule ranges
+  over (`de pasnummers van alle Leden`); the values in a dimension selection; and
+  the attributes an object creation assigns (`met het deelnemersaantal gelijk aan
+  1`).
+
+  The last three share a shape worth naming: they belong to *another name in the
+  same sentence* — `Leden`, the dimension, the type being created — rather than to
+  the rule's own subject, so resolving them the ordinary way gave a confidently
+  wrong answer instead of no answer. Found by a sweep over every name in every
+  model this project ships; what remains uncovered is deliberate.
 - **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
   numbers in the same sentence. Same cause as the operators above: the scope name
   was one no theme has a rule for. A date now takes the colour your theme gives a
