@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 
 import { State as ClientState } from 'vscode-languageclient/node';
 
+import { ServerStatus } from '../serverStatus';
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
 interface ServerStatusLike {
@@ -65,5 +66,29 @@ suite('Taalserverstatus (C7)', () => {
 		// En weer terug, zodat de volgende suite een draaiende server aantreft.
 		status.follow(ClientState.Running);
 		assert.equal(status.state, 'ready');
+	});
+
+	// C6: hetzelfde moment, maar hardop. De statusbalk kleurt rood en dat is de
+	// juiste luidheid voor al het andere hier — maar hier herstelt niets vanzelf,
+	// en wie niet naar de statusbalk kijkt merkt het doordat functies zwijgen.
+	test('meldt een val precies één keer per val, niet per stop', () => {
+		let calls = 0;
+		const own = new ServerStatus(() => { calls++; });
+		try {
+			own.follow(ClientState.Running);
+			own.follow(ClientState.Stopped);
+			assert.equal(calls, 1, 'een val hoort één melding te geven');
+
+			// Een tweede `Stopped` zonder tussenliggende goede start is dezelfde val;
+			// een server die blijft rondtollen mag niet blijven melden.
+			own.follow(ClientState.Stopped);
+			assert.equal(calls, 1, 'dezelfde val hoort niet twee keer te melden');
+
+			own.follow(ClientState.Running);
+			own.follow(ClientState.Stopped);
+			assert.equal(calls, 2, 'een nieuwe val na een goede start is nieuw nieuws');
+		} finally {
+			own.dispose();
+		}
 	});
 });

@@ -75,7 +75,14 @@ export class ServerStatus implements Disposable {
 	private current: ServerState = 'starting';
 	private explanation: string | undefined;
 
-	constructor() {
+	/**
+	 * Told when a **running** server dies (C6).
+	 *
+	 * A callback rather than a notification raised here: what to say and which
+	 * actions to offer is the extension's decision — it owns the restart command
+	 * — and this class stays a status-bar item that a test can drive.
+	 */
+	constructor(private readonly onCrash?: () => void) {
 		// Behind the scenario item: which testgeval a run uses is checked before
 		// every run, and this is read once and then forgotten.
 		const { item, dispose } = regelSpraakStatusItem('regelspraak.serverStatus', 99);
@@ -137,6 +144,12 @@ export class ServerStatus implements Disposable {
 			this.set('ready');
 		} else if (state === ClientState.Stopped && this.current === 'ready') {
 			this.set('error', 'De taalserver is gestopt nadat hij gestart was. Bekijk het logboek voor de oorzaak.');
+			// **Once per crash, and the guard above is what makes that true**: the
+			// transition only fires from `ready`, so a server that keeps cycling
+			// says so on each *good* start it loses and not on each stop. A
+			// deliberate stop never reaches here, `stopClient` setting `stopped`
+			// before it calls `stop()`.
+			this.onCrash?.();
 		}
 	}
 

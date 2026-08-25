@@ -30,6 +30,35 @@ const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
 
 /**
+ * Says out loud that a running language server has died (C6).
+ *
+ * **The one thing here that interrupts, and it earns it.** C7's status item goes
+ * red at the same moment, which is the right loudness for everything else this
+ * extension reports — but nothing recovers from this on its own, and a reader
+ * who is not watching the status bar learns about it by noticing that features
+ * have quietly stopped answering. That is exactly the state NFR-5 names: the one
+ * thing worse than no language support is language support that looks like an
+ * opinion.
+ *
+ * Two actions, because there are two things to do about it and both already
+ * exist: read why, or try again. Dismissing is the third and needs no button.
+ */
+async function announceCrash(): Promise<void> {
+	const readLog = 'Toon log';
+	const restart = 'Opnieuw starten';
+	const chosen = await window.showErrorMessage(
+		'De RegelSpraak-taalserver is gestopt. Diagnostiek, navigatie en aanvulling zijn tot die tijd leeg.',
+		readLog,
+		restart
+	);
+	if (chosen === readLog) {
+		await commands.executeCommand(SHOW_LOG_COMMAND);
+	} else if (chosen === restart) {
+		await commands.executeCommand(RESTART_COMMAND);
+	}
+}
+
+/**
  * Opens the peek list a CodeLens counted (P13).
  *
  * `editor.action.showReferences` is VS Code's own and does exactly this, but it
@@ -191,7 +220,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	output = window.createOutputChannel('RegelSpraak Language Server');
 	context.subscriptions.push(output);
 
-	serverStatus = new ServerStatus();
+	serverStatus = new ServerStatus(() => void announceCrash());
 	context.subscriptions.push(
 		serverStatus,
 		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
