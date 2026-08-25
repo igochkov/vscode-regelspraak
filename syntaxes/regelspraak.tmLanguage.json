@@ -66,7 +66,7 @@
 		},
 		{
 			"match": "(?:dd\\.\\s*)?\\d{1,2}-\\d{1,2}-\\d{4}(?:\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3})?",
-			"name": "constant.other.date.regelspraak"
+			"name": "constant.numeric.date.regelspraak"
 		},
 		{
 			"match": "-?\\d+(?:,\\d+)?%",

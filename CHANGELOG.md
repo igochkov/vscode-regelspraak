@@ -115,6 +115,10 @@ model, teaching one, asking what happens if.
   them. They were emitted under a scope name themes do not know, and now use the
   one themes list beside `instanceof` and `typeof`. No colour is imposed — which
   colour it is remains your theme's business.
+- **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
+  numbers in the same sentence. Same cause as the operators above: the scope name
+  was one no theme has a rule for. A date now takes the colour your theme gives a
+  literal value — which colour that is remains your theme's business.
 - **Every unit is coloured, not only the ones your model declares.** A unit was
   coloured if and only if an `Eenheidsysteem` in the workspace declared it — so
   `kg` and `pt` were, while `jaar`, `uur`, `dag` and `%` were not, and a compound
