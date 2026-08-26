@@ -112,3 +112,142 @@ suite('Debug-adapter: volgorde (X5 deel E)', () => {
 		adapter.dispose();
 	});
 });
+
+/** An adapter over a canned server, with every reply it sends collected. */
+function drive(reply: (request: { kind: string }) => unknown): {
+	adapter: RegelSpraakDebugAdapter;
+	sent: Record<string, unknown>[];
+} {
+	const sent: Record<string, unknown>[] = [];
+	const client = {
+		onNotification: (): { dispose(): void } => ({ dispose: (): void => undefined }),
+		sendRequest: async (_method: string, request: { kind: string }): Promise<unknown> =>
+			reply(request)
+	} as unknown as LanguageClient;
+	const adapter = new RegelSpraakDebugAdapter(client, {} as vscode.DebugSession);
+	adapter.onDidSendMessage(message => sent.push(message as Record<string, unknown>));
+	return { adapter, sent };
+}
+
+function send(adapter: RegelSpraakDebugAdapter, seq: number, command: string, args?: unknown): void {
+	adapter.handleMessage(
+		{ seq, type: 'request', command, arguments: args } as vscode.DebugProtocolMessage);
+}
+
+const settle = async (): Promise<void> =>
+	await new Promise(resolve => setTimeout(resolve, 60));
+
+// §X5 deel D — de Variabelen-lade.
+//
+// Een waarde komt als `value` **of** als `segments`, nooit als allebei. Deze
+// kant droeg alleen `value`, dus elk tijdsafhankelijk attribuut stond als *leeg*
+// in de lade — de server stuurde de periodes en niemand las ze. `coordinates`
+// ontbrak om dezelfde reden en kostte hetzelfde: twee cellen van één
+// gedimensioneerd attribuut werden twee regels met dezelfde naam en
+// verschillende waarden.
+suite('Debug-adapter: de stand in de Variabelen-lade (X5 deel D)', () => {
+	const STOP = {
+		rule: 'bepaal contributie',
+		instance: 'Alice',
+		parameters: [{ name: 'basistarief', value: '10 €' }],
+		rekendatum: '15-06-2026',
+		variables: ['korting'],
+		kenmerken: [],
+		values: [
+			{ instance: 'Alice', attribute: 'contributie', value: '40 €', derived: true },
+			{
+				instance: 'Alice', attribute: 'tarief', derived: true,
+				segments: [
+					{ from: '01-01-2026', to: '01-07-2026', value: '10 €' },
+					{ from: '01-07-2026', value: '12 €' }
+				]
+			},
+			{
+				instance: 'Alice', attribute: 'omzet', coordinates: ['roman'],
+				value: '3 €', derived: true
+			},
+			{
+				instance: 'Alice', attribute: 'omzet', coordinates: ['strip'],
+				value: '7 €', derived: true
+			}
+		]
+	};
+
+	async function variables(): Promise<{ name: string; value: string }[]> {
+		const { adapter, sent } = drive(request =>
+			request.kind === 'start' ? { session: true, at: STOP } : { session: true, at: STOP });
+		send(adapter, 1, 'launch', { program: 'd:/m/a.test.rgs', case: '001' });
+		send(adapter, 2, 'configurationDone');
+		send(adapter, 3, 'variables', { variablesReference: 1000 });
+		await settle();
+		const answer = sent.find(one => one.command === 'variables');
+		assert.ok(answer, 'de lade hoort beantwoord te worden');
+		adapter.dispose();
+		return (answer.body as { variables: { name: string; value: string }[] }).variables;
+	}
+
+	test('schrijft een tijdsafhankelijke waarde als haar periodes, niet als leeg', async () => {
+		const rows = await variables();
+		const tarief = rows.find(one => one.name === 'Alice · tarief');
+		assert.ok(tarief, rows.map(one => one.name).join(' | '));
+		assert.ok(!tarief.value.includes('leeg'), `stond als: ${tarief.value}`);
+		assert.ok(tarief.value.includes('van 01-01-2026 tot 01-07-2026: 10 €'), tarief.value);
+		assert.ok(tarief.value.includes('vanaf 01-07-2026: 12 €'), tarief.value);
+	});
+
+	test('houdt twee cellen van één gedimensioneerd attribuut uit elkaar', async () => {
+		const rows = await variables();
+		const named = rows.map(one => one.name);
+		assert.ok(named.includes('Alice · omzet [roman]'), named.join(' | '));
+		assert.ok(named.includes('Alice · omzet [strip]'), named.join(' | '));
+	});
+
+	test('zet de rekendatum, de parameters en de variabelen vooraan', async () => {
+		const rows = await variables();
+		assert.strictEqual(rows[0].name, 'rekendatum');
+		assert.strictEqual(rows[1].name, 'basistarief');
+		// §11.1 maakt een variabele lui: bij een stop vóór de regel is er niets te
+		// tonen, en dat zeggen is beter dan hem weglaten of leeg noemen.
+		const korting = rows.find(one => one.name === 'korting');
+		assert.ok(korting);
+		assert.strictEqual(korting.value, 'nog niet berekend');
+	});
+});
+
+// Het vangnet hield de ketting in leven en liet het antwoord vallen: een
+// `sendRequest` die verwierp — een herstarte server, een geannuleerd verzoek —
+// liet VS Code wachten op een antwoord dat nooit kwam.
+suite('Debug-adapter: een mislukt verzoek (X5 deel C)', () => {
+	test('beantwoordt een verzoek dat de server niet kon afhandelen', async () => {
+		const { adapter, sent } = drive(() => {
+			throw new Error('de taalserver is gestopt');
+		});
+		send(adapter, 1, 'setBreakpoints',
+			{ source: { path: 'd:/m/a.test.rgs' }, breakpoints: [{ line: 21 }] });
+		await settle();
+		const answer = sent.find(one => one.command === 'setBreakpoints');
+		assert.ok(answer, 'er hoort een antwoord te komen, ook een mislukt');
+		assert.strictEqual(answer.success, false);
+		assert.match(String(answer.message), /gestopt/u);
+		adapter.dispose();
+	});
+
+	test('blijft daarna gewoon verzoeken afhandelen', async () => {
+		let fail = true;
+		const { adapter, sent } = drive(() => {
+			if (fail) {
+				fail = false;
+				throw new Error('even niet');
+			}
+			return { session: false };
+		});
+		send(adapter, 1, 'setBreakpoints',
+			{ source: { path: 'd:/m/a.test.rgs' }, breakpoints: [{ line: 21 }] });
+		send(adapter, 2, 'threads');
+		await settle();
+		assert.deepStrictEqual(
+			sent.filter(one => one.command).map(one => one.command),
+			['setBreakpoints', 'threads']);
+		adapter.dispose();
+	});
+});

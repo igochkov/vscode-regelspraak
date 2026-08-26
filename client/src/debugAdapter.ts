@@ -23,7 +23,28 @@ interface DebugStop {
 	instance?: string;
 	table?: boolean;
 	location?: { uri: string; range: { start: { line: number; character: number } } };
-	values: { instance: string; attribute: string; value?: string; derived: boolean }[];
+	/**
+	 * One value each, and a value is **either** `value` **or** `segments` — never
+	 * both, and never neither.
+	 *
+	 * This copy carried only `value` until 26 August 2026, so a time-dependent
+	 * attribute — which the server sends as its periods and with no `value` at all
+	 * — showed as *leeg* in the Variables pane for every instance that had one.
+	 * `coordinates` was missing for the same reason and cost the same way: two
+	 * dimension cells of one attribute became two rows with the same name and
+	 * different values, and nothing to tell them apart.
+	 *
+	 * Kept in step with `RunValue` in the server's `protocol.ts`, which is the
+	 * definition; nothing checks that automatically, so widen both together.
+	 */
+	values: {
+		instance: string;
+		attribute: string;
+		coordinates?: string[];
+		value?: string;
+		segments?: { from?: string; to?: string; value: string }[];
+		derived: boolean;
+	}[];
 	kenmerken: { instance: string; kenmerk: string; present: boolean }[];
 	parameters: { name: string; value: string }[];
 	rekendatum: string;
@@ -139,7 +160,18 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 
 	handleMessage(message: vscode.DebugProtocolMessage): void {
 		const request = message as { seq: number; type: string; command: string; arguments?: unknown };
-		this.tail = this.tail.then(() => this.dispatch(request)).catch(() => undefined);
+		this.tail = this.tail
+			.then(() => this.dispatch(request))
+			// **Answer the request, then keep the chain.** Swallowing to `undefined`
+			// kept the chain alive — which is why the catch is here — and dropped the
+			// reply with it, so a `sendRequest` that rejected (a restarted server, a
+			// cancelled request) left VS Code waiting for a response that was never
+			// coming. A failure it can show beats a session that hangs.
+			.catch(error => {
+				this.fail(request, error instanceof Error
+					? error.message
+					: 'De taalserver beantwoordde het verzoek niet.');
+			});
 	}
 
 	// -----------------------------------------------------------------------
@@ -419,8 +451,11 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 		}
 		const rows = [
 			...at.values.map(one => ({
-				name: `${one.instance} · ${one.attribute}`,
-				value: `${one.value ?? 'leeg'}${one.derived ? '' : '  (invoer)'}`,
+				// The coordinates belong in the name: without them two cells of one
+				// dimensioned attribute are two rows called the same thing holding
+				// different numbers, which reads as the pane contradicting itself.
+				name: `${one.instance} · ${stateName(one.attribute, one.coordinates)}`,
+				value: `${showState(one)}${one.derived ? '' : '  (invoer)'}`,
 				variablesReference: 0
 			})),
 			...at.kenmerken.map(one => ({
@@ -456,6 +491,46 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 		}));
 		return [...context, ...variables, ...rows];
 	}
+}
+
+/** `<attribuut> [<coördinaten>]`, the way §W3's panel names the same cell. */
+function stateName(attribute: string, coordinates?: string[]): string {
+	return coordinates?.length ? `${attribute} [${coordinates.join(', ')}]` : attribute;
+}
+
+/**
+ * One value in the pane — a plain one, or a time-dependent one as its periods.
+ *
+ * A value is **either** `value` **or** `segments`, never both, so reading only
+ * the first showed every time-dependent attribute as *leeg*. The periods are
+ * written the way `runView`'s `period` writes them, because a reader comparing
+ * the pane with the run panel is comparing the same fact and a second phrasing
+ * would read as a second answer.
+ *
+ * Flattened onto one line rather than nested under a `variablesReference`: a
+ * child list would need a reference of its own per row and a `variables` request
+ * to answer it, and a timeline of two or three periods reads fine inline.
+ */
+function showState(one: DebugStop['values'][number]): string {
+	if (!one.segments) {
+		return one.value ?? 'leeg';
+	}
+	if (one.segments.length === 0) {
+		return 'leeg';
+	}
+	return one.segments
+		.map(segment => `${period(segment.from, segment.to)}: ${segment.value}`)
+		.join('; ');
+}
+
+function period(from?: string, to?: string): string {
+	if (from && to) {
+		return `van ${from} tot ${to}`;
+	}
+	if (from) {
+		return `vanaf ${from}`;
+	}
+	return to ? `tot ${to}` : 'altijd';
 }
 
 /** One comparable form of a file path, case-folded where the platform is. */
@@ -496,31 +571,48 @@ export function stopsOnEntry(stated: boolean | undefined, marks: number): boolea
 }
 
 /**
- * A launch configuration VS Code will actually launch.
+ * A configuration VS Code will actually launch — the invariant, in one place.
+ *
+ * **What it is here for**: with no `launch.json` VS Code hands a resolver an
+ * *empty* object and silently drops whatever comes back unless `type`, `request`
+ * and `name` are all present. The first cut returned `{...config, program}`,
+ * which resolved without error and launched nothing at all, which is the worst
+ * shape a failure can take. Both resolver hooks now go through here, so the
+ * lesson is stated once rather than restated in each and forgotten in a third.
+ *
+ * Spread first, then fill: a `launch.json` may say anything else it likes, but
+ * the type and the request are what this provider *is*.
+ */
+function completeConfiguration(
+	config: Record<string, unknown>,
+	program: string,
+	name: string
+): vscode.DebugConfiguration {
+	return {
+		...config,
+		type: 'regelspraak',
+		request: 'launch',
+		name: (config.name as string | undefined) || name,
+		program
+	} as vscode.DebugConfiguration;
+}
+
+/**
+ * The same, once the testgeval is known.
  *
  * **Exported because it is the half that decides anything**, and a session
  * cannot be driven from a test — the same reason W4's `rangeOfGesture` and X2's
- * `statusFor` live where a test can import them. It earned that the hard way:
- * the first cut returned `{...config, program}`, which resolved without error
- * and launched nothing at all, because with no `launch.json` VS Code hands the
- * resolver an *empty* object and silently drops anything lacking `type`,
- * `request` and `name`.
+ * `statusFor` live where a test can import them.
  */
 export function launchConfiguration(
 	config: Record<string, unknown>,
 	program: string,
 	caseName: string
 ): vscode.DebugConfiguration {
-	// Spread first, then fill: a `launch.json` may say anything else it likes,
-	// but the type and the request are what this provider *is*.
 	return {
-		...config,
-		type: 'regelspraak',
-		request: 'launch',
-		name: (config.name as string | undefined) || `${caseName} stap voor stap`,
-		program,
+		...completeConfiguration(config, program, `${caseName} stap voor stap`),
 		case: caseName
-	} as vscode.DebugConfiguration;
+	};
 }
 
 /**
@@ -551,12 +643,19 @@ async function pickCase(
 	}
 	const cases = answer.testsets
 		.filter(one => pathKey(vscode.Uri.parse(one.uri)) === wanted)
-		.flatMap(one => one.cases);
+		.flatMap(one => one.cases)
+		// `testable` was declared and never read, so a case the composer had
+		// already refused was offered like any other and failed at `start` with a
+		// message from a layer down. The Testing view greys the same cases out;
+		// offering one here and refusing it there is the two surfaces disagreeing
+		// about what the file holds.
+		.filter(one => one.testable);
 	if (cases.length === 0) {
-		// The file is named, because the two ways to get here read identically
-		// otherwise: a testset with no testgeval, and a path that matched none.
+		// The file is named, because the ways to get here read identically
+		// otherwise: a testset with no testgeval, one whose cases cannot be
+		// composed, and a path that matched none.
 		void vscode.window.showErrorMessage(
-			`Geen testgeval gevonden in '${vscode.Uri.file(program).fsPath}'.`);
+			`Geen uitvoerbaar testgeval gevonden in '${vscode.Uri.file(program).fsPath}'.`);
 		return undefined;
 	}
 	// One case needs no question: asking would be ceremony over the only answer.
@@ -661,34 +760,22 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 				}];
 			},
 			/**
-			 * F5 with no `launch.json`.
-			 *
-			 * **A complete configuration, not a patched one.** With no `launch.json`
-			 * VS Code hands the resolver an *empty* object — no `type`, no `request`,
-			 * no `name` — and silently does nothing with what comes back unless all
-			 * three are there. Returning `{...config, program}` therefore looked
-			 * right, resolved without error and launched nothing at all, which is
-			 * the worst shape a failure can take.
-			 *
-			 * The testgeval is **asked for** rather than demanded: it is the one
-			 * thing the editor cannot infer — a file holds several — and an error
-			 * saying `case` is missing would be true and useless. This is the same
-			 * reading §X2 takes of the run commands, where what a person invokes is
-			 * the lens above the thing they mean.
-			 */
-			/**
-			 * The half that needs no path.
+			 * F5 with no `launch.json` — the half that needs no path.
 			 *
 			 * **Variables are *not* substituted yet here** — `program` is still the
 			 * literal `${file}` a generated `launch.json` writes. Looking a testset
 			 * up by that path found nothing and reported "deze testset heeft geen
 			 * testgeval", which is a true sentence about a path that does not exist
 			 * and tells the reader nothing. So this hook only fills in what is
-			 * knowable without one.
+			 * knowable without one, and the testgeval is asked for in the hook below.
 			 *
-			 * A complete configuration all the same: with no `launch.json` VS Code
-			 * hands this an empty object and silently drops anything lacking `type`,
-			 * `request` and `name`.
+			 * **A complete configuration all the same, not a patched one.** With no
+			 * `launch.json` VS Code hands this an *empty* object — no `type`, no
+			 * `request`, no `name` — and silently does nothing with what comes back
+			 * unless all three are there. Returning `{...config, program}` therefore
+			 * looked right, resolved without error and launched nothing at all,
+			 * which is the worst shape a failure can take. `completeConfiguration`
+			 * is that invariant in one place.
 			 */
 			resolveDebugConfiguration(_folder, config) {
 				const editor = vscode.window.activeTextEditor;
@@ -701,13 +788,9 @@ export function registerDebugging(clientOf: () => LanguageClient | undefined): v
 						'Open een testset (*.test.rgs) om een testgeval stap voor stap uit te voeren.');
 					return undefined;
 				}
-				return {
-					...config,
-					type: 'regelspraak',
-					request: 'launch',
-					name: config.name || 'Testgeval stap voor stap',
-					program
-				};
+				return completeConfiguration(
+					config as unknown as Record<string, unknown>, program,
+					'Testgeval stap voor stap');
 			},
 
 			/**

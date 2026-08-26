@@ -228,9 +228,13 @@ export function buildView(fileName: string, run: TestRun, focus?: string): RunVi
 	}
 
 	if (detail.trace.length > 0) {
+		// Built once, not once per row: `producedBy` walks the whole trace, and
+		// calling it inside the `map` made drawing a trace quadratic in the largest
+		// thing a run produces.
+		const wrote = producedBy(detail);
 		view.sections.push({
 			title: 'Trace, in de volgorde waarin geschreven werd',
-			rows: detail.trace.map(one => writeRow(one, true, producedBy(detail)))
+			rows: detail.trace.map(one => writeRow(one, true, wrote))
 		});
 	}
 
@@ -315,6 +319,9 @@ function reasons(one: RunDetail['inconsistencies'][number]): RunRow[] {
 function focusSections(focus: string, detail: RunDetail): RunSection[] {
 	const wrote = detail.trace.filter(one => one.rule === focus);
 	const fired = detail.firedRules.find(one => one.rule === focus);
+	// Once, for the same reason the trace section builds it once: it is a walk of
+	// the whole trace, and inside the `map` below it was one walk per row.
+	const producers = producedBy(detail);
 	return [
 		{
 			title: `Geschreven door '${focus}'`,
@@ -324,7 +331,7 @@ function focusSections(focus: string, detail: RunDetail): RunSection[] {
 				? [{ kind: 'note', label: '(niets — deze regel vuurde niet in dit testgeval)' }]
 				// Unattributed: the heading already names the rule, so putting it on
 				// every row would be the section title once per line.
-				: wrote.map(one => writeRow(one, false, producedBy(detail)))
+				: wrote.map(one => writeRow(one, false, producers))
 		},
 		{
 			title: 'Vuurde',

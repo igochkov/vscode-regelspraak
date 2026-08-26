@@ -430,8 +430,7 @@
 							},
 							"stopOnEntry": {
 								"type": "boolean",
-								"description": "Stilstaan vóór de eerste regel. Zet op false om door te lopen tot het eerste breekpunt.",
-								"default": true
+								"description": "Stilstaan vóór de eerste regel. Weglaten om dat te laten afhangen van de breekpunten: zonder breekpunten wordt er vóór de eerste regel stilgestaan, met breekpunten wordt er doorgelopen tot het eerste."
 							}
 						}
 					}

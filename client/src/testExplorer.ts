@@ -433,16 +433,17 @@ export class TestExplorer {
 			run.passed(item, duration);
 			return;
 		}
-		if (failed.length === 0) {
-			// Nothing asserted went wrong, but the run could not do what the model
-			// asked. Reported as a failure of the *run* rather than of an
-			// expectation, so it has no diff and no location: there is no
-			// expectation to point at, which is exactly the problem.
-			run.failed(item, broken.map(one => new vscode.TestMessage(
-				`${one.rule}${one.instance ? ` · ${one.instance}` : ''}: ${one.message}`)), duration);
-			return;
-		}
-		run.failed(item, failed.map(one => {
+		// A model error carries **no diff and no location**: there is no expectation
+		// to point at, which is exactly the problem it reports.
+		const brokenMessages = broken.map(one => new vscode.TestMessage(
+			`${one.rule}${one.instance ? ` · ${one.instance}` : ''}: ${one.message}`));
+		// **On the item in both cases**, and it was only in the first until 26
+		// August 2026: with a failing expectation *as well*, the model errors went to
+		// the output channel and no further — and that is the case where a model
+		// error is most likely to be the *cause* of the expectation failing, so it is
+		// the last place to leave it out. Ahead of the diffs, because "the run could
+		// not do what the model asked" is the thing to read first.
+		run.failed(item, [...brokenMessages, ...failed.map(one => {
 			// A diff, so the editor renders "expected/actual" itself rather than
 			// leaving a reader to spot the difference in a sentence.
 			const message = vscode.TestMessage.diff(
@@ -452,7 +453,7 @@ export class TestExplorer {
 			message.location = new vscode.Location(
 				item.uri ?? vscode.Uri.parse(splitId(item.id)[0]), rangeOf(one.range));
 			return message;
-		}), duration);
+		})], duration);
 	}
 
 	dispose(): void {
