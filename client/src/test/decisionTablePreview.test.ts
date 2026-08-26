@@ -19,7 +19,7 @@ const PREVIEW_COMMAND = 'regelspraak.previewBeslistabel';
 interface SourceLike { decisionTables(uri: string): Promise<DecisionTable[]> }
 
 suite('Beslistabelvoorbeeld (W4)', () => {
-	const docUri = getDocUri('regels/contributie.rgs');
+	const docUri = getDocUri('regels/h3-contributie/art-06-contributie.rgs');
 	let source: SourceLike;
 
 	suiteSetup(async () => {
@@ -98,7 +98,7 @@ suite('Beslistabelvoorbeeld (W4)', () => {
 	// geldigheid. Alle versies komen mee — welke de rekendatum kiest, weet de
 	// server niet, want een rekendatum hoort bij een scenario.
 	test('levert elke versie van een tabel als een eigen raster', async () => {
-		const genre = getDocUri('regels/publicatie.rgs');
+		const genre = getDocUri('regels/h6-collectie/art-10-publicaties.rgs');
 		const found = await waitUntil('de beslistabel van publicatie.rgs', async () => {
 			const answer = await source.decisionTables(genre.toString());
 			return answer.length > 0 ? answer : undefined;

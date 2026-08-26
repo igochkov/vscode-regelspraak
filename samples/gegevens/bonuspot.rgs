@@ -1,5 +1,6 @@
 // De Bonuspot — wat over de spaarders verdeeld wordt (§9.7).
 
+// Bron: [art. 1 lid 6](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype de Bonuspot (mv: Bonuspotten)
 	het totale tegoed (mv: tegoeden)  Numeriek (positief geheel getal) met eenheid pt;
 	het onverdeelde tegoed            Numeriek (niet-negatief geheel getal) met eenheid pt;

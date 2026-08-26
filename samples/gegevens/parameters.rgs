@@ -1,6 +1,7 @@
 // Parameters (§13.3.8): waarden die niet bij één object horen. Een testgeval
 // stelt ze; zonder waarde is een parameter leeg.
 
+// Bron: [art. 2 lid 3](bron/reglement.md#artikel-2-eenheden-domeinen-en-vastgestelde-bedragen)
 Parameter de leenlimiet : Numeriek (niet-negatief geheel getal)
 
 Parameter de standaardcontributie : Geldbedrag voor elk jaar;

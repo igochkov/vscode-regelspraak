@@ -1,6 +1,7 @@
 // De Publicatie en de Bundel — twee soorten werk. De Bundel staat hier omdat
-// zij de tweede verzameling is in de uniciteitscontrole van regels/consistentie.rgs.
+// zij de tweede verzameling is in de uniciteitscontrole van art-18-controlevoorschriften.rgs.
 
+// Bron: [art. 1 lid 4](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype de Publicatie (mv: Publicaties)
 	de titel (mv: titels)               Tekst;
 	het uitgavejaar (mv: uitgavejaren)  Numeriek (geheel getal);

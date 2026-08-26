@@ -5,23 +5,28 @@
 
 // Een regelgroep geeft de regels van dit bestand een naam. Eén per bestand:
 // het bestand is de groep, dus een tweede kop spreekt de eerste tegen (RS614).
+// Bron: [art. 6](bron/reglement.md#artikel-6-contributie)
 Regelgroep contributie
 
+// Bron: [art. 6 lid 1](bron/reglement.md#artikel-6-contributie)
 Regel bepaal oude contributie
 	geldig t/m 2026
 		De contributie van een Lid moet gesteld worden op de standaardcontributie.
 
 // §13.4.9 — initialisatie: een startwaarde die een latere regel mag overschrijven.
+// Bron: [art. 6 lid 2](bron/reglement.md#artikel-6-contributie)
 Regel Initialiseer contributie
 	geldig altijd
 		De contributie van een Lid moet geïnitialiseerd worden op de standaardcontributie.
 
 // §13.4.15 #68 — een periodevergelijking als voorwaardendeel, in drie vormen.
+// Bron: [art. 6 lid 3](bron/reglement.md#artikel-6-contributie)
 Regel Contributie met overgangsperiode
 	geldig altijd
 		De contributie van een Lid moet gesteld worden op de standaardcontributie
 		van dd. 01-01-2027 tot dd. 01-07-2027.
 
+// Bron: [art. 6 lid 4](bron/reglement.md#artikel-6-contributie)
 Regel Contributie nieuwe stijl
 	geldig altijd
 		De contributie van een Lid moet gesteld worden op de standaardcontributie maal 2
@@ -31,28 +36,33 @@ Regel Contributie nieuwe stijl
 // eigen attribuut zodat geen twee regels om dezelfde periode strijden. Let op de
 // spelling: een periode schrijft `tot en met`, waar een geldigheidsbereik `t/m`
 // schrijft — twee tokens, en alleen het eerste hoort hier.
+// Bron: [art. 6 lid 5](bron/reglement.md#artikel-6-contributie)
 Regel Proefcontributie tot de omslag
 	geldig altijd
 		De proefcontributie van een Lid moet gesteld worden op 10,00 €
 		tot dd. 01-01-2027.
 
+// Bron: [art. 6 lid 6](bron/reglement.md#artikel-6-contributie)
 Regel Najaarscontributie tot en met het jaareinde
 	geldig altijd
 		De najaarscontributie van een Lid moet gesteld worden op 20,00 €
 		tot en met dd. 31-12-2026.
 
+// Bron: [art. 6 lid 7](bron/reglement.md#artikel-6-contributie)
 Regel Overgangscontributie in één jaar
 	geldig altijd
 		De overgangscontributie van een Lid moet gesteld worden op 30,00 €
 		van dd. 01-01-2026 tot en met dd. 31-12-2026.
 
 // §13.2 #18 — een percentage als waarde op zichzelf, niet als operator.
+// Bron: [art. 6 lid 8](bron/reglement.md#artikel-6-contributie)
 Regel bepaal kortingsfactor
 	geldig altijd
 		De kortingsfactor van een Lid moet gesteld worden op 2,50%.
 
 // §12 — de beslistabel. Kolomtitel en cel vormen samen één zin; welke kolom
 // concludeert, blijkt uit wat die zin zegt en staat nergens als vlag in de tekst.
+// Bron: [art. 6 lid 9](bron/reglement.md#artikel-6-contributie)
 Beslistabel Contributiestaffel
 	geldig vanaf 2027
 		|   | de contributie van een Lid moet gesteld worden op | indien zijn lidmaatschapsduur kleiner is dan |

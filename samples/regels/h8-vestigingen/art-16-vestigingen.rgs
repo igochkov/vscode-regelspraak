@@ -2,29 +2,35 @@
 // één met twee conditiekolommen, één die een kenmerk concludeert.
 
 // §13.4.17 #37 — de eerste paasdag van een jaar.
+// Bron: [art. 16 lid 1](bron/reglement.md#artikel-16-vestigingen)
 Regel bepaal referentiedatum
 	geldig altijd
 		De referentiedatum van een Boekerijvestiging moet berekend worden als de eerste paasdag van (het jaar uit (de openingsdatum van de Boekerijvestiging)).
 
 // §13.4.17 #35 en #31 — de datum met benoemde onderdelen, en het Rekenjaar.
+// Bron: [art. 16 lid 2](bron/reglement.md#artikel-16-vestigingen)
 Regel bepaal stelseldatum
 	geldig altijd
 		De stelseldatum van een Boekerijvestiging moet gesteld worden op de datum met jaar: Rekenjaar, maand: 1 en dag: 1.
 
 // §13.4.17 #36 — de datumtijd, met elk onderdeel benoemd.
+// Bron: [art. 16 lid 2](bron/reglement.md#artikel-16-vestigingen)
 Regel bepaal stelseltijdstip
 	geldig altijd
 		Het stelseltijdstip van een Boekerijvestiging moet gesteld worden op de datumtijd met jaar: 2027, maand: 3, dag: 14, uur: 9, minuut: 30, seconde: 0 en milliseconde: 0.
 
 // §13.2 #19/#20 — een datum- en een datumtijdliteraal.
+// Bron: [art. 16 lid 3](bron/reglement.md#artikel-16-vestigingen)
 Regel bepaal vaste peildatum
 	geldig altijd
 		De peildatum van een Boekerijvestiging moet gesteld worden op dd. 15-06-2027.
 
+// Bron: [art. 16 lid 3](bron/reglement.md#artikel-16-vestigingen)
 Regel bepaal peiltijdstip
 	geldig altijd
 		Het peiltijdstip van een Boekerijvestiging moet gesteld worden op dd. 15-06-2027 08:30:00.000.
 
+// Bron: [art. 16 lid 4](bron/reglement.md#artikel-16-vestigingen)
 Regel Drukbezochte vestiging
 	geldig altijd
 		Een Boekerijvestiging is een drukbezochte vestiging
@@ -34,24 +40,28 @@ Regel Drukbezochte vestiging
 
 // §13.4.14 #5 — een kwantificatie over een verzameling, hier over de rol van
 // een feittype twee stappen verderop.
+// Bron: [art. 16 lid 5](bron/reglement.md#artikel-16-vestigingen)
 Regel Volle potten
 	geldig altijd
 		Een Boekerijvestiging is een spaarvestiging
 		indien alle tegoeden van alle beheerde bonuspotten van de Boekerijvestiging groter zijn dan 0.
 
 // §13.4.17 #31 — Rekenjaar als operand van een gewone vergelijking.
+// Bron: [art. 16 lid 6](bron/reglement.md#artikel-16-vestigingen)
 Regel Overgangsvestiging
 	geldig altijd
 		Een Boekerijvestiging is een overgangsvestiging
 		indien Rekenjaar kleiner of gelijk is aan 2028.
 
 // §13.4.17 #47 — het aantal exemplaren in een rol, zonder verdere selectie.
+// Bron: [art. 16 lid 7](bron/reglement.md#artikel-16-vestigingen)
 Regel Aantal leden
 	geldig altijd
 		Het ledenaantal van een Boekerijvestiging moet berekend worden als het aantal ingeschreven leden van de Boekerijvestiging.
 
 // §13.4.2 #8 / §13.4.13 — een subselectie: het predicaat gaat over het
 // geselecteerde element, niet over het onderwerp van de regel.
+// Bron: [art. 16 lid 7](bron/reglement.md#artikel-16-vestigingen)
 Regel Aantal actieve leden
 	geldig altijd
 		Het actieve ledenaantal van een Boekerijvestiging moet berekend worden als het aantal ingeschreven leden van de Boekerijvestiging die een actieve deelnemer zijn.
@@ -60,6 +70,7 @@ Regel Aantal actieve leden
 // voldoen, en `n.v.t.` betekent dat dít geval die kolom niet gebruikt. Het
 // onderwerp staat in elke conditiekolom voluit — de taal heeft `zijn` en `hij`
 // als bezittelijke verwijzing, maar geen vrouwelijke tegenhanger.
+// Bron: [art. 16 lid 8](bron/reglement.md#artikel-16-vestigingen)
 Beslistabel Openingsuren
 	geldig altijd
 		|   | de openingsuren van een Boekerijvestiging moet gesteld worden op | indien het bezoekersaantal van de Boekerijvestiging groter is dan | indien het uitleenaantal van de Boekerijvestiging groter is dan |
@@ -71,6 +82,7 @@ Beslistabel Openingsuren
 // het kenmerk, de cel de waarde. §12 laat de conclusie zo over twee cellen
 // lopen, wat `waar` hier tot een volwaardige zin maakt — en dat de cel de zin
 // afmaakt in plaats van hem te herhalen, is wat de server meestuurt.
+// Bron: [art. 16 lid 9](bron/reglement.md#artikel-16-vestigingen)
 Beslistabel Leeszaalvestiging
 	geldig altijd
 		|   | een Boekerijvestiging is een leeszaalvestiging | indien de openingsuren van de Boekerijvestiging groter is dan |

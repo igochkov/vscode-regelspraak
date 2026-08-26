@@ -39,7 +39,7 @@ const outcomeTabs = (): vscode.Tab[] =>
 		&& one.input.viewType.includes('uitkomst'));
 
 suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
-	const rulesUri = getDocUri('regels/lidmaatschap.rgs');
+	const rulesUri = getDocUri('regels/h2-lidmaatschap/art-04-lidmaatschap.rgs');
 	let document: vscode.TextDocument;
 	let api: Api;
 

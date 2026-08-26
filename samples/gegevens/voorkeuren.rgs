@@ -3,6 +3,7 @@
 
 // §3.1.2 — een extensieblok heropent een objecttype dat elders gedeclareerd is,
 // desnoods in een ander bestand. De leden erin horen bij het objecttype.
+// Bron: [art. 1 lid 1](bron/reglement.md#artikel-1-begripsbepalingen)
 Extensie van objecttype het Lid
 	--- leesduo
 	de vergelijkingsdatum         Datum in dagen;

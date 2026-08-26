@@ -18,9 +18,9 @@ import { activate, doc, getDocUri, positionOf, waitUntil } from './helper';
  * need an attribute with a declared domein and a multi-word name.
  */
 suite('Navigatie en hernoemen (P5–P9, P11, P20)', () => {
-	const rulesUri = getDocUri('regels/lidmaatschap.rgs');
+	const rulesUri = getDocUri('regels/h2-lidmaatschap/art-04-lidmaatschap.rgs');
 	const dataUri = getDocUri('gegevens/lid.rgs');
-	const loanRulesUri = getDocUri('regels/boete.rgs');
+	const loanRulesUri = getDocUri('regels/h4-uitlening/art-08-boete.rgs');
 	const testsUri = getDocUri('tests/lidmaatschap.test.rgs');
 	let data: vscode.TextDocument;
 	let loanRules: vscode.TextDocument;
@@ -59,8 +59,10 @@ suite('Navigatie en hernoemen (P5–P9, P11, P20)', () => {
 			const range = link.targetRange ?? spot.range;
 			// The folder is part of the label: a basename is the *subject* here and
 			// is deliberately reused across gegevens/ and regels/, so `uitlening.rgs`
-			// alone would not say which of the two answered.
-			const where = uri.fsPath.split(/[\\/]/).slice(-2).join('/');
+			// alone would not say which of the two answered — and the last two
+			// segments no longer would either, now that a rule file sits in the
+			// chapter folder of the article it renders.
+			const where = vscode.workspace.asRelativePath(uri, false).split(/[\\/]/).join('/');
 			// Opened here rather than looked up in a list: a name resolves into
 			// whichever file declares it, and one file per subject means that is
 			// most of them.
@@ -104,7 +106,8 @@ suite('Navigatie en hernoemen (P5–P9, P11, P20)', () => {
 	test('P7 — implementatie noemt de regel die het attribuut afleidt', async () => {
 		const found = await locations('vscode.executeImplementationProvider', dataUri,
 			positionOf('lidmaatschapsduur', data));
-		assert.deepStrictEqual(found, ['regels/lidmaatschap.rgs «bepaal lidmaatschapsduur»']);
+		assert.deepStrictEqual(found,
+			['regels/h2-lidmaatschap/art-04-lidmaatschap.rgs «bepaal lidmaatschapsduur»']);
 	});
 
 	test('P8 — alle verwijzingen omvatten beide bestanden', async () => {

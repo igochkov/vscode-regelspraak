@@ -1,5 +1,6 @@
 // Domeinen (§13.3.4): een eigen naam voor een datatype, en een enumeratie.
 
+// Bron: [art. 2 lid 2](bron/reglement.md#artikel-2-eenheden-domeinen-en-vastgestelde-bedragen)
 Domein Geldbedrag is van het type Numeriek (getal met 2 decimalen) met eenheid €
 
 Domein Krediet is van het type Numeriek (negatief geheel getal)

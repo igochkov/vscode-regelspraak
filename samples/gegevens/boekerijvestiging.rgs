@@ -1,5 +1,6 @@
 // De Boekerijvestiging — waar de Leden ingeschreven staan.
 
+// Bron: [art. 1 lid 2](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype de Boekerijvestiging (mv: Boekerijvestigingen)
 	de vestigingsnaam (mv: vestigingsnamen)  Tekst;
 	het vestigingsnummer                     Tekst;

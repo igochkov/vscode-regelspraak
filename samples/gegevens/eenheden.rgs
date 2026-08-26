@@ -1,6 +1,7 @@
 // Eenheidsystemen (§13.3.5). Een omrekening (`= 1000 g`) maakt twee eenheden
 // onderling omrekenbaar; eenheden uit verschillende systemen zijn dat niet.
 
+// Bron: [art. 2 lid 1](bron/reglement.md#artikel-2-eenheden-domeinen-en-vastgestelde-bedragen)
 Eenheidsysteem gewicht
 	de milligram (mv: milligrammen)  mg  = 1/1000 g
 	de gram (mv: grammen)            g

@@ -3,11 +3,13 @@
 // [D-50] — "het jaar uit …" opent óók een functievorm, en "het jaar uit druk"
 // is hier een attribuutnaam. De parser kiest de functie; de taalserver vindt de
 // naamlezing terug.
+// Bron: [art. 10 lid 1](bron/reglement.md#artikel-10-publicaties)
 Regel bepaal drukjaar
 	geldig altijd
 		Het drukjaar van een Publicatie moet berekend worden als het jaar uit druk van de Publicatie.
 
 // §13.4.17 #2 — een reeks enumeratiewaarden, met "of" als laatste scheiding.
+// Bron: [art. 10 lid 2](bron/reglement.md#artikel-10-publicaties)
 Regel Fictiewerk
 	geldig altijd
 		Een Publicatie is een fictiewerk
@@ -18,6 +20,7 @@ Regel Fictiewerk
 // versies heeft. De korting ging per 1 januari 2027 omhoog, en de nieuwe versie
 // kent een genre dat de oude niet noemde; welke van de twee geldt, kiest de
 // rekendatum, en RS601 bewaakt dat de perioden elkaar niet overlappen.
+// Bron: [art. 10 lid 3](bron/reglement.md#artikel-10-publicaties)
 Beslistabel Genrekorting
 	geldig t/m 31-12-2026
 		|   | de genrekorting van een Publicatie moet gesteld worden op | indien het genre van de Publicatie gelijk is aan |

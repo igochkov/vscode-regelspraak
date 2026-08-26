@@ -449,6 +449,7 @@
 		"postinstall": "node scripts/install-nested.mjs client",
 		"test": "node ./client/out/test/runTest.js",
 		"build:icon": "node scripts/build-icon.mjs",
+		"source:coverage": "node scripts/source-coverage.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
 	},
 	"devDependencies": {
