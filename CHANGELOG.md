@@ -7,6 +7,58 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [0.8.0] — The document a model renders
+
+A RegelSpraak model is almost always a rendering of something written in prose —
+a reglement, a regeling, a beleidsregel, a contract. The editor knew nothing
+about that document, so the connection lived in people's heads, and the question
+a reviewer actually asks — *which provision says this?* — had no answer the
+tooling could give.
+
+### Added
+
+- **Cite the provision a declaration or rule renders.** A `//` comment above it
+  may say where it comes from, written as a Markdown link:
+  `// Bron: [art. 8 lid 1](bron/reglement.md#artikel-8-boete)`. Nothing about the
+  language changes — it is a comment, and a model that ignores this reads exactly
+  as it did — but the editor now follows it.
+- **Two ways to follow it, each doing what its gesture means.** Hovering the rule
+  shows the citation as a link that opens **the article, rendered**, in the
+  Markdown preview: following a citation is a reading gesture, and what a reader
+  wants is the provision rather than its source. The same citation in the comment
+  itself is a link too — beside the URLs and `.rgs` names that were already linked
+  there — and that one opens the Markdown **source at the line**, because a link
+  in the text is a location and is followed like a go-to-definition. Both are
+  resolved by the same code, so they cannot reach different provisions.
+- **It lands on the article, not at the top of the file.** The heading anchor is
+  looked up in the document each time it is asked for and turned into the line it
+  is on, so a provision that moves within the document is still found and no line
+  number is ever written into a model. An anchor that names no heading is dropped
+  and the document opens at the top.
+- **The path is written from the model root**, not from the file the comment sits
+  in, so a rule file can be moved or renumbered without its citations going
+  stale. That root is found by looking for the cited document rather than assumed
+  to be the workspace folder — a model usually lives in a subfolder of a
+  repository, and then the two are not the same place.
+
+### Notes
+
+- **One command is trusted, and no others.** The hover's link has to invoke a
+  command, there being no URI that means "the preview of this file", so the
+  extension declares exactly `regelspraak.openBron` as trusted. A hover
+  ultimately renders comments written by whoever wrote the model, and a blanket
+  trust would let any of them run anything.
+- **The example model shows the whole convention.** `samples/` is laid out by the
+  document it renders now — a folder per chapter and a file per article under
+  `regels/`, with the (invented) reglement itself under `samples/bron/` — and
+  every declaration and rule in it carries a citation. `docs/AUTHORING.md`
+  explains the layout, and why `gegevens/` is deliberately *not* organized that
+  way.
+- **Citations can be checked.** `npm run source:coverage` reports a citation that
+  no longer resolves, a provision that nothing in the model renders, and a rule
+  version whose `geldig vanaf` contradicts a stated commencement date. It reads
+  text and needs no language server, so it runs in CI.
+
 ## [0.7.0] — Stepping through a run, and why a rule did not fire
 
 A run stops being a black box. `0.6.0` could tell you *what* a model produced;
