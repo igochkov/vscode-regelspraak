@@ -130,10 +130,17 @@ Four things about the form, each doing work:
   likely mistake here.
 - **Repeat the line rather than listing** where a rule renders more than one lid.
 
-**A citation is clickable in two places**: in the hover over the rule, and in
-the comment itself, where it joins the URLs and `.rgs` names P14 already links.
-Both open the document at the article, and both are answered by the same code on
-the server, so they cannot send you to different places.
+**A citation is clickable in two places**, and both are answered by the same
+code on the server, so they cannot land on different provisions:
+
+- **In the hover** over the rule, where it opens the article in the Markdown
+  **preview** — a reader following a citation wants to read the provision, not
+  its source. There is no URI meaning "the preview of this file", so this one is
+  a `command:` link, and the extension trusts exactly that one command.
+- **In the comment itself**, where it joins the URLs and `.rgs` names P14 already
+  links, and opens the Markdown source at the line. A document link is a location
+  in the text and is followed with the same gesture as a go-to-definition, so it
+  behaves like one.
 
 That rewriting is not optional. VS Code resolves a *relative* href as a single
 path, `#` and all, so an unrewritten citation tries to open a file called

@@ -25,6 +25,7 @@ import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
 import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
+import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -224,6 +225,8 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	context.subscriptions.push(
 		serverStatus,
 		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
+	context.subscriptions.push(
+		commands.registerCommand(OPEN_SOURCE_COMMAND, openSource));
 
 	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
 	context.subscriptions.push(
@@ -529,7 +532,12 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		},
 		// Ours, so the resolution report above and the server's log end up in
 		// one place; the extension disposes it, not the client.
-		outputChannel: output
+		outputChannel: output,
+		// A source citation in a hover opens the provision rendered, which needs a
+		// `command:` link — see sourceDocument.ts. Exactly that one command and no
+		// others: the Markdown of a hover ends in doc comments the model's own author
+		// wrote, so a blanket `isTrusted` would let any of them run anything.
+		markdown: { isTrusted: { enabledCommands: [OPEN_SOURCE_COMMAND] } }
 	};
 
 	client = new LanguageClient(
