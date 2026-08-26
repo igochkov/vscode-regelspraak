@@ -17,7 +17,6 @@ navigated and renamed against the GegevensSpraak declarations in another.
 - **Counts above a declaration** (CodeLens): how often an object type, a rule or a decision table is named elsewhere, and — above an object type — how many rules derive something it declares. Clicking one opens the list.
 - **Outline, breadcrumbs and folding**, with object types, fact types, domains, unit systems and rules carrying their members as children; folding is grammar-aware — declarations, rule versions, koptekst sections, `Daarbij geldt:` blocks and compound-condition bullets — and honours `//#region` markers.
 - **Links in comments**: a URL, and the name of another `.rgs` file of the model — `// zie boekerij-gegevens.rgs` becomes a way to get there.
-- **RegelSpraak in Markdown**: a fenced code block marked `regelspraak` (or `rgs`) is highlighted inside any `.md` file, so a model reads properly in documentation and design notes. Syntax only — a Markdown file is not a model, so a block is coloured but not analysed.
 
 ## Checking it
 

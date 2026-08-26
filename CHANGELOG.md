@@ -704,19 +704,6 @@ name is navigated as the thing it *means* — not as matching text.
   - it **reports what it did not change**: a plural form `(mv: …)` that now needs
     the same treatment, and any remaining text the model does not account for —
     a comment, a unit inside an expression, a decision-table cell.
-- **RegelSpraak in Markdown.** A fenced code block marked `regelspraak` (or
-  `rgs`) is highlighted as RegelSpraak inside any `.md` file — documentation,
-  a design note, a pull-request description rendered locally. The fence
-  behaves like every built-in language block: `~~~` works, so do longer
-  fences, an indented block inside a list item works, and an info string
-  (```` ```regelspraak{1,3} ````) is accepted.
-
-  This is the syntax layer only — keywords, literals, comments. The
-  meaning-aware colouring, diagnostics, hover and navigation all need a model,
-  and a Markdown file is not one, so a block is coloured but not analysed. No
-  language server is started for a `.md` file, and none is needed: the
-  highlighting is a declarative contribution, so it applies with no `.rgs` file
-  in the workspace.
 
 ### Changed
 
@@ -741,15 +728,6 @@ name is navigated as the thing it *means* — not as matching text.
 - Enumeration values and units written inside expressions are literals that the
   model does not yet resolve, so a rename of one edits its declaration and tells
   you about the rest.
-- **The Markdown preview shows a `regelspraak` block unhighlighted.** The editor
-  and the preview colour code with two different engines: the editor uses the
-  TextMate grammar this release injects, while the built-in preview renders with
-  markdown-it and highlights fences with highlight.js, which has no RegelSpraak
-  language and falls back to plain escaped text. Nothing about the injection can
-  change that. Supporting the preview means contributing a markdown-it plugin
-  that emits highlight.js's own CSS classes — a separate piece of work, and one
-  that has to be careful not to start a language server for every previewed
-  `.md` file. Deferred, not forgotten.
 
 ## [0.1.0] — First public preview
 
