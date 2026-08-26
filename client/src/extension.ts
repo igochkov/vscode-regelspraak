@@ -18,6 +18,7 @@ import {
 import { MODEL_CHANGED_NOTIFICATION, ModelSource } from './model';
 import { ModelDocuments, MODEL_SCHEME, SHOW_MODEL_COMMAND, showModel } from './modelDocument';
 import { ModelExplorer } from './modelExplorer';
+import { registerDebugging } from './debugAdapter';
 import { TestExplorer } from './testExplorer';
 import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocument';
 import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
@@ -27,6 +28,35 @@ import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
+
+/**
+ * Says out loud that a running language server has died (C6).
+ *
+ * **The one thing here that interrupts, and it earns it.** C7's status item goes
+ * red at the same moment, which is the right loudness for everything else this
+ * extension reports — but nothing recovers from this on its own, and a reader
+ * who is not watching the status bar learns about it by noticing that features
+ * have quietly stopped answering. That is exactly the state NFR-5 names: the one
+ * thing worse than no language support is language support that looks like an
+ * opinion.
+ *
+ * Two actions, because there are two things to do about it and both already
+ * exist: read why, or try again. Dismissing is the third and needs no button.
+ */
+async function announceCrash(): Promise<void> {
+	const readLog = 'Toon log';
+	const restart = 'Opnieuw starten';
+	const chosen = await window.showErrorMessage(
+		'De RegelSpraak-taalserver is gestopt. Diagnostiek, navigatie en aanvulling zijn tot die tijd leeg.',
+		readLog,
+		restart
+	);
+	if (chosen === readLog) {
+		await commands.executeCommand(SHOW_LOG_COMMAND);
+	} else if (chosen === restart) {
+		await commands.executeCommand(RESTART_COMMAND);
+	}
+}
 
 /**
  * Opens the peek list a CodeLens counted (P13).
@@ -190,7 +220,7 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	output = window.createOutputChannel('RegelSpraak Language Server');
 	context.subscriptions.push(output);
 
-	serverStatus = new ServerStatus();
+	serverStatus = new ServerStatus(() => void announceCrash());
 	context.subscriptions.push(
 		serverStatus,
 		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
@@ -244,6 +274,13 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
 			(uri: string, run: TestRun, focus?: string) =>
 				runDocuments.show(Uri.parse(uri), run, focus)));
+
+	// X5. The adapter is inline — no second process, and no
+	// `@vscode/debugadapter` dependency, so the bundle stays the size it is. It
+	// is also the only module on either side that knows about DAP: the server
+	// exposes five operations behind one method, and the mismatches between the
+	// protocol and a rule engine (no call stack, no `stepIn`) stop here.
+	context.subscriptions.push(...registerDebugging(() => client));
 
 	// A crashed or wedged server is otherwise only recoverable by reloading
 	// the whole window (FSD NFR-5).

@@ -48,7 +48,13 @@ interface TestAssertion {
 	rule?: string;
 }
 
-interface TestFault { rule: string; instance?: string; message: string }
+interface TestFault {
+	rule: string;
+	instance?: string;
+	message: string;
+	/** `modelfout`: the model said something the engine could not resolve. */
+	kind: 'fout' | 'modelfout';
+}
 
 /**
  * What a run computed (X4) — see the server's `protocol.ts`, which defines it.
@@ -86,6 +92,16 @@ export interface RunOperand {
 	label: string;
 	instance?: string;
 	value: string;
+	/**
+	 * Where the value came from — see the server's `protocol.ts`.
+	 *
+	 * `regel` names the trace entry to expand under this operand, which is what
+	 * makes the derivation walkable; `invoer` and `parameter` are where it ends.
+	 */
+	source?:
+		| { kind: 'regel'; rule: string }
+		| { kind: 'invoer' }
+		| { kind: 'parameter' };
 }
 
 export interface RunValue {
@@ -380,9 +396,18 @@ export class TestExplorer {
 	 *
 	 * A refusal is `errored`, not `failed`: the model did not produce a wrong
 	 * answer, it produced none, and the two read differently in the Test Explorer
-	 * for good reason. A fault is neither — the run carried on ([E-29]) — so it is
-	 * appended to the output rather than turned into a failure the engine did not
-	 * report.
+	 * for good reason.
+	 *
+	 * **A fault depends on which kind it is** (24 August 2026). Every fault still
+	 * reaches the output, since the run carried on ([E-29]). But the two kinds are
+	 * not the same news: a `fout` is the specification's own run-time error on a
+	 * model that is correct — §6.5's leeg divisor, which the conformance corpus
+	 * contains deliberately — and a test asserting around it is right to be green,
+	 * while a **`modelfout`** means the model said something the engine could not
+	 * make sense of, so the run derived less than the model asked for and a test
+	 * that passes anyway passed by luck. That one fails the item, with the fault as
+	 * its message. Before this the two were one shape and both were treated as the
+	 * first, so a green suite could hide a model that resolved nothing.
 	 */
 	private report(
 		run: vscode.TestRun,
@@ -403,11 +428,22 @@ export class TestExplorer {
 			return;
 		}
 		const failed = outcome.assertions.filter(one => !one.passed);
-		if (failed.length === 0) {
+		const broken = outcome.faults.filter(one => one.kind === 'modelfout');
+		if (failed.length === 0 && broken.length === 0) {
 			run.passed(item, duration);
 			return;
 		}
-		run.failed(item, failed.map(one => {
+		// A model error carries **no diff and no location**: there is no expectation
+		// to point at, which is exactly the problem it reports.
+		const brokenMessages = broken.map(one => new vscode.TestMessage(
+			`${one.rule}${one.instance ? ` · ${one.instance}` : ''}: ${one.message}`));
+		// **On the item in both cases**, and it was only in the first until 26
+		// August 2026: with a failing expectation *as well*, the model errors went to
+		// the output channel and no further — and that is the case where a model
+		// error is most likely to be the *cause* of the expectation failing, so it is
+		// the last place to leave it out. Ahead of the diffs, because "the run could
+		// not do what the model asked" is the thing to read first.
+		run.failed(item, [...brokenMessages, ...failed.map(one => {
 			// A diff, so the editor renders "expected/actual" itself rather than
 			// leaving a reader to spot the difference in a sentence.
 			const message = vscode.TestMessage.diff(
@@ -417,7 +453,7 @@ export class TestExplorer {
 			message.location = new vscode.Location(
 				item.uri ?? vscode.Uri.parse(splitId(item.id)[0]), rangeOf(one.range));
 			return message;
-		}), duration);
+		})], duration);
 	}
 
 	dispose(): void {

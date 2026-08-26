@@ -1,12 +1,12 @@
 # RegelSpraak for Visual Studio Code
 
-Write, read and review RegelSpraak models with the editor support you expect from a programming language: colour that reflects meaning, errors while you type, model-aware completion, hover documentation, an outline, navigation and rename that follow what a name means across every file, and formatting that keeps the layout without touching a word of it.
+Write, read and review RegelSpraak models with the editor support you expect from a programming language: colour that reflects meaning, errors while you type, model-aware completion, hover documentation, an outline, navigation and rename that follow what a name means across every file, formatting that keeps the layout without touching a word of it — and a debugger that steps through a run one rule at a time.
 
 [RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
 
 The extension activates on `.rgs` files — models, and the `*.test.rgs` testsets that go with them. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
 
-> **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets**, showing the derivation trace behind every result. What is next is in the [roadmap](docs/ROADMAP.md).
+> **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets** — showing the derivation behind every value, why a rule stayed quiet, and, with <kbd>F5</kbd>, the run itself one rule at a time. What is next is in the [roadmap](docs/ROADMAP.md).
 
 ## The extension in two minutes
 
@@ -29,6 +29,8 @@ captions (mp4, 5 MB).
 - **What the text does not say, shown beside it**: hover with the declaration's `//` comment, inlay hints for the datatype and unit a rule derives, reference and derivation counts above a declaration, a grammar-aware outline and folding, and sentence-wise selection expansion.
 - **The model seen whole**: a Model Explorer over every declaration in the workspace, a read-only model view of one file, and a preview for a `Beslistabel` that shows what the source cannot — which column concludes, and what the case your cursor is in concludes as one sentence.
 - **Testsets that run.** A `*.test.rgs` testset is part of the language — same colour, checks, formatting and rename, crossing into the model in both directions — and it *runs*: in the Testing view with failures as diffs, or from a link in the text, one testgeval or one rule at a time, with the values, the characteristics, the faults and the derivation trace in a panel beside the model.
+- **Step through a run** (<kbd>F5</kbd> in a testset): breakpoints on a rule *or* on a `Verwacht` line — where the mark means "stop where this value comes from" and can be held to one instance — the situation in the Variables pane at every stop, and Watch, the Debug Console and hover evaluating any RegelSpraak expression in the scope the run is standing in.
+- **Why a value is what it is.** Every derived value names the rule that wrote it and unfolds back through the rules behind *its* operands, to the input or parameter where the derivation ends — and a rule that did **not** fire says which criterion stopped it, and what it read.
 
 Each of these in full, with the reasoning behind the shape it takes, is in
 [docs/FEATURES.md](docs/FEATURES.md). Per-release detail is in the

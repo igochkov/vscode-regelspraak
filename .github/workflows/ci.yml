@@ -41,7 +41,6 @@ jobs:
               "language-configuration.json",
               "snippets/regelspraak.code-snippets",
               "syntaxes/regelspraak.tmLanguage.json",
-              "syntaxes/regelspraak.markdown-injection.json",
             ]) {
               JSON.parse(strip(fs.readFileSync(f, "utf8")));
               console.log("ok", f);

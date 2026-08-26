@@ -7,6 +7,172 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [0.7.0] — Stepping through a run, and why a rule did not fire
+
+A run stops being a black box. `0.6.0` could tell you *what* a model produced;
+this release tells you **how it got there, and what it decided along the way** —
+forwards, by stepping through the run with a debugger, and backwards, by
+following a value to the rules that made it.
+
+The two are deliberately different tools. A failing test hands you a *value*,
+which is a backward question, and the derivation chain answers it without a
+session at all. Stepping is for the forward one: understanding an unfamiliar
+model, teaching one, asking what happens if.
+
+### Added
+
+- **Step through a run.** Press <kbd>F5</kbd> in a testset and the model runs one
+  rule at a time. It stops **before** each rule fires, so what you see is the
+  situation the rule is about to act on; **Continue** and **Step Over** move to
+  the next rule × instance.
+
+  The Call Stack holds **one frame**, named `<regel> · <instantie>`. RegelSpraak
+  has no calls, and firing order follows the dependencies between rules rather
+  than nesting, so there is no stack to draw — and filling that pane with the
+  derivation chain would show something that runs backwards in time as though it
+  nested. That view is the run panel's and stays there.
+
+  **Variables** shows the rekendatum, the parameters, the rule's `Daarbij geldt`
+  variables and then the situation itself: every instance's attributes and
+  characteristics, with `(invoer)` marking what you gave rather than what the
+  model derived. The variables read *nog niet berekend* — the stop is before the
+  rule and a variable is computed only when something asks for it, so showing a
+  value would mean inventing one.
+
+- **Breakpoints, including on a `Verwacht` line.** In a rule file a breakpoint
+  marks that rule. In a **testset** it marks *the rules that derive whatever the
+  line names*, because an expectation has no moment during a run: the useful
+  reading of a mark there is not "stop at this assertion" but **"stop where this
+  value comes from"**. A value line marks every rule that writes it; a block
+  header marks every rule behind any line beneath it; `Verwacht regelversie
+  <naam> is gevuurd` marks that rule outright.
+
+  A mark taken from a `Verwacht <instantie> met` block **stops only for that
+  instance**, the expectation having named the one it is about. For a breakpoint
+  on a rule, the condition field takes an instance name and does the same. A line
+  nothing derives stays grey and says why — a `Gegeven` is input, and an
+  expectation on an attribute *no rule writes at all* is very often the reason it
+  was failing.
+
+- **Watch, the Debug Console and hover.** While stopped, any RegelSpraak
+  expression evaluates in the paused instance's scope: `zijn pensioengrondslag`,
+  `de som van de premies van zijn deelnemers`, a parameter, a rule variable.
+  **Hovering** a phrase in the rule you are standing in shows its value — over the
+  whole reference rather than the word under the pointer, a RegelSpraak name being
+  several words. Only inside that rule: `zijn X` means the subject of the sentence
+  it is written in, so the same words one rule down denote something else, and
+  everywhere else you keep the ordinary hover.
+
+- **Why a rule did *not* fire.** A run now records the rules that were considered
+  and stayed quiet, with the criteria of a compound condition in the order they
+  were evaluated and the values the condition read. Until now a run said what had
+  fired and nothing about the rest — and "absent from that list" cannot tell a
+  rule that did not fire from one that fired nowhere.
+
+- **The derivation drawn as a chain.** Every derived value names the rule that
+  wrote it, and each of that rule's operands names *its* source: another rule to
+  follow, or `invoer` or `parameter` where the derivation ends. The run panel
+  nests them, so a value unfolds back through the rules that made it as far as the
+  run can say. A distribution (§9.7) is walkable now too — it records what the
+  ceiling read, plus each recipient's own criterion and maximum.
+
+- **A fault says what sort it is.** A **fout** is the specification's own run-time
+  error on a model that is correct — dividing by an empty value, say. A
+  **modelfout** is the model saying something the engine cannot make sense of, and
+  a test whose run hit one now **fails**, rather than passing on a run that derived
+  less than the model asked for.
+
+- **Six checks for mistakes that used to cost a run-time fault and nothing in
+  the editor.**
+  - `RS114` — the possessive `haar`, which RegelSpraak does not have: `zijn` is
+    the one spelling whatever the referent. Raised only where dropping the pronoun
+    leaves a phrase the model resolves, and it comes with a quick fix.
+  - `RS115` — one name declared as two things a rule can name, typically a role
+    named after the object type that fills it. Every use of it then failed at run
+    time as *dubbelzinnig* while nothing at all was said in the editor. Reported
+    on both declarations, since which one to rename is yours to choose.
+  - `RS116` — `<onderwerp> een X is` where X names no characteristic, role or day
+    type of the subject.
+  - `RS117` — `voor elke <naam>` naming a timeline nothing declares. The name was
+    not collected at all, so it had no colour, no hover and no <kbd>F12</kbd> —
+    and renaming the `Tijdlijn` left every attribute naming the old one and
+    silently without the timeline it says it has.
+  - `RS615` — a `Feittype` whose cardinality line names a role that does not
+    exist, so the cardinality was silently not recorded at all.
+  - `RS101` and `RS102` now reach a **decision table's columns**. The identical
+    typo was reported in a rule and completely silent in a table.
+
+- **Progress while the workspace is indexed**, in the status bar. Indexing costs
+  about 6 ms a file, and until it finishes the unknown-name checks are held back
+  on purpose — a correct reference to a file not yet read looks exactly like a
+  broken one. On a large workspace that window was live, silent and reporting less
+  than it would; now it says so.
+
+- **A language server that dies says so**, offering **Toon log** and **Opnieuw
+  starten**. The status bar already turned red, but nothing recovers on its own
+  and a reader not watching it found out when features stopped answering.
+
+### Changed
+
+- **Word operators are coloured as keywords.** `maal`, `gedeeld door`, `met een
+  maximum van` and the rest rendered as plain text beside the keywords around
+  them. They were emitted under a scope name themes do not know, and now use the
+  one themes list beside `instanceof` and `typeof`. No colour is imposed — which
+  colour it is remains your theme's business.
+- **Names the editor knew and never showed.** Seven positions, each recorded by
+  the model and read by nobody — so none had colour, hover, **Go to Definition**
+  or, the part that cost, **rename**: renaming what they name left them behind,
+  pointing at something that no longer exists.
+
+  The unit a conversion converts to (`= 1000 g`); the timeline in `voor elke
+  <naam>`; the object type a decision table's conclusion is about (`een Lid is
+  jeugdlid` coloured `jeugdlid` and not `Lid`); a unit inside an expression (`… in
+  millisecondes`, and a literal's suffix); the attributes a uniqueness rule ranges
+  over (`de pasnummers van alle Leden`); the values in a dimension selection; and
+  the attributes an object creation assigns (`met het deelnemersaantal gelijk aan
+  1`).
+
+  The last three share a shape worth naming: they belong to *another name in the
+  same sentence* — `Leden`, the dimension, the type being created — rather than to
+  the rule's own subject, so resolving them the ordinary way gave a confidently
+  wrong answer instead of no answer. Found by a sweep over every name in every
+  model this project ships; what remains uncovered is deliberate.
+- **A decision table's rows are highlighted.** Everything inside one rendered as
+  plain text — `indien`, `moet gesteld worden op`, `kleiner is dan`, `n.v.t.`,
+  the amounts, even the pipes. Only names showed, which made it look like a few
+  missing keywords rather than a table with no highlighting at all.
+- **A testset's and testgeval's name reads as one name.** The label had no colour
+  of its own, so whichever words inside it happened to be keywords lit up on
+  their own — `Testgeval Een pasnummer **dat** de elfproef **niet** haalt`. It now
+  gets the same treatment a rule name has always had.
+- **Date literals are coloured.** `01-01-2027` rendered as plain text beside the
+  numbers in the same sentence. Same cause as the operators above: the scope name
+  was one no theme has a rule for. A date now takes the colour your theme gives a
+  literal value — which colour that is remains your theme's business.
+- **Every unit is coloured, not only the ones your model declares.** A unit was
+  coloured if and only if an `Eenheidsysteem` in the workspace declared it — so
+  `kg` and `pt` were, while `jaar`, `uur`, `dag` and `%` were not, and a compound
+  like `€/dag` or `kg/uur` coloured its left half and left the right half plain.
+  The built-in units come with §3.7 and are never declared by anyone; so does a
+  standard currency code the model has not declared. An unknown unit still gets
+  no colour, which is what `RS106` is for.
+- **Unknown-name diagnostics wait for the first workspace scan to finish.** A file
+  opened during it was told its references were unknown and told otherwise a
+  second later.
+- **A `zijn` on a subject that is not `(bezield)` is reported again** (`RS609`),
+  and asked per reference rather than per rule: a pronoun inside a subselection is
+  about what the subselection filters, not about the rule's subject.
+
+### Fixed
+
+- Renaming a role left a `Feittype`'s cardinality line stale, and the feittype
+  then recorded no cardinality at all — so the check that reads it went quiet.
+  Rename covers that line now.
+- A run-time ambiguity message repeated everything the two readings agreed about
+  instead of stating the choice between them.
+- `regelversie <naam> (<geldigheid>) gevuurd is` ignored the version qualifier and
+  answered about whichever version the rekendatum had selected.
+
 ## [0.6.0] — The test language, and running it
 
 A second kind of file: `*.test.rgs`, where you write what a model is supposed to
@@ -538,19 +704,6 @@ name is navigated as the thing it *means* — not as matching text.
   - it **reports what it did not change**: a plural form `(mv: …)` that now needs
     the same treatment, and any remaining text the model does not account for —
     a comment, a unit inside an expression, a decision-table cell.
-- **RegelSpraak in Markdown.** A fenced code block marked `regelspraak` (or
-  `rgs`) is highlighted as RegelSpraak inside any `.md` file — documentation,
-  a design note, a pull-request description rendered locally. The fence
-  behaves like every built-in language block: `~~~` works, so do longer
-  fences, an indented block inside a list item works, and an info string
-  (```` ```regelspraak{1,3} ````) is accepted.
-
-  This is the syntax layer only — keywords, literals, comments. The
-  meaning-aware colouring, diagnostics, hover and navigation all need a model,
-  and a Markdown file is not one, so a block is coloured but not analysed. No
-  language server is started for a `.md` file, and none is needed: the
-  highlighting is a declarative contribution, so it applies with no `.rgs` file
-  in the workspace.
 
 ### Changed
 
@@ -575,15 +728,6 @@ name is navigated as the thing it *means* — not as matching text.
 - Enumeration values and units written inside expressions are literals that the
   model does not yet resolve, so a rename of one edits its declaration and tells
   you about the rest.
-- **The Markdown preview shows a `regelspraak` block unhighlighted.** The editor
-  and the preview colour code with two different engines: the editor uses the
-  TextMate grammar this release injects, while the built-in preview renders with
-  markdown-it and highlights fences with highlight.js, which has no RegelSpraak
-  language and falls back to plain escaped text. Nothing about the injection can
-  change that. Supporting the preview means contributing a markdown-it plugin
-  that emits highlight.js's own CSS classes — a separate piece of work, and one
-  that has to be careful not to start a language server for every previewed
-  `.md` file. Deferred, not forgotten.
 
 ## [0.1.0] — First public preview
 
