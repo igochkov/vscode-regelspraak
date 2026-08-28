@@ -1,4 +1,10 @@
-// Importeren uit ALEF (FSD §C11, IPD Phase 7 item 4).
+// Importeren uit en exporteren naar ALEF (FSD §C11, IPD Phase 7 items 3 and 4).
+//
+// Both directions in one module because they share the two things this side
+// owns — a folder picker and permission to write — and differ in nothing else.
+// The asymmetry worth knowing is on the wire: an import sends the ALEF files,
+// because the server has never heard of that project, while an export sends
+// nothing, because the workspace is the model the server already holds.
 //
 // The client half of the import, and it is deliberately the smaller half: it
 // picks a project, reads its model files, hands them to the server, and writes
@@ -35,8 +41,10 @@ import { SHOW_LOG_COMMAND, startedServer } from './serverStatus';
 const RESTART_COMMAND = 'regelspraak.restartServer';
 
 export const IMPORT_ALEF_COMMAND = 'regelspraak.importeerUitAlef';
+export const EXPORT_ALEF_COMMAND = 'regelspraak.exporteerNaarAlef';
 
 const IMPORT_ALEF_REQUEST = 'regelspraak/importAlef';
+const EXPORT_ALEF_REQUEST = 'regelspraak/exportAlef';
 
 interface ImportAlefResult {
 	documents: { path: string; text: string }[];
@@ -331,4 +339,77 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 async function showReport(markdown: string): Promise<void> {
 	const document = await workspace.openTextDocument({ language: 'markdown', content: markdown });
 	await window.showTextDocument(document);
+}
+
+// ---------------------------------------------------------------------------
+// Exporteren naar ALEF (FR-C11.1)
+// ---------------------------------------------------------------------------
+
+interface ExportAlefResult {
+	models: { path: string; text: string }[];
+	report: { kind: string; where: string; message: string }[];
+	reportDocument: string;
+}
+
+/**
+ * The workspace, written out as ALEF model files.
+ *
+ * **Nothing is sent to the server.** The workspace is the model it already holds
+ * indexed, so the request carries only the name to give the exported ObjectModel
+ * — the workspace folder's, which is what a reader would call this model.
+ *
+ * The files that come back are model files and not an MPS project: the report
+ * says so, and the destination someone picks is the `models` folder of an ALEF
+ * solution they already have.
+ */
+export async function exportToAlef(client: LanguageClient | undefined): Promise<void> {
+	const server = await runningServer(client);
+	if (!server) {
+		return;
+	}
+	const projectName = workspace.workspaceFolders?.[0]?.name;
+	let result: ExportAlefResult;
+	try {
+		result = await window.withProgress({
+			location: ProgressLocation.Notification,
+			title: 'Model omzetten naar ALEF…'
+		}, async () => await server.sendRequest<ExportAlefResult>(EXPORT_ALEF_REQUEST, { projectName }));
+	} catch (error) {
+		await reportRequestFailure(error, projectName ?? 'de werkmap');
+		return;
+	}
+	if (result.models.length === 0) {
+		window.showWarningMessage(
+			'De omzetting heeft geen ALEF-model opgeleverd. Het verslag vertelt waarom.');
+		await showReport(result.reportDocument);
+		return;
+	}
+
+	const target = await chooseTarget();
+	if (!target) {
+		return;
+	}
+	const names = [...result.models.map(one => one.path), REPORT_NAME];
+	if (!await confirmTarget(target, names)) {
+		return;
+	}
+	try {
+		for (const model of result.models) {
+			fs.writeFileSync(path.join(target.fsPath, model.path), model.text, 'utf8');
+		}
+		fs.writeFileSync(path.join(target.fsPath, REPORT_NAME), result.reportDocument, 'utf8');
+	} catch (error) {
+		window.showErrorMessage(`Schrijven naar ${target.fsPath} is mislukt: ${String(error)}`);
+		return;
+	}
+
+	const skipped = result.report.filter(one => one.kind === 'overgeslagen').length;
+	const read = 'Verslag lezen';
+	const summary = `${result.models.length} ALEF-modelbestand(en) geschreven naar ${target.fsPath}`
+		+ (skipped > 0 ? `; ${skipped} ding(en) niet overgenomen.` : '.');
+	const chosen = await window.showInformationMessage(summary, read);
+	if (chosen === read) {
+		await window.showTextDocument(
+			await workspace.openTextDocument(Uri.file(path.join(target.fsPath, REPORT_NAME))));
+	}
 }

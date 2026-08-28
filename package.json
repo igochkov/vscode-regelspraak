@@ -114,6 +114,11 @@
 				"command": "regelspraak.importeerUitAlef",
 				"title": "Importeren uit ALEF",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.exporteerNaarAlef",
+				"title": "Exporteren naar ALEF",
+				"category": "RegelSpraak"
 			}
 		],
 		"menus": {
