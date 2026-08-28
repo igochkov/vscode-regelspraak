@@ -7,51 +7,58 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [0.8.0] — Where a model comes from, and where it goes
+## [0.8.0] — Where a model comes from
 
-Two halves, and they are about the same thing from opposite ends: a RegelSpraak
-model does not begin or end in the editor. It **renders** something written in
-prose — a reglement, a regeling, a beleidsregel — and it **lives beside** ALEF,
-the Belastingdienst's own modelling environment, where the same model may already
-exist or need to end up.
+Two halves, and both are about the same thing: a RegelSpraak model does not begin
+in the editor. It **renders** something written in prose — a reglement, a
+regeling, a beleidsregel — and it may already **exist in ALEF**, the
+Belastingdienst's MPS-based modelling environment.
 
 Neither connection was something the tooling could see. The question a reviewer
 actually asks — *which provision says this?* — had no answer, and a model that
 existed in ALEF had to be re-typed by hand.
 
-### ALEF interoperability
+### Importeren uit ALEF
 
-Two commands, one per direction, and the text stays the place a model is
-authored: an import scaffolds `.rgs` files and then gets out of the way, an
-export writes ALEF files and does not read them back. There is deliberately no
-synchronisation between the two — two surfaces that both write a model is exactly
-what this extension is built not to be.
+Point it at an ALEF project folder and it reads the models, then writes
+RegelSpraak text: the GegevensSpraak declarations, the rules, and the testsets,
+laid out the way **Document opmaken** would lay them out.
 
-- **Importeren uit ALEF.** Point it at an ALEF project folder and it reads the
-  models, writes RegelSpraak text — declarations, rules and testsets — and lays
-  it out the way **Document opmaken** would. From that moment the text is the
-  model: there is no link back to the project and nothing watching it.
-- **Exporteren naar ALEF.** Writes the workspace's **declarations** as ALEF model
-  files — object types, attributes, characteristics, domains, units, parameters
-  and fact types with their cardinality. These are model files, not a whole MPS
-  project: put them in the `models` folder of an ALEF solution you already have.
+**It is a one-shot migration, on purpose.** From the moment the files land the
+text is the model — there is no link back to the ALEF project, no re-import
+gesture, and nothing watching it. The `.rgs` files are the one place a model is
+authored, and an import that kept a second source of truth alive would undo that.
 
-  **Rules are not exported yet.** A rule body is an expression tree and writing
-  one is a piece of work of its own; a file containing rules is reported rather
-  than half-written, so nothing silently loses a rule.
-- **Both say what they could not do.** A conversion report is written beside the
-  files: constructs that were **not translated** (and which), readings **worth
-  checking**, and any word the conversion had to invent. Nothing is dropped in
-  silence.
-- **Nothing is written until you say where — and it shows you where.** Each
-  direction asks for a target folder, then names the full path of it and every
-  file about to land there before writing anything. The message afterwards names
-  the folder again and offers to open it.
+- **An imported rule reads the way ALEF draws it.** Where a chain runs over a
+  collection the attribute is written in the plural — `de som van de toegekende
+  premies van zijn aangesloten deelnemers` — with `de` in front of it whatever
+  the singular took. Where no plural can be spelled properly (`aantal boeken` is
+  a count of books) the singular is written instead, which reads correctly and
+  means the same.
+- **It says what it could not do.** A conversion report is written beside the
+  files, listing three things separately: constructs that were **not translated**
+  (the text is a model short of a line, and it says which), readings **worth
+  checking**, and every word the conversion had to invent. Nothing is dropped in
+  silence, and an ALEF construct with no RegelSpraak equivalent stops its own rule
+  rather than producing a sentence that means something else.
+- **Nothing is written until you say where — and it shows you where.** It asks
+  for a target folder, then names the full path of it and every file about to
+  land there before writing anything. It is the only thing in the extension that
+  writes files you did not name, and the message afterwards names the folder
+  again and offers to open it.
+- **And when it cannot run, it says why.** The import needs the language server;
+  where it is not running the command says so, with the log and a restart a click
+  away. A server that is **older than the extension** is called out by name, with
+  the path it was started from and when that file was built — and, in a window
+  with no folder open, a note that a workspace setting like
+  `regelspraak.server.path` does not apply there.
 
-  It is also honest about not running: importing and exporting both need the
-  language server, and where it is missing, older than the extension, or the
-  window has no folder open, the command says which of those it is rather than
-  failing on a request with a message about a connection.
+**There is no export.** One was built and withdrawn before release: the files it
+produced break a real ALEF environment, because an ALEF project is not its model
+files — the solution that holds them carries far more than the file format an
+outside tool can observe. A converter that damages the tool it targets is worse
+than none, so the finding is kept and the code is not. Import is unaffected: it
+reads ALEF and writes text, and hands nothing back.
 
 ### The document a model renders
 
@@ -96,13 +103,6 @@ what this extension is built not to be.
   **RS613 is a hint rather than a warning** now, and it names the plural that
   will be derived so you can see the word and correct it in one place. Because of
   this, an imported ALEF model states no plurals in its declarations at all.
-- **An imported rule reads the way ALEF draws it.** Where a chain runs over a
-  collection the attribute is written in the plural — `de som van de toegekende
-  premies van zijn aangesloten deelnemers` — with `de` in front of it whatever
-  the singular took. Where no plural can be spelled properly (`aantal boeken` is
-  a count of books) the singular is written instead, which reads correctly and
-  means the same. Every plural word the conversion invented is listed in its
-  report.
 
 ### Notes
 
