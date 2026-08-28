@@ -24,7 +24,7 @@ import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocum
 import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
 import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
-import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
+import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
 
@@ -478,13 +478,16 @@ function resolveServerModule(context: ExtensionContext): { module: string; origi
  * its cause.
  */
 function reportServerOrigin(module: string, origin: string): void {
+	let builtAt: string | undefined;
+	try {
+		builtAt = fs.statSync(module).mtime.toLocaleString('nl-NL');
+	} catch {
+		builtAt = undefined;
+	}
+	recordServerBuild({ module, origin, builtAt });
 	output?.appendLine(`Taalserver : ${module}`);
 	output?.appendLine(`Herkomst   : ${origin}`);
-	try {
-		output?.appendLine(`Gebouwd    : ${fs.statSync(module).mtime.toLocaleString('nl-NL')}`);
-	} catch {
-		output?.appendLine('Gebouwd    : niet gevonden');
-	}
+	output?.appendLine(`Gebouwd    : ${builtAt ?? 'niet gevonden'}`);
 }
 
 async function startClient(context: ExtensionContext): Promise<void> {

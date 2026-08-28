@@ -29,7 +29,7 @@ import * as path from 'path';
 import { commands, ProgressLocation, Uri, window, workspace } from 'vscode';
 import { LanguageClient, State } from 'vscode-languageclient/node';
 
-import { SHOW_LOG_COMMAND } from './serverStatus';
+import { SHOW_LOG_COMMAND, startedServer } from './serverStatus';
 
 /** The command that restarts the server, so this offers the same one C6 does. */
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -177,6 +177,55 @@ async function runningServer(client: LanguageClient | undefined): Promise<Langua
 	return undefined;
 }
 
+/** LSP's own code for a method the server does not implement. */
+const METHOD_NOT_FOUND = -32601;
+
+/**
+ * Why the request failed, and for the one failure that has a real answer, what
+ * to do about it.
+ *
+ * **A method the server does not know is a version mismatch, not a bug in the
+ * model.** `Error: Unhandled method regelspraak/importAlef` says nothing a
+ * reader can act on, and it is the message a *stale server build* produces:
+ * every custom request this extension adds will hit it the same way. The client
+ * already knows which server it started, where the path came from and when that
+ * file was built — it wrote all three to the output channel on start — so the
+ * message states them instead of pointing at a log.
+ *
+ * The line about a window with no folder is stated only when it is true, and it
+ * is the reason this turned up at all: a workspace setting like
+ * `regelspraak.server.path` belongs to a folder, so in a window with none it
+ * does not apply and the extension falls back to the server it ships with —
+ * which in a development checkout is whatever was last built there.
+ */
+async function reportRequestFailure(error: unknown, project: string): Promise<void> {
+	const code = (error as { code?: unknown } | undefined)?.code;
+	const unknownMethod = code === METHOD_NOT_FOUND
+		|| /unhandled method/i.test(String(error));
+	if (!unknownMethod) {
+		window.showErrorMessage(`De omzetting van '${project}' is mislukt: ${String(error)}`);
+		return;
+	}
+	const build = startedServer();
+	const where = build
+		? ` Gestart is ${build.module} (via ${build.origin}), gebouwd op ${build.builtAt ?? 'onbekend'}.`
+		: '';
+	const noFolder = workspace.workspaceFolders === undefined
+		? ' Let op: er is geen map geopend, dus een werkmapinstelling zoals'
+			+ ' "regelspraak.server.path" geldt hier niet.'
+		: '';
+	const log = 'Toon log';
+	const restart = 'Opnieuw starten';
+	const answer = await window.showErrorMessage(
+		`Deze taalserver kent het importverzoek niet: hij is ouder dan deze extensie.${where}${noFolder}`,
+		log, restart);
+	if (answer === log) {
+		await commands.executeCommand(SHOW_LOG_COMMAND);
+	} else if (answer === restart) {
+		await commands.executeCommand(RESTART_COMMAND);
+	}
+}
+
 export async function importFromAlef(client: LanguageClient | undefined): Promise<void> {
 	// The running client, rather than a boolean: everything below sends through
 	// it, and a `!` at each of those sites would be asserting what this already
@@ -219,8 +268,7 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 			}))
 		}));
 	} catch (error) {
-		window.showErrorMessage(
-			`De omzetting van '${path.basename(project.fsPath)}' is mislukt: ${String(error)}`);
+		await reportRequestFailure(error, path.basename(project.fsPath));
 		return;
 	}
 
