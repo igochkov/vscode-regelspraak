@@ -66,8 +66,14 @@ tooling could give.
 
   **RS613 is a hint rather than a warning** now, and it names the plural that
   will be derived so you can see the word and correct it in one place. Because of
-  this, an imported ALEF model states no plurals at all — the only invented word
-  left in it is the one the cardinality line of a `Feittype` forces.
+  this, an imported ALEF model states no plurals in its declarations at all.
+- **An imported rule reads the way ALEF draws it.** Where a chain runs over a
+  collection the attribute is written in the plural — `de som van de toegekende
+  premies van zijn aangesloten deelnemers` — with `de` in front of it whatever
+  the singular took. Where no plural can be spelled properly (`aantal boeken` is
+  a count of books) the singular is written instead, which reads correctly and
+  means the same. Every plural word the conversion invented is listed in its
+  report.
 
 ### Notes
 
