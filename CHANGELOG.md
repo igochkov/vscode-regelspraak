@@ -49,10 +49,25 @@ tooling could give.
 - **It says what it could not do.** A conversion report is written beside the
   files, listing three things separately: constructs that were **not translated**
   (the text is a model short of a line, and it says which), readings **worth
-  checking**, and the **plural forms it had to invent** — ALEF stores a name and
-  its gender but no plural, so `Werkgevers` is derived and an irregular one like
-  `Leden` will come out wrong. Every guess is on that list rather than buried in
-  the model.
+  checking**, and any **plural form it had to invent**. On a real project that
+  last list is now one line long — see below.
+- **A model no longer has to spell out its plurals.** `(mv: …)` is optional in
+  the specification's syntax chapter, and the editor now works the form out:
+  write `Objecttype de Vestiging` and a rule may still say `alle Vestigingen`.
+  Navigation, colouring, references and rename all follow, and renaming
+  `Vestiging` to `Filiaal` rewrites `alle Vestigingen` to `alle Filialen` with
+  it.
+
+  A derived form **never** overrides one that is written, and never competes with
+  another declaration: where two names would derive the same plural, neither is
+  chosen. So the worst a wrong guess can do is what happens today — the phrase
+  does not resolve, and the editor says so. Irregular plurals (`Lid` is `Leden`)
+  are exactly that case: declare the form and everything works as before.
+
+  **RS613 is a hint rather than a warning** now, and it names the plural that
+  will be derived so you can see the word and correct it in one place. Because of
+  this, an imported ALEF model states no plurals at all — the only invented word
+  left in it is the one the cardinality line of a `Feittype` forces.
 
 ### Notes
 
