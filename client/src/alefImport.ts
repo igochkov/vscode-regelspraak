@@ -13,14 +13,20 @@
 // they are the model, which is what makes this compatible with OBJ-8 where
 // continuous synchronisation (FR-C11.3) is not.
 //
-// It refuses to overwrite without asking, and it writes the report beside the
-// files rather than into the Problems panel: "this construct has no RegelSpraak
-// equivalent" is a fact about the conversion and would outlive the command that
-// produced it.
+// **It names the destination before it writes and again afterwards.** The first
+// version defaulted the destination dialog to the open workspace and asked only
+// where a *name* collided, which meant an accepted default wrote an imported
+// model into the reader's own project without a word — and only when they had
+// one open, which is how it was found. Neither the picker nor the write reports
+// anything on its own, so this module has to.
+//
+// The report is written beside the files rather than into the Problems panel:
+// "this construct has no RegelSpraak equivalent" is a fact about the conversion
+// and would outlive the command that produced it.
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ProgressLocation, Uri, window, workspace } from 'vscode';
+import { commands, ProgressLocation, Uri, window, workspace } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
 export const IMPORT_ALEF_COMMAND = 'regelspraak.importeerUitAlef';
@@ -72,29 +78,63 @@ function modelFiles(root: string): string[] {
 	return found;
 }
 
-/** Where the files should land: asked once, defaulting to the open workspace. */
+/**
+ * Where the files should land.
+ *
+ * **No `defaultUri`, and that is the fix for a real mistake** (28 August 2026).
+ * It used to default to `workspaceFolders[0]`, which opened this dialog *inside*
+ * the reader's own project — so accepting it without looking wrote an imported
+ * model into the model they had open, and only when they had one open, which is
+ * exactly how it was reported. A folder picker with no default opens where the
+ * last one left off, which in this flow is the ALEF project the reader has just
+ * chosen: still a place they may not want, but one they navigated to themselves.
+ *
+ * The first root of a multi-root workspace was the wrong guess for a second
+ * reason besides: it is not "the project" to anyone who has more than one open.
+ *
+ * What actually makes this safe is the confirmation below, which names the
+ * resolved path before a single byte is written.
+ */
 async function chooseTarget(): Promise<Uri | undefined> {
 	const chosen = await window.showOpenDialog({
 		canSelectFiles: false,
 		canSelectFolders: true,
 		canSelectMany: false,
-		defaultUri: workspace.workspaceFolders?.[0]?.uri,
-		openLabel: 'Hierin schrijven',
-		title: 'Waar moeten de RegelSpraak-bestanden komen?'
+		openLabel: 'Hierheen schrijven',
+		title: 'Doelmap voor de RegelSpraak-bestanden'
 	});
 	return chosen?.[0];
 }
 
 /**
- * Which of the files already exist, so the reader is asked once rather than
- * per file.
+ * The destination, confirmed — with its full path and everything about to be
+ * written into it.
  *
- * Asked at all because this is the only thing in the extension that writes files
- * the user did not name — rename writes, but only into documents that already
- * say what it is rewriting.
+ * **Always, not only when a name collides.** The overwrite guard this replaces
+ * asked about *names*; the question a reader actually needs answered is *where*,
+ * and a folder whose files happen to be named differently accepted the write in
+ * silence. Naming the path is also the only way the previous dialog's outcome
+ * becomes visible at all: a folder picker reports nothing back.
+ *
+ * Modal, because it is the one moment this extension writes files the user did
+ * not name, and because the alternative — noticing afterwards — is what went
+ * wrong.
  */
-function existing(target: Uri, names: string[]): string[] {
-	return names.filter(name => fs.existsSync(path.join(target.fsPath, name)));
+async function confirmTarget(target: Uri, names: string[]): Promise<boolean> {
+	const clash = names.filter(name => fs.existsSync(path.join(target.fsPath, name)));
+	const detail = [
+		`${names.length} bestand(en): ${names.join(', ')}.`,
+		clash.length > 0
+			? `\n\nLet op: ${clash.length} bestand(en) bestaan al en worden overschreven: `
+				+ `${clash.join(', ')}.`
+			: ''
+	].join('');
+	const write = clash.length > 0 ? 'Overschrijven' : 'Schrijven';
+	const question = `Schrijven naar ${target.fsPath}?`;
+	const answer = clash.length > 0
+		? await window.showWarningMessage(question, { modal: true, detail }, write)
+		: await window.showInformationMessage(question, { modal: true, detail }, write);
+	return answer === write;
 }
 
 export async function importFromAlef(client: LanguageClient | undefined): Promise<void> {
@@ -141,15 +181,8 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 		return;
 	}
 	const names = [...result.documents.map(one => one.path), REPORT_NAME];
-	const clash = existing(target, names);
-	if (clash.length > 0) {
-		const overwrite = 'Overschrijven';
-		const chosen = await window.showWarningMessage(
-			`${clash.length} bestand(en) bestaan al in deze map: ${clash.join(', ')}.`,
-			{ modal: true }, overwrite);
-		if (chosen !== overwrite) {
-			return;
-		}
+	if (!await confirmTarget(target, names)) {
+		return;
 	}
 
 	for (const document of result.documents) {
@@ -162,16 +195,24 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 	const first = Uri.file(path.join(target.fsPath, result.documents[0].path));
 	await window.showTextDocument(await workspace.openTextDocument(first));
 
+	// **The destination is named here too**, and not only in the confirmation:
+	// this is the message that is still on screen a minute later, and "where did
+	// they go" is the question this command has actually been asked.
 	const skipped = result.report.filter(one => one.kind === 'overgeslagen').length;
 	const derived = result.report.filter(one => one.kind === 'afgeleid').length;
 	const read = 'Verslag lezen';
-	const summary = skipped > 0
-		? `${result.documents.length} bestand(en) geschreven; ${skipped} constructie(s) overgeslagen.`
-		: `${result.documents.length} bestand(en) geschreven; ${derived} meervoudsvorm(en) afgeleid.`;
-	const chosen = await window.showInformationMessage(summary, read);
+	const reveal = 'Map tonen';
+	const summary = `${result.documents.length} bestand(en) geschreven naar ${target.fsPath}`
+		+ (skipped > 0
+			? `; ${skipped} constructie(s) overgeslagen.`
+			: `; ${derived} meervoudsvorm(en) afgeleid.`);
+	const chosen = await window.showInformationMessage(summary, read, reveal);
 	if (chosen === read) {
 		await window.showTextDocument(
 			await workspace.openTextDocument(Uri.file(path.join(target.fsPath, REPORT_NAME))));
+	} else if (chosen === reveal) {
+		await commands.executeCommand('revealFileInOS',
+			Uri.file(path.join(target.fsPath, result.documents[0].path)));
 	}
 }
 

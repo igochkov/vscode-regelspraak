@@ -77,9 +77,11 @@ tooling could give.
 
 ### Notes
 
-- **Nothing is written until you say where.** The import asks for a target folder
-  and asks again before overwriting anything in it. It is the only thing in the
-  extension that writes files you did not name.
+- **Nothing is written until you say where — and it shows you where.** The
+  import asks for a target folder and then names the full path of it, with every
+  file it is about to write, before writing anything. It is the only thing in
+  the extension that writes files you did not name, and the message afterwards
+  names the folder again and offers to open it.
 - **One command is trusted, and no others.** The hover's link has to invoke a
   command, there being no URI that means "the preview of this file", so the
   extension declares exactly `regelspraak.openBron` as trusted. A hover
