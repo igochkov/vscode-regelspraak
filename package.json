@@ -109,6 +109,11 @@
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.importeerUitAlef",
+				"title": "Importeren uit ALEF",
+				"category": "RegelSpraak"
 			}
 		],
 		"menus": {

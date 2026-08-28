@@ -40,9 +40,25 @@ tooling could give.
   stale. That root is found by looking for the cited document rather than assumed
   to be the workspace folder — a model usually lives in a subfolder of a
   repository, and then the two are not the same place.
+- **Bring a model in from ALEF.** **Importeren uit ALEF** in the command palette
+  asks for an ALEF project folder, reads its models, and writes RegelSpraak text:
+  the GegevensSpraak declarations, the rules, and the testsets, laid out the way
+  **Document opmaken** would lay them out. From that moment the text is the
+  model — there is no link back to the project and nothing watching it, which is
+  what makes this an import rather than a second place to author.
+- **It says what it could not do.** A conversion report is written beside the
+  files, listing three things separately: constructs that were **not translated**
+  (the text is a model short of a line, and it says which), readings **worth
+  checking**, and the **plural forms it had to invent** — ALEF stores a name and
+  its gender but no plural, so `Werkgevers` is derived and an irregular one like
+  `Leden` will come out wrong. Every guess is on that list rather than buried in
+  the model.
 
 ### Notes
 
+- **Nothing is written until you say where.** The import asks for a target folder
+  and asks again before overwriting anything in it. It is the only thing in the
+  extension that writes files you did not name.
 - **One command is trusted, and no others.** The hover's link has to invoke a
   command, there being no URI that means "the preview of this file", so the
   extension declares exactly `regelspraak.openBron` as trusted. A hover

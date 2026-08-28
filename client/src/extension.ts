@@ -26,6 +26,7 @@ import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
 import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
+import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -309,6 +310,12 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
+
+	// C11. Ungated on the active file: importing a project is not about the
+	// document in front of you, and there may not be one — an empty window is
+	// exactly where somebody reaches for this.
+	context.subscriptions.push(
+		commands.registerCommand(IMPORT_ALEF_COMMAND, () => importFromAlef(client)));
 
 	activeScenario = new ActiveScenario(context, testExplorer);
 	context.subscriptions.push(
