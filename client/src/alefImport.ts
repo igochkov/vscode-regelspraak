@@ -27,7 +27,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { commands, ProgressLocation, Uri, window, workspace } from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
+import { LanguageClient, State } from 'vscode-languageclient/node';
+
+import { SHOW_LOG_COMMAND } from './serverStatus';
+
+/** The command that restarts the server, so this offers the same one C6 does. */
+const RESTART_COMMAND = 'regelspraak.restartServer';
 
 export const IMPORT_ALEF_COMMAND = 'regelspraak.importeerUitAlef';
 
@@ -137,9 +142,47 @@ async function confirmTarget(target: Uri, names: string[]): Promise<boolean> {
 	return answer === write;
 }
 
+/**
+ * Whether the server can be asked anything, and what to say when it cannot.
+ *
+ * **`!client` was not the whole question** (28 August 2026). `startClient`
+ * assigns the client and *then* awaits `start()`, so a server that fails to
+ * start leaves a `LanguageClient` behind that is not running — and a
+ * `sendRequest` on one of those rejects with a message about a connection,
+ * which VS Code shows as "command failed". Asking for the state is the
+ * difference between that and a sentence somebody can act on.
+ *
+ * The two actions already exist and are the two things there are to do about
+ * it. The line about an unopened folder is stated only when it is true: this
+ * command is reachable from the palette in a window with nothing open, where
+ * the server has had no reason to start.
+ */
+async function runningServer(client: LanguageClient | undefined): Promise<LanguageClient | undefined> {
+	if (client?.state === State.Running) {
+		return client;
+	}
+	const log = 'Toon log';
+	const restart = 'Opnieuw starten';
+	const noFolder = workspace.workspaceFolders === undefined
+		? ' Er is in dit venster geen map geopend; open de map waarin het model moet komen en probeer het opnieuw.'
+		: '';
+	const answer = await window.showErrorMessage(
+		`De RegelSpraak-taalserver draait niet, dus er kan niets omgezet worden.${noFolder}`,
+		log, restart);
+	if (answer === log) {
+		await commands.executeCommand(SHOW_LOG_COMMAND);
+	} else if (answer === restart) {
+		await commands.executeCommand(RESTART_COMMAND);
+	}
+	return undefined;
+}
+
 export async function importFromAlef(client: LanguageClient | undefined): Promise<void> {
-	if (!client) {
-		window.showErrorMessage('De RegelSpraak-taalserver draait niet, dus er kan niets omgezet worden.');
+	// The running client, rather than a boolean: everything below sends through
+	// it, and a `!` at each of those sites would be asserting what this already
+	// established.
+	const server = await runningServer(client);
+	if (!server) {
 		return;
 	}
 	const picked = await window.showOpenDialog({
@@ -159,15 +202,27 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 		return;
 	}
 
-	const result = await window.withProgress({
-		location: ProgressLocation.Notification,
-		title: `${files.length} ALEF-model(len) omzetten…`
-	}, async () => await client.sendRequest<ImportAlefResult>(IMPORT_ALEF_REQUEST, {
-		files: files.map(file => ({
-			path: path.relative(project.fsPath, file).split(path.sep).join('/'),
-			text: fs.readFileSync(file, 'utf8')
-		}))
-	}));
+	// Both halves can fail on their own account — a file that cannot be read, a
+	// server that has died between the check above and here — and neither says
+	// anything useful when it does: an unhandled rejection reaches the user as
+	// "Running the contributed command … failed", with the reason in a log they
+	// have not been told to open.
+	let result: ImportAlefResult;
+	try {
+		result = await window.withProgress({
+			location: ProgressLocation.Notification,
+			title: `${files.length} ALEF-model(len) omzetten…`
+		}, async () => await server.sendRequest<ImportAlefResult>(IMPORT_ALEF_REQUEST, {
+			files: files.map(file => ({
+				path: path.relative(project.fsPath, file).split(path.sep).join('/'),
+				text: fs.readFileSync(file, 'utf8')
+			}))
+		}));
+	} catch (error) {
+		window.showErrorMessage(
+			`De omzetting van '${path.basename(project.fsPath)}' is mislukt: ${String(error)}`);
+		return;
+	}
 
 	if (result.documents.length === 0) {
 		window.showWarningMessage(
@@ -185,10 +240,18 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 		return;
 	}
 
-	for (const document of result.documents) {
-		fs.writeFileSync(path.join(target.fsPath, document.path), document.text, 'utf8');
+	try {
+		for (const document of result.documents) {
+			fs.writeFileSync(path.join(target.fsPath, document.path), document.text, 'utf8');
+		}
+		fs.writeFileSync(path.join(target.fsPath, REPORT_NAME), result.reportDocument, 'utf8');
+	} catch (error) {
+		// Named with the folder, because a write that fails halfway leaves some of
+		// the files there and the reader has to know which folder to look in.
+		window.showErrorMessage(
+			`Schrijven naar ${target.fsPath} is mislukt: ${String(error)}`);
+		return;
 	}
-	fs.writeFileSync(path.join(target.fsPath, REPORT_NAME), result.reportDocument, 'utf8');
 
 	// The first document, opened — an import that writes silently leaves the
 	// reader looking at the folder they started in, wondering whether it ran.

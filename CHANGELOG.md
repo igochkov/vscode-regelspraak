@@ -82,6 +82,11 @@ tooling could give.
   file it is about to write, before writing anything. It is the only thing in
   the extension that writes files you did not name, and the message afterwards
   names the folder again and offers to open it.
+- **And when it cannot run, it says why.** Importing needs the language server,
+  which is not running in a window with nothing open; the command now says so,
+  with the log and a restart a click away, instead of failing on the request
+  with a message about a connection. A conversion or a write that fails is
+  reported in the same way, naming the project or the folder it was working on.
 - **One command is trusted, and no others.** The hover's link has to invoke a
   command, there being no URI that means "the preview of this file", so the
   extension declares exactly `regelspraak.openBron` as trusted. A hover
