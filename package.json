@@ -318,6 +318,12 @@
 			"type": "object",
 			"title": "RegelSpraak",
 			"properties": {
+				"regelspraak.execution.blockOnErrors": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Weiger **Testgeval uitvoeren**, **Regel uitvoeren** en **Foutopsporing** zolang het model een fout bevat (venster **Problemen**). Een model met een fout kan niet betekenen wat er staat, en een uitvoering erover leidt dan een verkeerd getal af in plaats van geen enkel. De controle geldt voor het hele model: een fout in een ander bestand blokkeert de uitvoering ook, want een uitvoering leest alle regels. Zet uit om toch uit te voeren."
+				},
 				"regelspraak.execution.defaultScenario": {
 					"scope": "window",
 					"type": "string",

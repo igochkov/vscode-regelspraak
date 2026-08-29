@@ -183,6 +183,38 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
   will be derived so you can see the word and correct it in one place. Because of
   this, an imported ALEF model states no plurals in its declarations at all.
 
+### A name that hides another name
+
+- **RS119 — een losse naam die het objecttype vóór het lid leest.** Heet een
+  attribuut net zo als een objecttype, dan las een kale verwijzing in een regel
+  altijd het **objecttype**: een losse naam wordt eerst tussen de globale namen
+  gezocht, en daar staat een objecttype wel en een attribuut niet. Niets was
+  onopgelost en niets was dubbelzinnig, dus de editor zweeg — en de uitvoering
+  eindigde met *geen instantie van dit objecttype in bereik* en een lege waarde.
+
+  De editor meldt die zin nu, met beide manieren om hem te schrijven erbij
+  (`zijn <naam>`, of `<naam> van <onderwerp>`), en biedt de eerste als snelle
+  oplossing aan waar het onderwerp bezield is. Hij spreekt **alleen** waar het
+  model het lid werkelijk kent, dus een objecttype als wortel van een keten
+  noemen blijft gewoon RegelSpraak — en `zijn <naam>` en `<naam> van <onderwerp>`
+  waren en blijven goed.
+
+  RS115 waarschuwde al dát de twee namen bestaan, op de declaraties; dat blijft
+  een waarschuwing, want twee legale declaraties zijn geen fout. RS119 gaat over
+  de zin die er staat, en is daarom een fout.
+
+- **Een uitvoering start niet meer op een model met een fout.** **Testgeval
+  uitvoeren**, **Regel uitvoeren** en <kbd>F5</kbd> weigeren zolang het venster
+  **Problemen** een fout toont, en noemen bestand, regel en code van elke fout in
+  de weigering. Een model met een fout kan niet betekenen wat er staat, en een
+  uitvoering erover leidt dan een verkéérd getal af in plaats van geen enkel.
+
+  De controle geldt voor het hele model, want een uitvoering leest alle regels:
+  een fout in een bestand dat u niet open hebt, blokkeert de uitvoering ook.
+  Waarschuwingen en hints tellen niet mee, en met `regelspraak.validation.enable`
+  uit blokkeert er niets — dan is het venster Problemen leeg op uw eigen verzoek.
+  Zet **`regelspraak.execution.blockOnErrors`** uit om toch uit te voeren.
+
 ### Waar een getal vandaan komt
 
 `0.7.0` made a run say which rule wrote a value and out of which other values.
