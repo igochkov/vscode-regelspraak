@@ -85,6 +85,30 @@ reads ALEF and writes text, and hands nothing back.
   stale. That root is found by looking for the cited document rather than assumed
   to be the workspace folder — a model usually lives in a subfolder of a
   repository, and then the two are not the same place.
+
+### A name may contain an apostrophe
+
+- **`euro's`, `auto's`, `cd's`.** These are ordinary Dutch plurals and the
+  language could not spell any of them: the apostrophe opened an enumeration
+  value, so a declaration containing one was reported as an unterminated literal
+  and took the rest of the file with it. An apostrophe **between two letters** is
+  now part of the word — `Domein Hele euro's`, `(mv: euro's)`, `de meegeleverde
+  cd's` — and `'roman'` still reads as a value, the two being told apart by
+  position alone. Nothing that was valid changes meaning.
+- **A name may not begin or end with one**, so `'s-Gravenhage` still has no
+  spelling here. That is a decision rather than an omission: an apostrophe at the
+  start of a word is exactly the one that opens a value, and separating them
+  would mean reading to the end of the line and guessing.
+- **The plural the editor suggests is now the Dutch one.** With the apostrophe
+  unwritable it offered `Autos` and `euros`; it writes `Auto's` and `euro's`, and
+  it has learned the rest of the rule it could not apply — `cd's` and `HTS'en`
+  for abbreviations, `gepensioneerden` and `nabestaanden` for the participles a
+  pension model is written in, `cadeaus` and `cafés` where the apostrophe would
+  be wrong. Where Dutch itself has two forms (`periodes` and `perioden`,
+  `eigenaren` and `eigenaars`) **both are accepted** and the commoner one is
+  written — and a model that already says `euros` goes on resolving exactly as
+  it did.
+
 ### Plurals a model need not spell out
 
 - **A model no longer has to spell out its plurals.** `(mv: …)` is optional in
