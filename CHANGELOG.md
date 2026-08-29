@@ -183,6 +183,12 @@ about the sum in the middle, which is usually the one you are looking for.
   sub-expression whose value could not be worked out is simply not there — the
   fault beside it already names the operation.
 
+- **The outcome panel has a keystroke.** `Alt+R` in a `.rgs` or `.test.rgs`
+  file opens the outcome of the testgeval the cursor is in, beside `Alt+B`
+  and `Alt+Q` for the two characters the language needs. On Windows `Alt+R`
+  is also the menu bar’s mnemonic for the Run menu; the binding is scoped to
+  a focused RegelSpraak editor so it claims the key there and nowhere else.
+
 - **A Watch entry can be opened.** Type a calculation into Watch while a session
   is paused and it now has a disclosure triangle: the answer is on the row, and
   under it is every step that produced it.
