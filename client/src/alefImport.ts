@@ -128,7 +128,7 @@ async function modelRoot(): Promise<Uri | undefined> {
 }
 
 /**
- * The destination, confirmed — with its full path and everything about to be
+ * The destination, confirmed — with its full path and how much is about to be
  * written into it.
  *
  * **Always, not only when a name collides.** The overwrite guard this replaces
@@ -139,19 +139,22 @@ async function modelRoot(): Promise<Uri | undefined> {
  * Modal, because it is the one moment this extension writes files the user did
  * not name, and because the alternative — noticing afterwards — is what went
  * wrong. Since the folder picker was removed it is also the *only* moment the
- * destination is put in front of anybody before the write, which is why it says
- * the whole relative path of each file and not just its name: `gegevens/` and
- * `regels/` may be about to be created.
+ * destination is put in front of anybody before the write, which is why the
+ * question states the resolved path in full.
+ *
+ * **Counts, not a list of names.** A real project imports as dozens of files,
+ * and a modal that recites all of them is a wall of text nobody reads — which
+ * is the failure it exists to prevent, arrived at from the other side. What a
+ * reader decides on is *where* it lands and *how much of what is already there
+ * goes*, so the detail says how many files are written and how many of those
+ * replace one. The conversion report written beside them names every file, for
+ * anyone who wants the list afterwards.
  */
 async function confirmTarget(target: Uri, names: string[]): Promise<boolean> {
 	const clash = names.filter(name => fs.existsSync(path.join(target.fsPath, name)));
-	const detail = [
-		`${names.length} bestand(en): ${names.join(', ')}.`,
-		clash.length > 0
-			? `\n\nLet op: ${clash.length} bestand(en) bestaan al en worden overschreven: `
-				+ `${clash.join(', ')}.`
-			: ''
-	].join('');
+	const detail = clash.length > 0
+		? `${names.length} bestand(en), waarvan ${clash.length} bestaande worden overschreven.`
+		: `${names.length} bestand(en) worden geschreven.`;
 	const write = clash.length > 0 ? 'Overschrijven' : 'Schrijven';
 	const question = `Schrijven naar ${target.fsPath}?`;
 	const answer = clash.length > 0

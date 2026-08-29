@@ -7,20 +7,27 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [0.8.0] — Where a model comes from
+## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
-Three things, and the first two are about the same one: a RegelSpraak model does
-not begin in the editor. It **renders** something written in prose — a reglement, a
-regeling, a beleidsregel — and it may already **exist in ALEF**, the
-Belastingdienst's MPS-based modelling environment.
+A model that already exists in **ALEF** — the Belastingdienst's MPS-based
+modelling environment — no longer has to be re-typed by hand. The extension
+reads such a project and writes its declarations, its rules and its testsets as
+RegelSpraak text, into the folders a model is laid out in, with a report of
+everything it could not translate.
 
-Neither connection was something the tooling could see. The question a reviewer
-actually asks — *which provision says this?* — had no answer, and a model that
-existed in ALEF had to be re-typed by hand.
+And a run says more about itself. `0.7.0` could name the rule that wrote a value
+and the values that rule read; what it could not say is what the arithmetic **in
+between** was worth. It can now — every sub-expression with the number it
+produced, under the write it belongs to — and `F11` steps through that
+calculation one part at a time.
 
-The third is a different question about the same model, and it comes from the
-other end: **where did this number come from?** A run could name the rule; it
-can now show the calculation inside it, and step through it.
+The rest came out of writing and importing real models, and each one is a thing
+the language could not say before. A declaration or rule may cite the **provision
+it renders**, and the editor follows that citation to the article. A name may
+contain an **apostrophe**, so `euro's` and `cd's` are finally spellable, and it
+may contain words the editor used to keep to itself, so `de afstand tot
+bestemming` parses. And a declaration need not spell out its **plural** — the
+editor works the form out, and says which one it worked out.
 
 ### Importeren uit ALEF
 
@@ -51,14 +58,14 @@ authored, and an import that kept a second source of truth alive would undo that
   the root. So an import lands as a model somebody can read rather than a heap
   somebody has to sort, and a model that already has those folders simply gains
   files in them.
-- **Nothing is written until it has shown you where.** It names the full path and
-  every file about to land under it — folders and all — before writing anything,
-  and says which of them would be overwritten. It is the only thing in the
-  extension that writes files you did not name, and the message afterwards names
-  the folder again and offers to open it. There is no longer a folder picker: the
-  destination is the project you are working in. With no folder open it says so
-  instead of guessing a path on your disk, and in a multi-root workspace it asks
-  which of your open folders.
+- **Nothing is written until it has shown you where.** It names the full path it
+  is about to write into, how many files that is and how many of them already
+  exist and would be overwritten — the conversion report lists them all by name
+  afterwards. It is the only thing in the extension that writes files you did not
+  name, and the message afterwards names the folder again and offers to open it.
+  There is no longer a folder picker: the destination is the project you are
+  working in. With no folder open it says so instead of guessing a path on your
+  disk, and in a multi-root workspace it asks which of your open folders.
 - **And when it cannot run, it says why.** The import needs the language server;
   where it is not running the command says so, with the log and a restart a click
   away. A server that is **older than the extension** is called out by name, with
@@ -66,12 +73,20 @@ authored, and an import that kept a second source of truth alive would undo that
   with no folder open, a note that a workspace setting like
   `regelspraak.server.path` does not apply there.
 
-**There is no export.** One was built and withdrawn before release: the files it
-produced break a real ALEF environment, because an ALEF project is not its model
-files — the solution that holds them carries far more than the file format an
-outside tool can observe. A converter that damages the tool it targets is worse
-than none, so the finding is kept and the code is not. Import is unaffected: it
-reads ALEF and writes text, and hands nothing back.
+**There is no export, and that is a decision rather than an omission.** ALEF
+stores a model as an MPS project, and an MPS project is not a folder of model
+files. The XML holds an abstract node tree — concepts, node ids, references —
+which means something only inside a solution that declares the languages it is
+written in, at the versions it is written in, and imports the models it points
+at. None of that scaffolding is part of the file format; it belongs to an ALEF
+release. A tool writing it from outside would be encoding assumptions about
+somebody else's environment that it cannot check and that go stale the next time
+that environment moves, and the failure would land on the ALEF side, in a project
+somebody depends on.
+
+Import is the direction that carries the point of the product anyway: it reads
+ALEF, writes text, and hands nothing back, so from the moment the files land the
+`.rgs` text is the one place the model is authored.
 
 ### The document a model renders
 
