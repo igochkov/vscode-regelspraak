@@ -139,11 +139,14 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
 
 ### Words a name could not contain
 
-- **`hele`, `tot` and `decimalen` may be part of a name.** All three are words
-  RegelSpraak uses itself — `de tijdsduur van … tot … in hele dagen`, `Numeriek
-  (getal met 2 decimalen)` — which until now made them unwritable anywhere else,
-  so `de afstand tot bestemming`, `de contributie in hele euro's` and `Domein
-  Bedrag met 2 decimalen` were all syntax errors. Both readings work now. The
+- **`is`, `hele`, `tot` and `decimalen` may be part of a name.** All four are
+  words RegelSpraak uses itself — `een Lid is jeugdlid`, `de tijdsduur van … tot
+  … in hele dagen`, `Numeriek (getal met 2 decimalen)` — which until now made
+  them unwritable anywhere else, so `de datum waarop de pas verlopen is`, `de
+  afstand tot bestemming`, `de contributie in hele euro's` and `Domein Bedrag met
+  2 decimalen` were all syntax errors. Both readings work now, including the one
+  that needs both at once: `indien hij een lid waarvoor korting van toepassing is
+  is` reads the name to its end and then finds the verb it needs. The
   same is true of every word the language does not need to keep to itself: the
   specification puts **no word outside a name**, so each one that is reserved
   here is a limitation of this editor rather than of RegelSpraak, and the list is
@@ -153,10 +156,10 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
   rejected on `wordt verdeeld over` — a phrase RegelSpraak uses elsewhere, but
   the description between the two `één`/`meerdere` is prose and may say anything.
   It does now.
-- **And a word that is still reserved now says so.** Writing `de looptijd tot
-  einde` used to report *deze regel kan niet ontleed worden bij 'de looptijd
-  tot'* — the place, not the cause, and often not even the right place. It now
-  reads: **`'tot'` is een sleutelwoord van RegelSpraak en kan geen deel van een
+- **And a word that is still reserved now says so.** Writing `de winst of het
+  verlies` used to report *deze regel kan niet ontleed worden bij 'de winst
+  of'* — the place, not the cause, and often not even the right place. It now
+  reads: **`'of'` is een sleutelwoord van RegelSpraak en kan geen deel van een
   naam zijn**, on the word itself. It is checked before it is said: the line has
   to come right without that word, so an ordinary mistake near a keyword keeps
   the message it deserves.
