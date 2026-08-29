@@ -109,6 +109,23 @@ reads ALEF and writes text, and hands nothing back.
   written — and a model that already says `euros` goes on resolving exactly as
   it did.
 
+### Words a name could not contain
+
+- **`hele` may be part of a name.** RegelSpraak uses it in `de tijdsduur van …
+  tot … in hele dagen`, and until now that made it unwritable anywhere else — so
+  `de contributie in hele euro's` was a syntax error. Both readings work now, and
+  the same is true of every word the language does not need to keep to itself:
+  the specification puts **no word outside a name**, so each one that is reserved
+  here is a limitation of this editor rather than of RegelSpraak, and the list is
+  shrinking a word at a time.
+- **And a word that is still reserved now says so.** Writing `de looptijd tot
+  einde` used to report *deze regel kan niet ontleed worden bij 'de looptijd
+  tot'* — the place, not the cause, and often not even the right place. It now
+  reads: **`'tot'` is een sleutelwoord van RegelSpraak en kan geen deel van een
+  naam zijn**, on the word itself. It is checked before it is said: the line has
+  to come right without that word, so an ordinary mistake near a keyword keeps
+  the message it deserves.
+
 ### Plurals a model need not spell out
 
 - **A model no longer has to spell out its plurals.** `(mv: …)` is optional in
