@@ -311,6 +311,15 @@ function page(cspSource: string, scriptNonce: string): string {
 	details[open] > summary .disclosure::before { content: "\\25BE"; }
 	.operands { margin-left: 1.6rem; }
 	.operand .label, .segment .label { color: var(--vscode-descriptionForeground); }
+	/*
+	 * A step's label is a piece of the model's own text, not a name — so it is
+	 * set in the editor's font, which is what tells a reader at a glance that the
+	 * rows above it are values and this one is a sentence they can find in a file.
+	 */
+	.step .label {
+		font-family: var(--vscode-editor-font-family);
+		color: var(--vscode-descriptionForeground);
+	}
 	.refusal { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
 	/* In the header, where a reader looks for what to do with a view — not at the
 	   bottom, which for a long trace is a scroll away from the question. */
@@ -322,7 +331,7 @@ function page(cspSource: string, scriptNonce: string): string {
 	<h1 id="heading"></h1>
 	<p class="meta" id="meta"></p>
 	<p class="hint">Alleen-lezen, en de stand van één run. Klik een regelnaam om hem te openen;
-		klap een schrijving open om te zien waaruit hij berekend is.</p>
+		klap een schrijving open om te zien wat er gerekend is en waaruit.</p>
 	<p class="tools"><button class="link" id="asText">Als tekst openen</button></p>
 </header>
 <main id="body"></main>

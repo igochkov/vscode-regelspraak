@@ -20,7 +20,7 @@
 //     which is a different fact and a worse one to be told by accident.
 
 import { WireRange } from './model';
-import { RunDetail, TestRun } from './testExplorer';
+import { RunDetail, RunStep, TestRun } from './testExplorer';
 
 /**
  * What a row is, which is the whole of how a renderer styles it.
@@ -33,7 +33,7 @@ import { RunDetail, TestRun } from './testExplorer';
 export type RunRowKind =
 	| 'pass' | 'fail' | 'fault' | 'inconsistency'
 	| 'given' | 'derived' | 'segment'
-	| 'write' | 'operand' | 'fired' | 'note';
+	| 'write' | 'operand' | 'step' | 'fired' | 'note';
 
 export interface RunRow {
 	kind: RunRowKind;
@@ -294,8 +294,10 @@ export function withLinks(view: RunView): RunView {
  * Why a consistency rule found its model inconsistent.
  *
  * The criteria first, because that is the answer — the last one is the criterion
- * that decided, since §13.4.8's `alle` stops there — and then the values the check
- * read, because the next question after "which criterion" is "out of what".
+ * that decided, since §13.4.8's `alle` stops there — then what the check computed
+ * on its way (§X7 stage 3) and then the values it read, because the next question
+ * after "which criterion" is "out of what", and a threshold worked out on the
+ * spot is in the first list rather than the second.
  *
  * Both are absent for a uniqueness check (§8.1.6), which compares instances rather
  * than reading a value, and for a single-criterion rule, which *is* its criterion:
@@ -307,6 +309,7 @@ function reasons(one: RunDetail['inconsistencies'][number]): RunRow[] {
 			kind: each.holds ? 'pass' : 'fail',
 			label: each.text
 		})),
+		...stepRows(one.steps),
 		...(one.operands ?? []).map((each): RunRow => ({
 			kind: 'operand',
 			label: withInstance(each.label, each.instance, true),
@@ -376,8 +379,39 @@ function writeRow(
 		label: withInstance(target(one.target, one.coordinates), one.instance, true),
 		value: one.value,
 		...(attributed ? { rule: one.rule, ruleAt: 'beside' as const } : {}),
-		children: one.operands.map(operand => operandRow(operand, produced, seen))
+		// **Steps first, then operands, at the same level and behind the one
+		// click** (§X7 stage 3). They answer the two halves of "why is this value
+		// what it is" and they answer them in this order: what this rule *did*,
+		// then where the numbers it did it to came from. A group header of their
+		// own was the alternative and puts a second click between a reader and the
+		// arithmetic — which is the thing they opened the write for.
+		children: [
+			...stepRows(one.steps),
+			...one.operands.map(operand => operandRow(operand, produced, seen))
+		]
 	};
+}
+
+/**
+ * The sub-expressions of one evaluation, as rows (§X7 stage 3).
+ *
+ * A step is `text = value` and nothing else — no rule, no range, so `withLinks`
+ * gives it no click-through, which is right: a sub-expression is not a place,
+ * and the rule it sits in is already named on the row above.
+ *
+ * A node the engine cut short comes across as a marker with no text of its own;
+ * it is drawn as a plain note, because "and more below here" is a statement
+ * about the *view* and not about the model.
+ */
+function stepRows(steps: RunStep[] | undefined): RunRow[] {
+	return (steps ?? []).map((one): RunRow => one.truncated && one.value === ''
+		? { kind: 'note', label: '… (verder niet vastgelegd)' }
+		: {
+			kind: 'step',
+			label: one.text,
+			value: one.value,
+			...(one.parts?.length ? { children: stepRows(one.parts) } : {})
+		});
 }
 
 /**

@@ -101,6 +101,30 @@ suite('Uitkomst van een run (X4, W3)', () => {
 		assert.ok(trace.rows.some(one => (one.children ?? []).length > 0));
 	});
 
+	test('zet de tussenstappen onder een schrijving, vóór haar operanden', async function () {
+		this.timeout(60000);
+		const view = buildView('lidmaatschap.test.rgs', await run(PASSING));
+		const trace = view.sections.find(one => one.title.startsWith('Trace'))!;
+		const withSteps = trace.rows.find(one =>
+			(one.children ?? []).some(child => child.kind === 'step'));
+		assert.ok(withSteps, 'ergens in deze run wordt gerekend');
+
+		// §X7 fase 3: wat de regel *deed*, en daarna waar de getallen vandaan
+		// kwamen — in die volgorde, en achter dezelfde ene klik.
+		const kinds = (withSteps.children ?? []).map(one => one.kind);
+		assert.equal(kinds.indexOf('step'), 0, kinds.join(' | '));
+		assert.ok(kinds.lastIndexOf('step') < (kinds.indexOf('operand') === -1
+			? kinds.length
+			: kinds.indexOf('operand')), kinds.join(' | '));
+
+		// Een stap is `tekst = waarde` en verder niets: hij is geen plek, dus hij
+		// krijgt ook geen doorklik.
+		const step = (withSteps.children ?? []).find(one => one.kind === 'step')!;
+		assert.ok(step.label.length > 0 && step.value !== undefined);
+		assert.equal(step.link, undefined);
+		assert.equal(step.rule, undefined);
+	});
+
 	test('geeft elke verwachting het bereik van haar eigen Verwacht-regel', async function () {
 		this.timeout(60000);
 		const view = buildView('lidmaatschap.test.rgs', await run(PASSING));

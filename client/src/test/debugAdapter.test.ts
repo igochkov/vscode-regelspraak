@@ -251,3 +251,113 @@ suite('Debug-adapter: een mislukt verzoek (X5 deel C)', () => {
 		adapter.dispose();
 	});
 });
+
+// §X5 deel G — de Call Stack, die binnen één expressie wél een referent heeft.
+//
+// Tussen regels blijft het één frame: de vuurvolgorde volgt afhankelijkheden
+// ([E-7]) en er is geen aanroeper te noemen. Binnen één expressie is het de
+// gewone situatie — elke omsluitende knoop wacht op een operand — en dat is de
+// stapel die deze stapper aflegt.
+suite('Debug-adapter: de Call Stack binnen een expressie (X5 deel G)', () => {
+	const AT = {
+		rule: 'bepaal boete',
+		instance: 'Lening',
+		location: {
+			uri: 'file:///d:/m/regels.rgs',
+			range: { start: { line: 7, character: 0 }, end: { line: 7, character: 20 } }
+		},
+		parameters: [],
+		rekendatum: '15-06-2026',
+		variables: [],
+		kenmerken: [],
+		values: [],
+		at: {
+			text: 'de dagen te laat van de Uitlening',
+			value: '4 dag',
+			depth: 1,
+			range: { start: { line: 9, character: 54 }, end: { line: 9, character: 87 } },
+			frames: [{
+				text: 'de dagen te laat van de Uitlening maal het boetetarief',
+				range: { start: { line: 9, character: 54 }, end: { line: 9, character: 107 } }
+			}]
+		}
+	};
+
+	interface Frame {
+		name: string;
+		line: number;
+		column: number;
+		endLine?: number;
+		source?: { path: string };
+	}
+
+	async function frames(stop: unknown): Promise<Frame[]> {
+		const { adapter, sent } = drive(() => ({ session: true, at: stop }));
+		send(adapter, 1, 'launch', { program: 'd:/m/a.test.rgs', case: '001' });
+		send(adapter, 2, 'configurationDone');
+		send(adapter, 3, 'stackTrace', { threadId: 1 });
+		await settle();
+		const answer = sent.find(one => one.command === 'stackTrace');
+		assert.ok(answer, 'de stapel hoort beantwoord te worden');
+		adapter.dispose();
+		return (answer.body as { stackFrames: Frame[] }).stackFrames;
+	}
+
+	test('zet de afgeronde knoop bovenaan, met zijn waarde in zijn naam', async () => {
+		const stack = await frames(AT);
+		// Een stop gebeurt als een knoop *klaar* is, dus deze heeft een waarde en
+		// alles erboven niet. Daar een getal neerzetten zou een verzinsel zijn, en
+		// dit is de lade waar een verzinsel als feit leest.
+		assert.strictEqual(stack[0].name, 'de dagen te laat van de Uitlening = 4 dag');
+		assert.strictEqual(stack[1].name,
+			'de dagen te laat van de Uitlening maal het boetetarief');
+		assert.strictEqual(stack[2].name, 'bepaal boete · Lening');
+	});
+
+	test('geeft elke knoop zijn eigen bereik, zodat de zin oplicht en niet de regel', async () => {
+		const stack = await frames(AT);
+		assert.strictEqual(stack[0].line, 10);
+		assert.strictEqual(stack[0].column, 55);
+		assert.strictEqual(stack[0].endLine, 10);
+		// Alle frames staan in het document van de regel: een beslistabel wordt
+		// juist daarom nooit gestapt.
+		assert.ok(stack.every(one => one.source?.path.endsWith('regels.rgs')),
+			stack.map(one => one.source?.path).join(' | '));
+	});
+
+	test('blijft bij een regelstop één frame, want regels nesten niet', async () => {
+		const ruleStop: Record<string, unknown> = { ...AT };
+		delete ruleStop.at;
+		const stack = await frames(ruleStop);
+		assert.strictEqual(stack.length, 1);
+		assert.strictEqual(stack[0].name, 'bepaal boete · Lening');
+	});
+});
+
+// §X5 deel G — de drie toetsen zijn drie antwoorden over diepte.
+//
+// Ze waren één commando tot 29 augustus 2026, omdat regels niet nesten en een
+// stap die stilletjes iets anders doet erger is dan een knop die uit staat.
+suite('Debug-adapter: stappen (X5 deel G)', () => {
+	async function modeOf(command: string): Promise<string | undefined> {
+		const asked: { kind: string; mode?: string }[] = [];
+		const { adapter } = drive(request => {
+			asked.push(request as { kind: string; mode?: string });
+			return { session: true };
+		});
+		send(adapter, 1, 'launch', { program: 'd:/m/a.test.rgs', case: '001' });
+		send(adapter, 2, 'configurationDone');
+		send(adapter, 3, command, { threadId: 1 });
+		await settle();
+		adapter.dispose();
+		return asked.find(one => one.kind === 'step')?.mode;
+	}
+
+	test('stuurt de toetsaanslag door en beslist zelf niets', async () => {
+		// Wat een toets *bereikt* hangt af van waar de run staat, en dat weet de
+		// server. Deze kant stuurt de aanslag.
+		assert.strictEqual(await modeOf('next'), 'over');
+		assert.strictEqual(await modeOf('stepIn'), 'into');
+		assert.strictEqual(await modeOf('stepOut'), 'out');
+	});
+});

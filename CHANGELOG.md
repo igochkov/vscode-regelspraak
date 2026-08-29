@@ -9,14 +9,18 @@ ahead of execution, and each version since is named for what it delivers.
 
 ## [0.8.0] — Where a model comes from
 
-Two halves, and both are about the same thing: a RegelSpraak model does not begin
-in the editor. It **renders** something written in prose — a reglement, a
+Three things, and the first two are about the same one: a RegelSpraak model does
+not begin in the editor. It **renders** something written in prose — a reglement, a
 regeling, a beleidsregel — and it may already **exist in ALEF**, the
 Belastingdienst's MPS-based modelling environment.
 
 Neither connection was something the tooling could see. The question a reviewer
 actually asks — *which provision says this?* — had no answer, and a model that
 existed in ALEF had to be re-typed by hand.
+
+The third is a different question about the same model, and it comes from the
+other end: **where did this number come from?** A run could name the rule; it
+can now show the calculation inside it, and step through it.
 
 ### Importeren uit ALEF
 
@@ -160,6 +164,45 @@ reads ALEF and writes text, and hands nothing back.
   **RS613 is a hint rather than a warning** now, and it names the plural that
   will be derived so you can see the word and correct it in one place. Because of
   this, an imported ALEF model states no plurals in its declarations at all.
+
+### Waar een getal vandaan komt
+
+`0.7.0` made a run say which rule wrote a value and out of which other values.
+What it still could not say is what the arithmetic **in between** was worth: a
+rule that reads three numbers and writes one told you four numbers and nothing
+about the sum in the middle, which is usually the one you are looking for.
+
+- **The trace carries every sub-expression.** Open a write in the run panel and
+  the calculation is under it, one row per step, with the numbers it read below
+  that: `de dagen te laat maal het boetetarief = 1 euro` under the boete, before
+  `dagen te laat = 4 dag` and `boetetarief = 0,25 euro/dag`. What the rule *did*,
+  then where its numbers came from.
+
+  A `Daarbij geldt` variable appears under **its own name** rather than under the
+  sentence that defines it, which is what you were looking for it by. And a
+  sub-expression whose value could not be worked out is simply not there — the
+  fault beside it already names the operation.
+
+- **A Watch entry can be opened.** Type a calculation into Watch while a session
+  is paused and it now has a disclosure triangle: the answer is on the row, and
+  under it is every step that produced it.
+
+- **Step Into steps the arithmetic.** At a stop, `F11` no longer means the same
+  as `F10`: it goes **inside** the rule, stopping at each part of its expression
+  as that part is worked out, innermost first. The Call Stack shows what encloses
+  the phrase you are standing on and the editor highlights the phrase itself, not
+  the line. `F10` finishes the next part without going inside it, and
+  `Shift+F11` runs back out of the one you are in.
+
+  It lasts for the rule and instance you asked about, and then hands back — the
+  next stop is the next rule, as before. There is no mode to switch off, which
+  matters because a rule fires once per instance and stepping every calculation
+  of every one of them is not something anybody wants twice.
+
+  Two places deliberately do not step: a **beslistabel**, whose cells are
+  sentences composed from a header and a value and so cannot be pointed at
+  precisely, and a Watch expression, which must not be able to stop the run it is
+  asking about. In a decision table `F11` behaves as `F10`.
 
 ### Notes
 
