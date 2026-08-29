@@ -41,11 +41,20 @@ authored, and an import that kept a second source of truth alive would undo that
   checking**, and every word the conversion had to invent. Nothing is dropped in
   silence, and an ALEF construct with no RegelSpraak equivalent stops its own rule
   rather than producing a sentence that means something else.
-- **Nothing is written until you say where — and it shows you where.** It asks
-  for a target folder, then names the full path of it and every file about to
-  land there before writing anything. It is the only thing in the extension that
-  writes files you did not name, and the message afterwards names the folder
-  again and offers to open it.
+- **It writes the layout `docs/AUTHORING.md` describes**, into the folder you
+  have open: declarations in `gegevens/`, rules in `regels/`, the testsets in
+  `tests/`, each created if it is not there yet, with the conversion report at
+  the root. So an import lands as a model somebody can read rather than a heap
+  somebody has to sort, and a model that already has those folders simply gains
+  files in them.
+- **Nothing is written until it has shown you where.** It names the full path and
+  every file about to land under it — folders and all — before writing anything,
+  and says which of them would be overwritten. It is the only thing in the
+  extension that writes files you did not name, and the message afterwards names
+  the folder again and offers to open it. There is no longer a folder picker: the
+  destination is the project you are working in. With no folder open it says so
+  instead of guessing a path on your disk, and in a multi-root workspace it asks
+  which of your open folders.
 - **And when it cannot run, it says why.** The import needs the language server;
   where it is not running the command says so, with the log and a restart a click
   away. A server that is **older than the extension** is called out by name, with

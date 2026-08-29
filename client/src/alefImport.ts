@@ -89,31 +89,42 @@ function modelFiles(root: string): string[] {
 }
 
 /**
- * Where the files should land.
+ * Where the files should land: the model root the reader has open.
  *
- * **No `defaultUri`, and that is the fix for a real mistake** (28 August 2026).
- * It used to default to `workspaceFolders[0]`, which opened this dialog *inside*
- * the reader's own project — so accepting it without looking wrote an imported
- * model into the model they had open, and only when they had one open, which is
- * exactly how it was reported. A folder picker with no default opens where the
- * last one left off, which in this flow is the ALEF project the reader has just
- * chosen: still a place they may not want, but one they navigated to themselves.
+ * **The folder picker is gone** (29 August 2026). It was there because the
+ * import used to write a flat heap of files into whatever folder it was given,
+ * so *which* folder was a question worth stopping for; now the server names a
+ * path per document — `gegevens/`, `regels/`, `tests/`, the `docs/AUTHORING.md`
+ * layout — and the answer to "where" is the project you are working in. A
+ * dialog that asks a question with one sensible answer is a dialog that gets
+ * accepted without reading, which is how the earlier `defaultUri` mistake
+ * happened in the first place.
  *
- * The first root of a multi-root workspace was the wrong guess for a second
- * reason besides: it is not "the project" to anyone who has more than one open.
+ * What makes it safe is unchanged and is the confirmation below: it names the
+ * resolved path and every file about to land under it, before a byte is
+ * written.
  *
- * What actually makes this safe is the confirmation below, which names the
- * resolved path before a single byte is written.
+ * Two cases the word "the" does not cover. With **no folder open** there is
+ * nothing to be relative to, and guessing a path on someone's disk is exactly
+ * what this stopped doing — so it says so and stops. With **several roots
+ * open**, "the project" is not a thing; the reader picks one from the roots
+ * they already have, which is a list of their own folders rather than a walk of
+ * the file system.
  */
-async function chooseTarget(): Promise<Uri | undefined> {
-	const chosen = await window.showOpenDialog({
-		canSelectFiles: false,
-		canSelectFolders: true,
-		canSelectMany: false,
-		openLabel: 'Hierheen schrijven',
-		title: 'Doelmap voor de RegelSpraak-bestanden'
+async function modelRoot(): Promise<Uri | undefined> {
+	const folders = workspace.workspaceFolders ?? [];
+	if (folders.length === 0) {
+		window.showWarningMessage(
+			'Open eerst de map van het model waar de bestanden bij horen; daar schrijft de import naartoe.');
+		return undefined;
+	}
+	if (folders.length === 1) {
+		return folders[0].uri;
+	}
+	const picked = await window.showWorkspaceFolderPick({
+		placeHolder: 'In welke map van de werkruimte komt het model?'
 	});
-	return chosen?.[0];
+	return picked?.uri;
 }
 
 /**
@@ -123,12 +134,14 @@ async function chooseTarget(): Promise<Uri | undefined> {
  * **Always, not only when a name collides.** The overwrite guard this replaces
  * asked about *names*; the question a reader actually needs answered is *where*,
  * and a folder whose files happen to be named differently accepted the write in
- * silence. Naming the path is also the only way the previous dialog's outcome
- * becomes visible at all: a folder picker reports nothing back.
+ * silence.
  *
  * Modal, because it is the one moment this extension writes files the user did
  * not name, and because the alternative — noticing afterwards — is what went
- * wrong.
+ * wrong. Since the folder picker was removed it is also the *only* moment the
+ * destination is put in front of anybody before the write, which is why it says
+ * the whole relative path of each file and not just its name: `gegevens/` and
+ * `regels/` may be about to be created.
  */
 async function confirmTarget(target: Uri, names: string[]): Promise<boolean> {
 	const clash = names.filter(name => fs.existsSync(path.join(target.fsPath, name)));
@@ -284,7 +297,7 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 		return;
 	}
 
-	const target = await chooseTarget();
+	const target = await modelRoot();
 	if (!target) {
 		return;
 	}
@@ -295,8 +308,16 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 
 	try {
 		for (const document of result.documents) {
-			fs.writeFileSync(path.join(target.fsPath, document.path), document.text, 'utf8');
+			// The folders of `docs/AUTHORING.md`, made where they are missing. A
+			// model root that already has them is the ordinary case and this
+			// changes nothing there; one that has not is a model being started,
+			// and the layout is the thing it should be started in.
+			const file = path.join(target.fsPath, document.path);
+			fs.mkdirSync(path.dirname(file), { recursive: true });
+			fs.writeFileSync(file, document.text, 'utf8');
 		}
+		// The report stays at the root: it is not part of the model, and it is
+		// what a reader should meet first in a folder that was empty a moment ago.
 		fs.writeFileSync(path.join(target.fsPath, REPORT_NAME), result.reportDocument, 'utf8');
 	} catch (error) {
 		// Named with the folder, because a write that fails halfway leaves some of
