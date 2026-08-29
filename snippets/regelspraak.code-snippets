@@ -246,6 +246,13 @@
 			"Gegeven het feit ${1:feittypenaam} met ${2:id} als ${3:rol} en ${4:id} als ${5:rol}"
 		]
 	},
+	"Gegeven rol": {
+		"prefix": "gegeven-rol",
+		"description": "Hetzelfde feit vanaf één kant: het feittype wordt afgeleid",
+		"body": [
+			"Gegeven ${1:id} heeft ${2:id} als ${3:rol}"
+		]
+	},
 	"Verwacht regelversie": {
 		"prefix": "verwacht-regelversie",
 		"description": "Verwachting over de uitkomst van een regel (§8.1.9)",

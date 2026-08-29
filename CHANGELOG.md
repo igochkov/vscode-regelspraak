@@ -26,8 +26,9 @@ the language could not say before. A declaration or rule may cite the **provisio
 it renders**, and the editor follows that citation to the article. A name may
 contain an **apostrophe**, so `euro's` and `cd's` are finally spellable, and it
 may contain words the editor used to keep to itself, so `de afstand tot
-bestemming` parses. And a declaration need not spell out its **plural** — the
-editor works the form out, and says which one it worked out.
+bestemming` parses. A declaration need not spell out its **plural** — the
+editor works the form out, and says which one it worked out. And a testgeval
+may state a fact from one of its ends, without naming the feittype at all.
 
 ### Importeren uit ALEF
 
@@ -182,6 +183,38 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
   **RS613 is a hint rather than a warning** now, and it names the plural that
   will be derived so you can see the word and correct it in one place. Because of
   this, an imported ALEF model states no plurals in its declarations at all.
+
+### A fact stated from one end
+
+- **A testgeval may relate two instances without naming the feittype.** Writing a
+  fact used to mean naming four things where two identify it:
+
+  ```
+  Gegeven het feit lidmaatschap van de boekerij met Centrum als vestiging en Noor, Sam als ingeschreven lid
+  ```
+
+  The same fact now fits on:
+
+  ```
+  Gegeven Centrum heeft Noor, Sam als ingeschreven lid
+  ```
+
+  A feittype relates exactly two parties, so naming one end and one role names
+  the whole fact — the editor works out which feittype it is and which role the
+  subject plays. `Gegeven Noor heeft Sam als leespartner` works for a
+  `Wederkerig feittype` for the same reason, with no separate form.
+
+  **It is derived only where exactly one feittype fits.** Where none does, or
+  where two do, the editor says so (**RS959**) and names the candidates; the long
+  form is what to write there, and it is unchanged. That is the same rule the
+  derived plurals follow: a form the editor works out never quietly overrides
+  what a model actually says.
+
+  Completion follows: after `heeft` it offers the instances of the testgeval, and
+  after `als` the roles that instance's object type can actually stand opposite.
+  One fact per line — `en` joins two roles of one fact in the long form, so it is
+  not accepted in the short one — and lines accumulate rather than replace, so a
+  `Testinitialisatie` can seat the regulars and a testgeval add one.
 
 ### A name that hides another name
 
