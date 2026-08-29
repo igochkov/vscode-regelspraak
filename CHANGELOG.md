@@ -111,13 +111,20 @@ reads ALEF and writes text, and hands nothing back.
 
 ### Words a name could not contain
 
-- **`hele` may be part of a name.** RegelSpraak uses it in `de tijdsduur van …
-  tot … in hele dagen`, and until now that made it unwritable anywhere else — so
-  `de contributie in hele euro's` was a syntax error. Both readings work now, and
-  the same is true of every word the language does not need to keep to itself:
-  the specification puts **no word outside a name**, so each one that is reserved
+- **`hele`, `tot` and `decimalen` may be part of a name.** All three are words
+  RegelSpraak uses itself — `de tijdsduur van … tot … in hele dagen`, `Numeriek
+  (getal met 2 decimalen)` — which until now made them unwritable anywhere else,
+  so `de afstand tot bestemming`, `de contributie in hele euro's` and `Domein
+  Bedrag met 2 decimalen` were all syntax errors. Both readings work now. The
+  same is true of every word the language does not need to keep to itself: the
+  specification puts **no word outside a name**, so each one that is reserved
   here is a limitation of this editor rather than of RegelSpraak, and the list is
   shrinking a word at a time.
+- **A feittype's relation description is free text, as the language says it is.**
+  `één te verdelen ov-tegoed wordt verdeeld over één passagier` used to be
+  rejected on `wordt verdeeld over` — a phrase RegelSpraak uses elsewhere, but
+  the description between the two `één`/`meerdere` is prose and may say anything.
+  It does now.
 - **And a word that is still reserved now says so.** Writing `de looptijd tot
   einde` used to report *deze regel kan niet ontleed worden bij 'de looptijd
   tot'* — the place, not the cause, and often not even the right place. It now
