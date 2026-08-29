@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
 	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
-	OutputChannel, Position, Range, Uri
+	OutputChannel, Position, Range, SnippetString, Uri
 } from 'vscode';
 
 import {
@@ -98,6 +98,24 @@ const toRange = (r: { start: WirePosition; end: WirePosition }): Range =>
  * explains in the other two.
  */
 const FORMAT_COMMAND = 'regelspraak.formatDocument';
+
+/**
+ * Two characters RegelSpraak needs that a QWERTY keyboard does not carry.
+ *
+ * The bullet opens a criterion (§13.4.8 #9) and the guillemets delimit an
+ * interpolation inside a text value (§13.4.17). D7's on-enter rules already
+ * *continue* a bullet run and D4 already closes a `«` once it is typed — what
+ * neither could do is produce the first character, which is why these exist.
+ *
+ * **Insert, never substitute.** Replacing `•` with `-` in the grammar was the
+ * other option and is refused: `-` is already §13.4.10's distribution item, so
+ * the two lists would collide exactly where nesting matters, and a `.rgs` file
+ * written that way is no longer the language the specification describes. The
+ * cost of the character is that it is hard to type, and that is a keyboard
+ * problem with a keyboard answer.
+ */
+const INSERT_BULLET_COMMAND = 'regelspraak.invoegenOpsommingsteken';
+const INSERT_GUILLEMETS_COMMAND = 'regelspraak.invoegenInvulling';
 
 /**
  * Asks the server why formatting would do nothing, rather than working it out.
@@ -310,6 +328,9 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
+	context.subscriptions.push(
+		commands.registerCommand(INSERT_BULLET_COMMAND, insertBullet),
+		commands.registerCommand(INSERT_GUILLEMETS_COMMAND, insertGuillemets));
 
 	// C11. Ungated on the active file: importing a project is not about the
 	// document in front of you, and there may not be one — an empty window is
@@ -405,6 +426,49 @@ async function runRule(_uri: string, ruleName: string): Promise<void> {
 		// jump back to a rule goes through the workspace symbols by name.
 		await runPanels.show(Uri.parse(scenario.uri), run, ruleName);
 	}
+}
+
+/**
+ * A `•` at the caret, at the depth the line above is written at.
+ *
+ * The run states its own depth, so a criterion under a `••` line is another
+ * `••` — reading the line above is how the editor can know that without being
+ * told. An empty document, or a first bullet, gets one.
+ */
+async function insertBullet(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	const line = editor.selection.active.line;
+	let run = '•';
+	for (let above = line - 1; above >= 0; above--) {
+		const text = editor.document.lineAt(above).text;
+		const bullets = /^\s*(•+)\s/u.exec(text);
+		if (bullets) {
+			run = bullets[1];
+			break;
+		}
+		if (text.trim().length > 0) {
+			break;
+		}
+	}
+	await editor.insertSnippet(new SnippetString(`${run} `));
+}
+
+/**
+ * `«…»` around the selection, or an empty pair with the caret between them.
+ *
+ * A snippet rather than an edit, so that selecting a phrase and pressing the
+ * key wraps it — which is the gesture somebody reaches for when a text value is
+ * already written and one word of it has to become a reference.
+ */
+async function insertGuillemets(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	await editor.insertSnippet(new SnippetString('«${TM_SELECTED_TEXT:$1}»'));
 }
 
 async function formatDocument(): Promise<void> {

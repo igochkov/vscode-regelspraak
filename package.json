@@ -114,6 +114,16 @@
 				"command": "regelspraak.importeerUitAlef",
 				"title": "Importeren uit ALEF",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.invoegenOpsommingsteken",
+				"title": "Opsommingsteken invoegen (•)",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.invoegenInvulling",
+				"title": "Invulling invoegen (« »)",
+				"category": "RegelSpraak"
 			}
 		],
 		"menus": {
@@ -153,6 +163,16 @@
 			{
 				"command": "regelspraak.formatDocument",
 				"key": "shift+alt+f",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+			},
+			{
+				"command": "regelspraak.invoegenOpsommingsteken",
+				"key": "alt+b",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+			},
+			{
+				"command": "regelspraak.invoegenInvulling",
+				"key": "alt+q",
 				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
 			}
 		],

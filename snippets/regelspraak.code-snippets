@@ -139,6 +139,32 @@
 			"\t\t| 2 | ${7:tweede waarde} | n.v.t. |"
 		]
 	},
+	"Regel met samengestelde voorwaarde": {
+		"prefix": "regel-voorwaarden",
+		"description": "Regel met een samengestelde voorwaarde en twee criteria (§13.4.13)",
+		"body": [
+			"Regel ${1:naam van de regel}",
+			"\tgeldig altijd",
+			"\t\tDe ${2:attribuutnaam} van een ${3:objecttypenaam} moet gesteld worden op ${4:1}",
+			"\t\tindien er aan alle volgende voorwaarden wordt voldaan:",
+			"\t\t\t• zijn ${5:attribuut} is groter dan ${6:0}",
+			"\t\t\t• zijn ${7:attribuut} is kleiner dan ${8:9}."
+		]
+	},
+	"Criterium": {
+		"prefix": "criterium",
+		"description": "één opsommingsregel van een samengestelde voorwaarde (•)",
+		"body": [
+			"• zijn ${1:attribuut} is groter dan ${2:0}"
+		]
+	},
+	"Tekst met invulling": {
+		"prefix": "tekst-invulling",
+		"description": "Tekstwaarde met een invulling tussen « » (§13.4.17)",
+		"body": [
+			"De ${1:attribuutnaam} van een ${2:objecttypenaam} moet gesteld worden op \"${3:tekst} «${4:zijn attribuut}»\"."
+		]
+	},
 	"Verdeling": {
 		"prefix": "verdeling",
 		"description": "Regel die een waarde verdeelt (gelijke delen)",
