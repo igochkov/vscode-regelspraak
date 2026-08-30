@@ -13,6 +13,7 @@ Every setting the extension contributes, and the editor defaults it sets for
 | `regelspraak.semanticHighlighting.enable` | `true` | Colours names by what the model knows about them. Off leaves the keyword-level TextMate colouring. |
 | `regelspraak.format.enable` | `true` | Formats `.rgs` files. Off leaves the layout entirely to you. |
 | `regelspraak.inlayHints.enable` | `types` | `off`, `types` (inferred datatypes and units) or `all` (also the object type behind a `zijn`/`hij`). |
+| `regelspraak.execution.blockOnErrors` | `true` | Refuses **Testgeval uitvoeren**, **Regel uitvoeren** and debugging while the model carries an error. Workspace-wide: an error in a file you do not have open blocks a run too, because a run reads every rule. Warnings and hints do not count, and nothing blocks while `validation.enable` is off. |
 | `regelspraak.execution.defaultScenario` | *(empty)* | The testgeval a rule is run against, as `pad/naar/bestand.test.rgs#naam van het testgeval`. Meant to be committed; **Actief testgeval kiezen** overrides it per window. |
 | `regelspraak.server.path` | *(empty)* | Path to a language server build. Empty uses the bundled server. |
 | `regelspraakLanguageServer.trace.server` | `off` | Traces LSP communication into the output channel. |
