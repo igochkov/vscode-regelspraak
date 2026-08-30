@@ -6,7 +6,16 @@
  * the development build: it type-checks and emits `client/out/` with source
  * maps, which is what <kbd>F5</kbd> loads and debugs. This script *overwrites*
  * `client/out/extension.js` with a bundle, so `main` in package.json needs no
- * second path and the development loop is untouched.
+ * second path.
+ *
+ * **The development loop is not untouched by that, and the build info is
+ * deleted below to make it so.** This comment used to claim otherwise, and
+ * the claim is what made the consequence hard to suspect: `tsc -b` is
+ * incremental, so once the bundle sits in the slot it emits to, an unchanged
+ * `extension.ts` means the next build reports "up to date" and leaves it
+ * there. <kbd>F5</kbd> then runs whatever was last packaged. Every other
+ * module is *inlined* in that bundle, so a change to any of them compiles
+ * cleanly, updates its own `client/out/*.js` — and is never loaded.
  *
  * Why bundle at all:
  *
@@ -25,7 +34,7 @@
  * Usage:  npm run bundle
  */
 import { build } from 'esbuild';
-import { statSync } from 'node:fs';
+import { rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,4 +61,13 @@ await build({
 	logLevel: 'warning'
 });
 
+// The build info `tsc -b` keeps, dropped: it still describes the output this
+// script has just replaced. Deleting it costs a full re-emit of the client on
+// the next build — a second or so — and buys back the guarantee that what
+// <kbd>F5</kbd> loads is what the sources say. The alternative is bundling to
+// a path of its own, which is the better fix and the larger one: `main` would
+// then have to differ between the development tree and the package.
+rmSync(join(root, 'client', 'tsconfig.tsbuildinfo'), { force: true });
+
+console.log('bundle-client: dropped client/tsconfig.tsbuildinfo, so the next build re-emits over the bundle.');
 console.log(`bundle-client: ${(statSync(outfile).size / 1024).toFixed(0)} KB -> ${outfile}`);
