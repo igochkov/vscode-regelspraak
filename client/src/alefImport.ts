@@ -266,7 +266,14 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 	if (!project) {
 		return;
 	}
-	const files = modelFiles(project.fsPath);
+	// Under the progress notification, because the walk is synchronous and a real
+	// project has thousands of files under it: without this the window simply
+	// stops responding between the folder being picked and the first message,
+	// which reads as the command having failed to start.
+	const files = await window.withProgress({
+		location: ProgressLocation.Notification,
+		title: `Modelbestanden zoeken in '${path.basename(project.fsPath)}'…`
+	}, async () => modelFiles(project.fsPath));
 	if (files.length === 0) {
 		window.showWarningMessage(`In '${path.basename(project.fsPath)}' staan geen ALEF-modelbestanden.`);
 		return;
@@ -338,15 +345,28 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 	// **The destination is named here too**, and not only in the confirmation:
 	// this is the message that is still on screen a minute later, and "where did
 	// they go" is the question this command has actually been asked.
-	const skipped = result.report.filter(one => one.kind === 'overgeslagen').length;
-	const derived = result.report.filter(one => one.kind === 'afgeleid').length;
+	const counted = (kind: string): number =>
+		result.report.filter(one => one.kind === kind).length;
+	const unreadable = counted('onleesbaar');
+	const skipped = counted('overgeslagen');
+	const derived = counted('afgeleid');
 	const read = 'Verslag lezen';
 	const reveal = 'Map tonen';
-	const summary = `${result.documents.length} bestand(en) geschreven naar ${target.fsPath}`
-		+ (skipped > 0
+	// **What was written and does not parse leads whenever there is any.** It is
+	// the most urgent kind the report has — the converter having been *wrong*,
+	// rather than having declined — and this message never mentioned it: a reader
+	// whose project produced two unreadable documents was told how many plurals
+	// were derived, and met the RS001s later. A warning rather than a notice for
+	// the same reason, since it is the one outcome that needs somebody.
+	const tail = unreadable > 0
+		? `; op ${unreadable} plek(ken) is geen RegelSpraak geschreven — zie het verslag.`
+		: skipped > 0
 			? `; ${skipped} constructie(s) overgeslagen.`
-			: `; ${derived} meervoudsvorm(en) afgeleid.`);
-	const chosen = await window.showInformationMessage(summary, read, reveal);
+			: `; ${derived} meervoudsvorm(en) afgeleid.`;
+	const summary = `${result.documents.length} bestand(en) geschreven naar ${target.fsPath}${tail}`;
+	const chosen = unreadable > 0
+		? await window.showWarningMessage(summary, read, reveal)
+		: await window.showInformationMessage(summary, read, reveal);
 	if (chosen === read) {
 		await window.showTextDocument(
 			await workspace.openTextDocument(Uri.file(path.join(target.fsPath, REPORT_NAME))));
