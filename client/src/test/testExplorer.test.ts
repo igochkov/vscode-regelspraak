@@ -62,7 +62,9 @@ suite('Testverkenner (W7)', () => {
 		const found = (await testsets()).find(one => one.uri?.fsPath === testsUri.fsPath);
 		assert.ok(found, 'de testset van dit bestand ontbreekt in de boom');
 		const cases = childrenOf(found);
-		assert.ok(cases.length >= 4, cases.map(one => one.label).join(' | '));
+		// A floor and not a count: this testset is a sample, and what is being
+		// checked is that its cases hang under it and carry a range of their own.
+		assert.ok(cases.length >= 3, cases.map(one => one.label).join(' | '));
 		for (const one of cases) {
 			assert.ok(one.range, `${one.label} heeft geen bereik`);
 			assert.equal(one.uri?.fsPath, testsUri.fsPath);
@@ -92,8 +94,19 @@ suite('Testverkenner (W7)', () => {
 			return found && found.length > 0 ? found : undefined;
 		});
 		const run = lenses.filter(one => one.command?.command === 'regelspraak.runTestgeval');
-		// One for the testset, one per testgeval.
-		assert.equal(run.length, 5, run.map(one => one.command?.title).join(' | '));
+		// One for the testset, one per testgeval — counted off the document, so
+		// what is asserted is that relationship and not the length this sample
+		// happens to have. It had the number written out until 31 August 2026,
+		// when the testset lost a case and this failed on the sample rather than
+		// on the lens.
+		const source = await vscode.workspace.openTextDocument(testsUri);
+		let written = 0;
+		for (let line = 0; line < source.lineCount; line++) {
+			if (source.lineAt(line).text.startsWith('Testgeval ')) {
+				written++;
+			}
+		}
+		assert.equal(run.length, written + 1, run.map(one => one.command?.title).join(' | '));
 		assert.equal(run[0].command?.title, 'alle testgevallen uitvoeren');
 		assert.deepStrictEqual(run[0].command?.arguments, [testsUri.toString()]);
 		assert.equal(run[1].command?.arguments?.length, 2, 'een geval draagt zijn naam mee');

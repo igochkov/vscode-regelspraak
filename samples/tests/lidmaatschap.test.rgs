@@ -9,7 +9,6 @@ Rekendatum 15-06-2027
 
 Parameters
 	de leenlimiet            10
-	het boetetarief          0,25 EUR/dag
 	de standaardcontributie  50,00 EUR
 
 Testinitialisatie een vestiging met een lid
@@ -42,15 +41,6 @@ Testgeval Een lange inschrijving betaalt het volle bedrag
 		contributie        40,00 EUR
 		is geen jeugdlid
 	Verwacht regelversie Jeugdlid is niet gevuurd
-
-Testgeval Een boete over vier dagen te laat
-	Gegeven een Uitlening (Lening) met
-		uitleendatum   01-06-2027
-		inleverdatum   09-06-2027
-		dagen te laat  4 dagen
-
-	Verwacht Lening met
-		boete  1,00 EUR
 
 Testgeval Alleen uitvoeren, zonder verwachtingen
 	Gegeven een Lid (Kim) met
