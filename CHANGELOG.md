@@ -7,6 +7,310 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
+
+A model that already exists in **ALEF** — the Belastingdienst's MPS-based
+modelling environment — no longer has to be re-typed by hand. The extension
+reads such a project and writes its declarations, its rules and its testsets as
+RegelSpraak text, into the folders a model is laid out in, with a report of
+everything it could not translate.
+
+And a run says more about itself. `0.7.0` could name the rule that wrote a value
+and the values that rule read; what it could not say is what the arithmetic **in
+between** was worth. It can now — every sub-expression with the number it
+produced, under the write it belongs to — and `F11` steps through that
+calculation one part at a time.
+
+The rest came out of writing and importing real models, and each one is a thing
+the language could not say before. A declaration or rule may cite the **provision
+it renders**, and the editor follows that citation to the article. A name may
+contain an **apostrophe**, so `euro's` and `cd's` are finally spellable, and it
+may contain words the editor used to keep to itself, so `de afstand tot
+bestemming` parses. A declaration need not spell out its **plural** — the
+editor works the form out, and says which one it worked out. And a testgeval
+may state a fact from one of its ends, without naming the feittype at all.
+
+### Importeren uit ALEF
+
+Point it at an ALEF project folder and it reads the models, then writes
+RegelSpraak text: the GegevensSpraak declarations, the rules, and the testsets,
+laid out the way **Document opmaken** would lay them out.
+
+**It is a one-shot migration, on purpose.** From the moment the files land the
+text is the model — there is no link back to the ALEF project, no re-import
+gesture, and nothing watching it. The `.rgs` files are the one place a model is
+authored, and an import that kept a second source of truth alive would undo that.
+
+- **An imported rule reads the way ALEF draws it.** Where a chain runs over a
+  collection the attribute is written in the plural — `de som van de toegekende
+  premies van zijn aangesloten deelnemers` — with `de` in front of it whatever
+  the singular took. Where no plural can be spelled properly (`aantal boeken` is
+  a count of books) the singular is written instead, which reads correctly and
+  means the same.
+- **It says what it could not do.** A conversion report is written beside the
+  files, listing three things separately: constructs that were **not translated**
+  (the text is a model short of a line, and it says which), readings **worth
+  checking**, and every word the conversion had to invent. Nothing is dropped in
+  silence, and an ALEF construct with no RegelSpraak equivalent stops its own rule
+  rather than producing a sentence that means something else.
+- **It writes the layout `docs/AUTHORING.md` describes**, into the folder you
+  have open: declarations in `gegevens/`, rules in `regels/`, the testsets in
+  `tests/`, each created if it is not there yet, with the conversion report at
+  the root. So an import lands as a model somebody can read rather than a heap
+  somebody has to sort, and a model that already has those folders simply gains
+  files in them.
+- **Nothing is written until it has shown you where.** It names the full path it
+  is about to write into, how many files that is and how many of them already
+  exist and would be overwritten — the conversion report lists them all by name
+  afterwards. It is the only thing in the extension that writes files you did not
+  name, and the message afterwards names the folder again and offers to open it.
+  There is no longer a folder picker: the destination is the project you are
+  working in. With no folder open it says so instead of guessing a path on your
+  disk, and in a multi-root workspace it asks which of your open folders.
+- **And when it cannot run, it says why.** The import needs the language server;
+  where it is not running the command says so, with the log and a restart a click
+  away. A server that is **older than the extension** is called out by name, with
+  the path it was started from and when that file was built — and, in a window
+  with no folder open, a note that a workspace setting like
+  `regelspraak.server.path` does not apply there.
+
+**There is no export, and that is a decision rather than an omission.** ALEF
+stores a model as an MPS project, and an MPS project is not a folder of model
+files. The XML holds an abstract node tree — concepts, node ids, references —
+which means something only inside a solution that declares the languages it is
+written in, at the versions it is written in, and imports the models it points
+at. None of that scaffolding is part of the file format; it belongs to an ALEF
+release. A tool writing it from outside would be encoding assumptions about
+somebody else's environment that it cannot check and that go stale the next time
+that environment moves, and the failure would land on the ALEF side, in a project
+somebody depends on.
+
+Import is the direction that carries the point of the product anyway: it reads
+ALEF, writes text, and hands nothing back, so from the moment the files land the
+`.rgs` text is the one place the model is authored.
+
+### The document a model renders
+
+- **Cite the provision a declaration or rule renders.** A `//` comment above it
+  may say where it comes from, written as a Markdown link:
+  `// Bron: [art. 8 lid 1](bron/reglement.md#artikel-8-boete)`. Nothing about the
+  language changes — it is a comment, and a model that ignores this reads exactly
+  as it did — but the editor now follows it.
+- **Two ways to follow it, each doing what its gesture means.** Hovering the rule
+  shows the citation as a link that opens **the article, rendered**, in the
+  Markdown preview: following a citation is a reading gesture, and what a reader
+  wants is the provision rather than its source. The same citation in the comment
+  itself is a link too — beside the URLs and `.rgs` names that were already linked
+  there — and that one opens the Markdown **source at the line**, because a link
+  in the text is a location and is followed like a go-to-definition. Both are
+  resolved by the same code, so they cannot reach different provisions.
+- **It lands on the article, not at the top of the file.** The heading anchor is
+  looked up in the document each time it is asked for and turned into the line it
+  is on, so a provision that moves within the document is still found and no line
+  number is ever written into a model. An anchor that names no heading is dropped
+  and the document opens at the top.
+- **The path is written from the model root**, not from the file the comment sits
+  in, so a rule file can be moved or renumbered without its citations going
+  stale. That root is found by looking for the cited document rather than assumed
+  to be the workspace folder — a model usually lives in a subfolder of a
+  repository, and then the two are not the same place.
+
+### A name may contain an apostrophe
+
+- **`euro's`, `auto's`, `cd's`.** These are ordinary Dutch plurals and the
+  language could not spell any of them: the apostrophe opened an enumeration
+  value, so a declaration containing one was reported as an unterminated literal
+  and took the rest of the file with it. An apostrophe **between two letters** is
+  now part of the word — `Domein Hele euro's`, `(mv: euro's)`, `de meegeleverde
+  cd's` — and `'roman'` still reads as a value, the two being told apart by
+  position alone. Nothing that was valid changes meaning.
+- **A name may not begin or end with one**, so `'s-Gravenhage` still has no
+  spelling here. That is a decision rather than an omission: an apostrophe at the
+  start of a word is exactly the one that opens a value, and separating them
+  would mean reading to the end of the line and guessing.
+- **The plural the editor suggests is now the Dutch one.** With the apostrophe
+  unwritable it offered `Autos` and `euros`; it writes `Auto's` and `euro's`, and
+  it has learned the rest of the rule it could not apply — `cd's` and `HTS'en`
+  for abbreviations, `gepensioneerden` and `nabestaanden` for the participles a
+  pension model is written in, `cadeaus` and `cafés` where the apostrophe would
+  be wrong. Where Dutch itself has two forms (`periodes` and `perioden`,
+  `eigenaren` and `eigenaars`) **both are accepted** and the commoner one is
+  written — and a model that already says `euros` goes on resolving exactly as
+  it did.
+
+### Words a name could not contain
+
+- **`is`, `hele`, `tot` and `decimalen` may be part of a name.** All four are
+  words RegelSpraak uses itself — `een Lid is jeugdlid`, `de tijdsduur van … tot
+  … in hele dagen`, `Numeriek (getal met 2 decimalen)` — which until now made
+  them unwritable anywhere else, so `de datum waarop de pas verlopen is`, `de
+  afstand tot bestemming`, `de contributie in hele euro's` and `Domein Bedrag met
+  2 decimalen` were all syntax errors. Both readings work now, including the one
+  that needs both at once: `indien hij een lid waarvoor korting van toepassing is
+  is` reads the name to its end and then finds the verb it needs. The
+  same is true of every word the language does not need to keep to itself: the
+  specification puts **no word outside a name**, so each one that is reserved
+  here is a limitation of this editor rather than of RegelSpraak, and the list is
+  shrinking a word at a time.
+- **A feittype's relation description is free text, as the language says it is.**
+  `één te verdelen ov-tegoed wordt verdeeld over één passagier` used to be
+  rejected on `wordt verdeeld over` — a phrase RegelSpraak uses elsewhere, but
+  the description between the two `één`/`meerdere` is prose and may say anything.
+  It does now.
+- **And a word that is still reserved now says so.** Writing `de winst of het
+  verlies` used to report *deze regel kan niet ontleed worden bij 'de winst
+  of'* — the place, not the cause, and often not even the right place. It now
+  reads: **`'of'` is een sleutelwoord van RegelSpraak en kan geen deel van een
+  naam zijn**, on the word itself. It is checked before it is said: the line has
+  to come right without that word, so an ordinary mistake near a keyword keeps
+  the message it deserves.
+
+### Plurals a model need not spell out
+
+- **A model no longer has to spell out its plurals.** `(mv: …)` is optional in
+  the specification's syntax chapter, and the editor now works the form out:
+  write `Objecttype de Vestiging` and a rule may still say `alle Vestigingen`.
+  Navigation, colouring, references and rename all follow, and renaming
+  `Vestiging` to `Filiaal` rewrites `alle Vestigingen` to `alle Filialen` with
+  it.
+
+  A derived form **never** overrides one that is written, and never competes with
+  another declaration: where two names would derive the same plural, neither is
+  chosen. So the worst a wrong guess can do is what happens today — the phrase
+  does not resolve, and the editor says so. Irregular plurals (`Lid` is `Leden`)
+  are exactly that case: declare the form and everything works as before.
+
+  **RS613 is a hint rather than a warning** now, and it names the plural that
+  will be derived so you can see the word and correct it in one place. Because of
+  this, an imported ALEF model states no plurals in its declarations at all.
+
+### A fact stated from one end
+
+- **A testgeval may relate two instances without naming the feittype.** Writing a
+  fact used to mean naming four things where two identify it:
+
+  ```
+  Gegeven het feit lidmaatschap van de boekerij met Centrum als vestiging en Noor, Sam als ingeschreven lid
+  ```
+
+  The same fact now fits on:
+
+  ```
+  Gegeven Centrum heeft Noor, Sam als ingeschreven lid
+  ```
+
+  A feittype relates exactly two parties, so naming one end and one role names
+  the whole fact — the editor works out which feittype it is and which role the
+  subject plays. `Gegeven Noor heeft Sam als leespartner` works for a
+  `Wederkerig feittype` for the same reason, with no separate form.
+
+  **It is derived only where exactly one feittype fits.** Where none does, or
+  where two do, the editor says so (**RS959**) and names the candidates; the long
+  form is what to write there, and it is unchanged. That is the same rule the
+  derived plurals follow: a form the editor works out never quietly overrides
+  what a model actually says.
+
+  Completion follows: after `heeft` it offers the instances of the testgeval, and
+  after `als` the roles that instance's object type can actually stand opposite.
+  One fact per line — `en` joins two roles of one fact in the long form, so it is
+  not accepted in the short one — and lines accumulate rather than replace, so a
+  `Testinitialisatie` can seat the regulars and a testgeval add one.
+
+### A name that hides another name
+
+- **RS119 — een losse naam die het objecttype vóór het lid leest.** Heet een
+  attribuut net zo als een objecttype, dan las een kale verwijzing in een regel
+  altijd het **objecttype**: een losse naam wordt eerst tussen de globale namen
+  gezocht, en daar staat een objecttype wel en een attribuut niet. Niets was
+  onopgelost en niets was dubbelzinnig, dus de editor zweeg — en de uitvoering
+  eindigde met *geen instantie van dit objecttype in bereik* en een lege waarde.
+
+  De editor meldt die zin nu, met beide manieren om hem te schrijven erbij
+  (`zijn <naam>`, of `<naam> van <onderwerp>`), en biedt de eerste als snelle
+  oplossing aan waar het onderwerp bezield is. Hij spreekt **alleen** waar het
+  model het lid werkelijk kent, dus een objecttype als wortel van een keten
+  noemen blijft gewoon RegelSpraak — en `zijn <naam>` en `<naam> van <onderwerp>`
+  waren en blijven goed.
+
+  RS115 waarschuwde al dát de twee namen bestaan, op de declaraties; dat blijft
+  een waarschuwing, want twee legale declaraties zijn geen fout. RS119 gaat over
+  de zin die er staat, en is daarom een fout.
+
+- **Een uitvoering start niet meer op een model met een fout.** **Testgeval
+  uitvoeren**, **Regel uitvoeren** en <kbd>F5</kbd> weigeren zolang het venster
+  **Problemen** een fout toont, en noemen bestand, regel en code van elke fout in
+  de weigering. Een model met een fout kan niet betekenen wat er staat, en een
+  uitvoering erover leidt dan een verkéérd getal af in plaats van geen enkel.
+
+  De controle geldt voor het hele model, want een uitvoering leest alle regels:
+  een fout in een bestand dat u niet open hebt, blokkeert de uitvoering ook.
+  Waarschuwingen en hints tellen niet mee, en met `regelspraak.validation.enable`
+  uit blokkeert er niets — dan is het venster Problemen leeg op uw eigen verzoek.
+  Zet **`regelspraak.execution.blockOnErrors`** uit om toch uit te voeren.
+
+### Waar een getal vandaan komt
+
+`0.7.0` made a run say which rule wrote a value and out of which other values.
+What it still could not say is what the arithmetic **in between** was worth: a
+rule that reads three numbers and writes one told you four numbers and nothing
+about the sum in the middle, which is usually the one you are looking for.
+
+- **The trace carries every sub-expression.** Open a write in the run panel and
+  the calculation is under it, one row per step, with the numbers it read below
+  that: `de dagen te laat maal het boetetarief = 1 euro` under the boete, before
+  `dagen te laat = 4 dag` and `boetetarief = 0,25 euro/dag`. What the rule *did*,
+  then where its numbers came from.
+
+  A `Daarbij geldt` variable appears under **its own name** rather than under the
+  sentence that defines it, which is what you were looking for it by. And a
+  sub-expression whose value could not be worked out is simply not there — the
+  fault beside it already names the operation.
+
+- **The outcome panel has a keystroke.** `Alt+R` in a `.rgs` or `.test.rgs`
+  file opens the outcome of the testgeval the cursor is in, beside `Alt+B`
+  and `Alt+Q` for the two characters the language needs. On Windows `Alt+R`
+  is also the menu bar’s mnemonic for the Run menu; the binding is scoped to
+  a focused RegelSpraak editor so it claims the key there and nowhere else.
+
+- **A Watch entry can be opened.** Type a calculation into Watch while a session
+  is paused and it now has a disclosure triangle: the answer is on the row, and
+  under it is every step that produced it.
+
+- **Step Into steps the arithmetic.** At a stop, `F11` no longer means the same
+  as `F10`: it goes **inside** the rule, stopping at each part of its expression
+  as that part is worked out, innermost first. The Call Stack shows what encloses
+  the phrase you are standing on and the editor highlights the phrase itself, not
+  the line. `F10` finishes the next part without going inside it, and
+  `Shift+F11` runs back out of the one you are in.
+
+  It lasts for the rule and instance you asked about, and then hands back — the
+  next stop is the next rule, as before. There is no mode to switch off, which
+  matters because a rule fires once per instance and stepping every calculation
+  of every one of them is not something anybody wants twice.
+
+  Two places deliberately do not step: a **beslistabel**, whose cells are
+  sentences composed from a header and a value and so cannot be pointed at
+  precisely, and a Watch expression, which must not be able to stop the run it is
+  asking about. In a decision table `F11` behaves as `F10`.
+
+### Notes
+
+- **One command is trusted, and no others.** The hover's link has to invoke a
+  command, there being no URI that means "the preview of this file", so the
+  extension declares exactly `regelspraak.openBron` as trusted. A hover
+  ultimately renders comments written by whoever wrote the model, and a blanket
+  trust would let any of them run anything.
+- **The example model shows the whole convention.** `samples/` is laid out by the
+  document it renders now — a folder per chapter and a file per article under
+  `regels/`, with the (invented) reglement itself under `samples/bron/` — and
+  every declaration and rule in it carries a citation. `docs/AUTHORING.md`
+  explains the layout, and why `gegevens/` is deliberately *not* organized that
+  way.
+- **Citations can be checked.** `npm run source:coverage` reports a citation that
+  no longer resolves, a provision that nothing in the model renders, and a rule
+  version whose `geldig vanaf` contradicts a stated commencement date. It reads
+  text and needs no language server, so it runs in CI.
+
 ## [0.7.0] — Stepping through a run, and why a rule did not fire
 
 A run stops being a black box. `0.6.0` could tell you *what* a model produced;

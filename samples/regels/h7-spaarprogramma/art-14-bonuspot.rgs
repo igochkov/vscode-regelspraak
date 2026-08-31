@@ -2,41 +2,49 @@
 // pot en van de relatie ernaartoe (§9.3/§9.4).
 
 // §13.4.15 — de vragende vorm van de vergelijkingen, na "indien".
+// Bron: [art. 14 lid 1](bron/reglement.md#artikel-14-bonuspot)
 Regel Ruime pot
 	geldig altijd
 		Een Bonuspot is een ruime pot
 		indien het totale tegoed van de Bonuspot groter of gelijk is aan de bonusdrempel.
 
 // §6.5 — delen door de absolute waarde van de deler.
+// Bron: [art. 14 lid 2](bron/reglement.md#artikel-14-bonuspot)
 Regel bepaal gemiddelde inleg
 	geldig altijd
 		De gemiddelde inleg van een Bonuspot moet berekend worden als het totale tegoed van de Bonuspot gedeeld door (ABS) het deelnemersaantal van de Bonuspot rekenkundig afgerond op 2 decimalen.
 
+// Bron: [art. 14 lid 3](bron/reglement.md#artikel-14-bonuspot)
 Regel bepaal verdeelsleutel
 	geldig altijd
 		De verdeelsleutel van een Bonuspot moet berekend worden als (het totale tegoed van de Bonuspot min het onverdeelde tegoed van de Bonuspot) gedeeld door 2 weg van nul afgerond op 1 decimalen.
 
 // §13.2 #17 — een breuk is een literaal, geen deling.
+// Bron: [art. 14 lid 4](bron/reglement.md#artikel-14-bonuspot)
 Regel bepaal breukfactor
 	geldig altijd
 		De breukfactor van een Bonuspot moet gesteld worden op 3/8.
 
 // §5.8.2 — de som over een verzameling, met de terugval als die leeg is.
+// Bron: [art. 14 lid 5](bron/reglement.md#artikel-14-bonuspot)
 Regel Totale inleg
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot moet berekend worden als de som van het inlegtegoed van alle spaarders met recht op bonus van de te verdelen bonuspot of 0 als die er niet zijn.
 
 // §13.4.6 / §9.3 — objectcreatie, met één en met twee waardetoekenningen.
+// Bron: [art. 14 lid 6](bron/reglement.md#artikel-14-bonuspot)
 Regel Aanmaak bonusdossier
 	geldig altijd
 		Een Lid heeft een toegekende bonuspot met het deelnemersaantal gelijk aan 1.
 
+// Bron: [art. 14 lid 6](bron/reglement.md#artikel-14-bonuspot)
 Regel Aanmaak bonusdossier met status
 	geldig altijd
 		Een Lid heeft een toegekende bonuspot met het totale tegoed gelijk aan de startdrempel en het deelnemersaantal gelijk aan 1
 		indien hij een actieve deelnemer is.
 
 // §13.4.7 / §9.4 — feitcreatie: een relatie tussen twee bestaande objecten.
+// Bron: [art. 14 lid 7](bron/reglement.md#artikel-14-bonuspot)
 Regel Koppel ontvanger
 	geldig altijd
 		Een ontvanger van een toegekende bonuspot is een spaarder met recht op bonus van de te verdelen bonuspot.

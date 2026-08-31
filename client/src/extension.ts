@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
 	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
-	OutputChannel, Position, Range, Uri
+	OutputChannel, Position, Range, SnippetString, Uri
 } from 'vscode';
 
 import {
@@ -24,7 +24,9 @@ import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocum
 import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
 import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
-import { ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
+import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
+import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
+import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -96,6 +98,24 @@ const toRange = (r: { start: WirePosition; end: WirePosition }): Range =>
  * explains in the other two.
  */
 const FORMAT_COMMAND = 'regelspraak.formatDocument';
+
+/**
+ * Two characters RegelSpraak needs that a QWERTY keyboard does not carry.
+ *
+ * The bullet opens a criterion (§13.4.8 #9) and the guillemets delimit an
+ * interpolation inside a text value (§13.4.17). D7's on-enter rules already
+ * *continue* a bullet run and D4 already closes a `«` once it is typed — what
+ * neither could do is produce the first character, which is why these exist.
+ *
+ * **Insert, never substitute.** Replacing `•` with `-` in the grammar was the
+ * other option and is refused: `-` is already §13.4.10's distribution item, so
+ * the two lists would collide exactly where nesting matters, and a `.rgs` file
+ * written that way is no longer the language the specification describes. The
+ * cost of the character is that it is hard to type, and that is a keyboard
+ * problem with a keyboard answer.
+ */
+const INSERT_BULLET_COMMAND = 'regelspraak.invoegenOpsommingsteken';
+const INSERT_GUILLEMETS_COMMAND = 'regelspraak.invoegenInvulling';
 
 /**
  * Asks the server why formatting would do nothing, rather than working it out.
@@ -224,6 +244,8 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	context.subscriptions.push(
 		serverStatus,
 		commands.registerCommand(SHOW_LOG_COMMAND, () => output?.show(true)));
+	context.subscriptions.push(
+		commands.registerCommand(OPEN_SOURCE_COMMAND, openSource));
 
 	void commands.executeCommand('setContext', ACTIVE_CONTEXT, true);
 	context.subscriptions.push(
@@ -306,6 +328,15 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	context.subscriptions.push(commands.registerCommand(FORMAT_COMMAND, formatDocument));
+	context.subscriptions.push(
+		commands.registerCommand(INSERT_BULLET_COMMAND, insertBullet),
+		commands.registerCommand(INSERT_GUILLEMETS_COMMAND, insertGuillemets));
+
+	// C11. Ungated on the active file: importing a project is not about the
+	// document in front of you, and there may not be one — an empty window is
+	// exactly where somebody reaches for this.
+	context.subscriptions.push(
+		commands.registerCommand(IMPORT_ALEF_COMMAND, () => importFromAlef(client)));
 
 	activeScenario = new ActiveScenario(context, testExplorer);
 	context.subscriptions.push(
@@ -397,6 +428,49 @@ async function runRule(_uri: string, ruleName: string): Promise<void> {
 	}
 }
 
+/**
+ * A `•` at the caret, at the depth the line above is written at.
+ *
+ * The run states its own depth, so a criterion under a `••` line is another
+ * `••` — reading the line above is how the editor can know that without being
+ * told. An empty document, or a first bullet, gets one.
+ */
+async function insertBullet(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	const line = editor.selection.active.line;
+	let run = '•';
+	for (let above = line - 1; above >= 0; above--) {
+		const text = editor.document.lineAt(above).text;
+		const bullets = /^\s*(•+)\s/u.exec(text);
+		if (bullets) {
+			run = bullets[1];
+			break;
+		}
+		if (text.trim().length > 0) {
+			break;
+		}
+	}
+	await editor.insertSnippet(new SnippetString(`${run} `));
+}
+
+/**
+ * `«…»` around the selection, or an empty pair with the caret between them.
+ *
+ * A snippet rather than an edit, so that selecting a phrase and pressing the
+ * key wraps it — which is the gesture somebody reaches for when a text value is
+ * already written and one word of it has to become a reference.
+ */
+async function insertGuillemets(): Promise<void> {
+	const editor = window.activeTextEditor;
+	if (!editor || editor.document.languageId !== 'regelspraak') {
+		return;
+	}
+	await editor.insertSnippet(new SnippetString('«${TM_SELECTED_TEXT:$1}»'));
+}
+
 async function formatDocument(): Promise<void> {
 	const editor = window.activeTextEditor;
 	if (!editor || editor.document.languageId !== 'regelspraak') {
@@ -468,13 +542,16 @@ function resolveServerModule(context: ExtensionContext): { module: string; origi
  * its cause.
  */
 function reportServerOrigin(module: string, origin: string): void {
+	let builtAt: string | undefined;
+	try {
+		builtAt = fs.statSync(module).mtime.toLocaleString('nl-NL');
+	} catch {
+		builtAt = undefined;
+	}
+	recordServerBuild({ module, origin, builtAt });
 	output?.appendLine(`Taalserver : ${module}`);
 	output?.appendLine(`Herkomst   : ${origin}`);
-	try {
-		output?.appendLine(`Gebouwd    : ${fs.statSync(module).mtime.toLocaleString('nl-NL')}`);
-	} catch {
-		output?.appendLine('Gebouwd    : niet gevonden');
-	}
+	output?.appendLine(`Gebouwd    : ${builtAt ?? 'niet gevonden'}`);
 }
 
 async function startClient(context: ExtensionContext): Promise<void> {
@@ -529,7 +606,12 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		},
 		// Ours, so the resolution report above and the server's log end up in
 		// one place; the extension disposes it, not the client.
-		outputChannel: output
+		outputChannel: output,
+		// A source citation in a hover opens the provision rendered, which needs a
+		// `command:` link — see sourceDocument.ts. Exactly that one command and no
+		// others: the Markdown of a hover ends in doc comments the model's own author
+		// wrote, so a blanket `isTrusted` would let any of them run anything.
+		markdown: { isTrusted: { enabledCommands: [OPEN_SOURCE_COMMAND] } }
 	};
 
 	client = new LanguageClient(

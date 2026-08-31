@@ -4,6 +4,7 @@
 // §13.4.12 / §9.9 — een tijdlijn met een variabel startpunt heeft een regel
 // nodig die dat startpunt bepaalt; zonder die regel heeft de tijdlijn geen
 // tijdvakken (RS702).
+// Bron: [art. 13 lid 1](bron/reglement.md#artikel-13-spaartermijn)
 Regel Startpunt spaartermijn
 	geldig altijd
 		Het startpunt van een spaartermijn voor een Lid wordt bepaald door zijn inschrijfdatum.

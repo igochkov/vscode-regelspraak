@@ -1,5 +1,6 @@
 // De Zending — bezorging, met de datum- en tijdstipvormen erbij.
 
+// Bron: [art. 1 lid 5](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype de Zending (mv: Zendingen)
 	de bezorgdatum            Datum in dagen;
 	de bezorgmaand            Numeriek (geheel getal);

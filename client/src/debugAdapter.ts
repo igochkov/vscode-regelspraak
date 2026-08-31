@@ -22,7 +22,7 @@ interface DebugStop {
 	rule: string;
 	instance?: string;
 	table?: boolean;
-	location?: { uri: string; range: { start: { line: number; character: number } } };
+	location?: { uri: string; range: WireRange };
 	/**
 	 * One value each, and a value is **either** `value` **or** `segments` — never
 	 * both, and never neither.
@@ -49,6 +49,38 @@ interface DebugStop {
 	parameters: { name: string; value: string }[];
 	rekendatum: string;
 	variables: string[];
+	/**
+	 * The sub-expression the run has just finished, where it stands inside one
+	 * (§X5 part G).
+	 *
+	 * **Its absence is what tells a rule stop from an expression stop.** Nothing
+	 * else does, and nothing else needs to: a rule writes nothing until its result
+	 * part runs, so the situation above is the same at both.
+	 */
+	at?: DebugExpression;
+}
+
+/** One completed sub-expression and the ones enclosing it — the server's `DebugExpression`. */
+interface DebugExpression {
+	text: string;
+	value: string;
+	depth: number;
+	range?: WireRange;
+	/** Innermost first, which is the order DAP wants frames in. */
+	frames: { text: string; range?: WireRange }[];
+}
+
+interface WireRange {
+	start: { line: number; character: number };
+	end: { line: number; character: number };
+}
+
+/** One sub-expression of a Watch answer — the server's `RunStep`. */
+interface DebugStep {
+	text: string;
+	value: string;
+	parts?: DebugStep[];
+	truncated?: boolean;
 }
 
 interface DebugState {
@@ -57,6 +89,13 @@ interface DebugState {
 	reason?: string;
 	marks?: { line: number; rule: string; instance?: string }[];
 	answer?: string;
+	/**
+	 * The arithmetic behind that answer (§X7 stage 3).
+	 *
+	 * Kept in step with `RunStep` in the server's `protocol.ts`, which is the
+	 * definition; nothing checks that automatically, so widen both together.
+	 */
+	answerSteps?: DebugStep[];
 	expression?: {
 		text: string;
 		range: {
@@ -73,6 +112,17 @@ const DEBUG_STOPPED = 'regelspraak/debugStopped';
 const THREAD = 1;
 const FRAME = 1;
 const SCOPE_SITUATION = 1000;
+/**
+ * Where handed-out references for a Watch answer's sub-expressions start.
+ *
+ * DAP has one namespace for these and no way to say what a reference is
+ * *about*, so the situation keeps its fixed number and everything computed
+ * counts up from well clear of it. They are handed out per stop and dropped
+ * when the run moves — a reference that outlived its stop would answer with
+ * numbers from a situation the reader is no longer in, which is worse than
+ * refusing to expand.
+ */
+const EXPANDED_FROM = 2000;
 
 interface LaunchArguments {
 	/** The `*.test.rgs` file. */
@@ -115,6 +165,9 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	 * the testset were forgotten the moment a rule file was sent after it.
 	 */
 	private readonly marksBySource = new Map<string, number>();
+	/** Sub-expression trees handed out as `variablesReference`s (§X7 stage 3). */
+	private readonly expanded = new Map<number, DebugStep[]>();
+	private nextReference = EXPANDED_FROM;
 
 	private get marks(): number {
 		let total = 0;
@@ -209,13 +262,21 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	private async refresh(): Promise<void> {
 		const state = await this.ask({ kind: 'state' });
 		this.stopped = state.at;
+		// A new stop is a new situation, so every reference handed out at the last
+		// one is about numbers nobody is looking at any more.
+		this.forget();
 		if (!state.session) {
 			this.event('terminated');
 			return;
 		}
 		if (state.at) {
+			// A sub-expression stop is never a breakpoint — breakpoints are lines and
+			// land on rules (§X5 part E) — so saying so would put *Paused on
+			// breakpoint* under every node of a walk somebody is stepping.
 			this.event('stopped', {
-				reason: 'breakpoint', threadId: THREAD, allThreadsStopped: true
+				reason: state.at.at ? 'step' : 'breakpoint',
+				threadId: THREAD,
+				allThreadsStopped: true
 			});
 		}
 	}
@@ -225,10 +286,12 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	): Promise<void> {
 		switch (request.command) {
 			case 'initialize':
-				// What is *not* claimed is the interesting half: no `stepIn`, no
-				// `stepBack`, no `setVariable`. §X5 states why for each — there are
-				// no calls, the trace already answers backwards, and editing state
-				// while paused would be a second place a situation is authored.
+				// What is *not* claimed is the interesting half: no `stepBack`, no
+				// `setVariable`. §X5 states why for each — the trace already answers
+				// backwards, and editing state while paused would be a second place a
+				// situation is authored. `stepIn` and `stepOut` *are* claimed since
+				// part G: between rules they still have no referent, but inside an
+				// expression they have the ordinary one.
 				this.reply(request, {
 					supportsConfigurationDoneRequest: true,
 					// **A condition is an instance name, not an expression.** A rule
@@ -354,18 +417,8 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				// draw something that runs backwards in time as though it nested —
 				// see §X5. The backward view is §W3's, and it is a click away.
 				const at = this.stopped;
-				this.reply(request, {
-					totalFrames: at ? 1 : 0,
-					stackFrames: at ? [{
-						id: FRAME,
-						name: at.instance ? `${at.rule} · ${at.instance}` : at.rule,
-						line: (at.location?.range.start.line ?? 0) + 1,
-						column: (at.location?.range.start.character ?? 0) + 1,
-						...(at.location
-							? { source: { path: vscode.Uri.parse(at.location.uri).fsPath } }
-							: {})
-					}] : []
-				});
+				const frames = at ? this.frames(at) : [];
+				this.reply(request, { totalFrames: frames.length, stackFrames: frames });
 				return;
 			}
 
@@ -379,9 +432,16 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				});
 				return;
 
-			case 'variables':
-				this.reply(request, { variables: this.situation() });
+			case 'variables': {
+				const args = (request.arguments ?? {}) as { variablesReference?: number };
+				const reference = args.variablesReference ?? SCOPE_SITUATION;
+				this.reply(request, {
+					variables: reference === SCOPE_SITUATION
+						? this.situation()
+						: this.stepVariables(this.expanded.get(reference) ?? [])
+				});
 				return;
+			}
 
 			case 'evaluate': {
 				// Watch, the Debug Console and a hover all arrive here. The
@@ -396,14 +456,22 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					return;
 				}
 				const state = await this.ask({ kind: 'evaluate', expression: args.expression });
+				// §X7 stage 3: the value, and behind a disclosure triangle what it
+				// was computed out of. **The single root is unwrapped**, because one
+				// expression was asked and its own row is the one already showing the
+				// answer — expanding it to repeat itself would put a click between a
+				// reader and the only thing they cannot already see.
+				const roots = state.answerSteps ?? [];
+				const parts = roots.length === 1 ? roots[0].parts ?? [] : roots;
 				this.reply(request, {
 					result: state.answer ?? '',
-					variablesReference: 0
+					variablesReference: parts.length > 0 ? this.hold(parts) : 0
 				});
 				return;
 			}
 
 			case 'continue':
+				this.forget();
 				await this.ask({ kind: 'resume' });
 				this.reply(request, { allThreadsContinued: true });
 				return;
@@ -411,10 +479,18 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 			case 'next':
 			case 'stepIn':
 			case 'stepOut':
-				// `next` is the honest one; the other two arrive anyway because VS
-				// Code's toolbar sends them, and stepping one rule is a better
-				// answer than an error the user cannot act on.
-				await this.ask({ kind: 'step' });
+				this.forget();
+				// **All three mean something now** (§X5 part G). They were one command
+				// until 29 August 2026, because rules do not nest and a step that
+				// silently did something else would be worse than a disabled button;
+				// inside an expression they are three answers about depth. What each
+				// one *reaches* depends on where the run stands, and that is the
+				// server's to know — this sends the keystroke.
+				await this.ask({
+					kind: 'step',
+					mode: request.command === 'stepIn' ? 'into'
+						: request.command === 'stepOut' ? 'out' : 'over'
+				});
 				this.reply(request);
 				return;
 
@@ -444,6 +520,98 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	 * arithmetic and no unit algebra, and inventing a second notation here is
 	 * what §X4's rule exists to prevent.
 	 */
+	/**
+	 * The Call Stack, which has a referent inside an expression and none outside one.
+	 *
+	 * Between **rules** there is still no stack — firing order is dependency-driven
+	 * ([E-7]) and there is no caller to name — so a rule stop is one frame, as it
+	 * has been since part D. Inside one expression the situation is the ordinary
+	 * one: each enclosing node is waiting on an operand, which is a stack in the
+	 * plainest sense, and it is the one being walked.
+	 *
+	 * **The top frame states its value and the ones above it do not.** A stop
+	 * happens when a node *completes*, so everything enclosing it is unfinished;
+	 * putting a number there would be an invention, and this is the pane where an
+	 * invention reads as fact.
+	 *
+	 * Every frame carries the sub-expression's own range, so VS Code highlights
+	 * the phrase rather than the line — which is the whole of what "stepping into
+	 * the rule" looks like. They are all in the rule's document: a beslistabel is
+	 * never stepped, precisely because its cells are not.
+	 */
+	private frames(at: DebugStop): {
+		id: number;
+		name: string;
+		line: number;
+		column: number;
+		endLine?: number;
+		endColumn?: number;
+		source?: { path: string };
+	}[] {
+		const source = at.location
+			? { source: { path: vscode.Uri.parse(at.location.uri).fsPath } }
+			: {};
+		const rule = {
+			id: FRAME,
+			name: at.instance ? `${at.rule} · ${at.instance}` : at.rule,
+			line: (at.location?.range.start.line ?? 0) + 1,
+			column: (at.location?.range.start.character ?? 0) + 1,
+			...source
+		};
+		if (!at.at) {
+			return [rule];
+		}
+		const placed = (
+			name: string,
+			range: WireRange | undefined,
+			id: number
+		): typeof rule => ({
+			id,
+			name,
+			line: (range?.start.line ?? at.location?.range.start.line ?? 0) + 1,
+			column: (range?.start.character ?? 0) + 1,
+			...(range ? { endLine: range.end.line + 1, endColumn: range.end.character + 1 } : {}),
+			...source
+		});
+		return [
+			placed(`${at.at.text} = ${at.at.value}`, at.at.range, FRAME + 1),
+			...at.at.frames.map((one, i) => placed(one.text, one.range, FRAME + 2 + i)),
+			rule
+		];
+	}
+
+	/** Hands out one reference for a sub-expression's parts (§X7 stage 3). */
+	private hold(parts: DebugStep[]): number {
+		const reference = ++this.nextReference;
+		this.expanded.set(reference, parts);
+		return reference;
+	}
+
+	/** Drops every reference handed out at the stop the run has just left. */
+	private forget(): void {
+		this.expanded.clear();
+	}
+
+	/**
+	 * One level of a Watch answer's sub-expression tree.
+	 *
+	 * The **name** is the model's own text and the **value** is what it came to,
+	 * which is the pane's own idiom rather than a borrowed one: a Variables row
+	 * says "this, here, is that". A node the engine cut short comes across with
+	 * no text of its own and is said in words — an empty row would read as a
+	 * sub-expression that computed nothing.
+	 */
+	private stepVariables(steps: DebugStep[]):
+		{ name: string; value: string; variablesReference: number }[] {
+		return steps.map(one => one.truncated && one.value === ''
+			? { name: '…', value: 'verder niet vastgelegd', variablesReference: 0 }
+			: {
+				name: one.text,
+				value: one.value,
+				variablesReference: one.parts?.length ? this.hold(one.parts) : 0
+			});
+	}
+
 	private situation(): { name: string; value: string; variablesReference: number }[] {
 		const at = this.stopped;
 		if (!at) {

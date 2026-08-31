@@ -3,18 +3,22 @@
 
 // §13.4.10 #2 — verdeling zonder groepen, in gelijke delen en naar rato.
 
+// Bron: [art. 15](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regelgroep bonusverdeling
 
+// Bron: [art. 15 lid 1](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regel Verdeling bonus in gelijke delen
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld in gelijke delen.
 
+// Bron: [art. 15 lid 2](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regel Verdeling bonus naar rato
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld naar rato van de spaarfactor.
 
 // §13.4.10 #3–#8 — het meervoudige verdeelcriterium: rangorde, gelijkspel,
 // maximum, afronding, en de onverdeelde rest als tweede zin.
+// Bron: [art. 15 lid 3](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regel Verdeling bonus met rangorde
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
@@ -24,6 +28,7 @@ Regel Verdeling bonus met rangorde
 			- afgerond op 0 decimalen naar beneden.
 		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
 
+// Bron: [art. 15 lid 4](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regel Verdeling bonus aflopend
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:
@@ -31,6 +36,7 @@ Regel Verdeling bonus aflopend
 			- in gelijke delen.
 		Als onverdeelde rest blijft het onverdeelde tegoed van de te verdelen bonuspot over.
 
+// Bron: [art. 15 lid 5](bron/reglement.md#artikel-15-verdeling-van-de-bonuspot)
 Regel Verdeling bonus per groep naar rato
 	geldig altijd
 		Het totale tegoed van een te verdelen bonuspot wordt verdeeld over de bonusaandelen van alle spaarders met recht op bonus van de te verdelen bonuspot, waarbij wordt verdeeld:

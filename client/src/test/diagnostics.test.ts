@@ -7,7 +7,7 @@ const codesOf = (uri: vscode.Uri) =>
 	vscode.languages.getDiagnostics(uri).map(d => String(d.code));
 
 suite('Diagnostiek (P1)', () => {
-	const docUri = getDocUri('regels/contributie.rgs');
+	const docUri = getDocUri('regels/h3-contributie/art-06-contributie.rgs');
 	let original: string;
 
 	suiteSetup(async () => {

@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.7.0",
+	"version": "0.8.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -109,6 +109,21 @@
 				"command": "regelspraak.restartServer",
 				"title": "Taalserver opnieuw starten",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.importeerUitAlef",
+				"title": "Importeren uit ALEF",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.invoegenOpsommingsteken",
+				"title": "Opsommingsteken invoegen (•)",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.invoegenInvulling",
+				"title": "Invulling invoegen (« »)",
+				"category": "RegelSpraak"
 			}
 		],
 		"menus": {
@@ -149,6 +164,21 @@
 				"command": "regelspraak.formatDocument",
 				"key": "shift+alt+f",
 				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+			},
+			{
+				"command": "regelspraak.invoegenOpsommingsteken",
+				"key": "alt+b",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+			},
+			{
+				"command": "regelspraak.invoegenInvulling",
+				"key": "alt+q",
+				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+			},
+			{
+				"command": "regelspraak.showUitkomst",
+				"key": "alt+r",
+				"when": "editorLangId == regelspraak && editorTextFocus"
 			}
 		],
 		"languages": [
@@ -288,6 +318,12 @@
 			"type": "object",
 			"title": "RegelSpraak",
 			"properties": {
+				"regelspraak.execution.blockOnErrors": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Weiger **Testgeval uitvoeren**, **Regel uitvoeren** en **Foutopsporing** zolang het model een fout bevat (venster **Problemen**). Een model met een fout kan niet betekenen wat er staat, en een uitvoering erover leidt dan een verkeerd getal af in plaats van geen enkel. De controle geldt voor het hele model: een fout in een ander bestand blokkeert de uitvoering ook, want een uitvoering leest alle regels. Zet uit om toch uit te voeren."
+				},
 				"regelspraak.execution.defaultScenario": {
 					"scope": "window",
 					"type": "string",
@@ -449,6 +485,7 @@
 		"postinstall": "node scripts/install-nested.mjs client",
 		"test": "node ./client/out/test/runTest.js",
 		"build:icon": "node scripts/build-icon.mjs",
+		"source:coverage": "node scripts/source-coverage.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
 	},
 	"devDependencies": {

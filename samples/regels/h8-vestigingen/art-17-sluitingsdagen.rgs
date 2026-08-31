@@ -2,6 +2,7 @@
 // voorwaarde, niet een attribuut.
 
 // §13.4.11 — een dagsoortdefinitie: "de dag" is het onderwerp van de voorwaarde.
+// Bron: [art. 17 lid 1](bron/reglement.md#artikel-17-sluitingsdagen)
 Regel Inventarisdag
 	geldig altijd
 		Een dag is een inventarisdag
@@ -9,6 +10,7 @@ Regel Inventarisdag
 			• de maand uit (de dag) is gelijk aan 1
 			• de dag uit (de dag) is gelijk aan 2.
 
+// Bron: [art. 17 lid 2](bron/reglement.md#artikel-17-sluitingsdagen)
 Regel Sluitingsdag
 	geldig altijd
 		Een dag is een sluitingsdag

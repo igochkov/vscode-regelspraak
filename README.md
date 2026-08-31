@@ -10,14 +10,14 @@ The extension activates on `.rgs` files — models, and the `*.test.rgs` testset
 
 ## The extension in two minutes
 
-[![Completion proposing the four-word name "dagen te laat" with its datatype, after two letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e)
+[![Completion proposing "recht op verlenging" with "kenmerk (bezittelijk)" beside it, after four letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/user-attachments/assets/e6379585-41eb-4051-bbb4-fbec90c844f0)
 
 Writing with completion, three kinds of mistake caught, a testset running with the
 derivation trace behind every value, navigation and rename that cross between a
 model and the testset that tests it, the formatter, the decision-table preview,
 and the whole workspace in one tree — over the model in [samples/](samples).
-[The film](https://github.com/user-attachments/assets/8f672331-1c57-4ca5-96eb-34ae4cff278e) plays in the browser: two minutes and twenty, with Dutch
-captions (mp4, 5 MB).
+[The film](https://github.com/user-attachments/assets/e6379585-41eb-4051-bbb4-fbec90c844f0) plays in the browser: one minute fifty-five, with Dutch
+captions (mp4, 7 MB).
 
 ## Features
 
@@ -29,8 +29,11 @@ captions (mp4, 5 MB).
 - **What the text does not say, shown beside it**: hover with the declaration's `//` comment, inlay hints for the datatype and unit a rule derives, reference and derivation counts above a declaration, a grammar-aware outline and folding, and sentence-wise selection expansion.
 - **The model seen whole**: a Model Explorer over every declaration in the workspace, a read-only model view of one file, and a preview for a `Beslistabel` that shows what the source cannot — which column concludes, and what the case your cursor is in concludes as one sentence.
 - **Testsets that run.** A `*.test.rgs` testset is part of the language — same colour, checks, formatting and rename, crossing into the model in both directions — and it *runs*: in the Testing view with failures as diffs, or from a link in the text, one testgeval or one rule at a time, with the values, the characteristics, the faults and the derivation trace in a panel beside the model.
-- **Step through a run** (<kbd>F5</kbd> in a testset): breakpoints on a rule *or* on a `Verwacht` line — where the mark means "stop where this value comes from" and can be held to one instance — the situation in the Variables pane at every stop, and Watch, the Debug Console and hover evaluating any RegelSpraak expression in the scope the run is standing in.
-- **Why a value is what it is.** Every derived value names the rule that wrote it and unfolds back through the rules behind *its* operands, to the input or parameter where the derivation ends — and a rule that did **not** fire says which criterion stopped it, and what it read.
+- **Step through a run** (<kbd>F5</kbd> in a testset): breakpoints on a rule *or* on a `Verwacht` line — where the mark means "stop where this value comes from" and can be held to one instance — the situation in the Variables pane at every stop, and Watch, the Debug Console and hover evaluating any RegelSpraak expression in the scope the run is standing in. <kbd>F11</kbd> steps *inside* a rule, stopping at each part of its arithmetic as that part is worked out, with the editor highlighting the phrase rather than the line.
+- **Why a value is what it is.** Every derived value names the rule that wrote it and unfolds back through the rules behind *its* operands, to the input or parameter where the derivation ends — with the rule's own arithmetic shown between the two, one row per step. A rule that did **not** fire says which criterion stopped it, and what it read.
+- **The provision a rule renders.** A `// Bron:` comment above a declaration or a rule may link the article it comes from; hovering opens that article **rendered**, and the same link in the comment opens the source at the line. The path is written from the model root, so a rule file can be moved without its citations going stale.
+- **A model need not spell out its plurals.** `(mv: …)` is optional in the specification's syntax chapter, and the editor works the form out: write `Objecttype de Vestiging` and a rule may still say `alle Vestigingen`, with navigation, colour, references and rename all following. A derived form never overrides one you wrote and never competes with another declaration, so the worst a wrong guess does is what happens today — the phrase does not resolve, and the editor says so.
+- **Bring a model in from ALEF.** **Importeren uit ALEF** reads the models of an ALEF project and writes RegelSpraak text — declarations, rules and testsets — laid out the way **Document opmaken** would. It is a one-shot migration: from that moment the text is the model, and a conversion report beside the files lists everything that was not translated, every reading worth checking, and every word the conversion had to invent.
 
 Each of these in full, with the reasoning behind the shape it takes, is in
 [docs/FEATURES.md](docs/FEATURES.md). Per-release detail is in the

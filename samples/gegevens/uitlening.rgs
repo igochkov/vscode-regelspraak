@@ -1,5 +1,6 @@
 // De Uitlening — wat een Lid leent, en te laat inlevert.
 
+// Bron: [art. 1 lid 3](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype de Uitlening (mv: Uitleningen)
 	de uitleendatum           Datum in dagen;
 	de inleverdatum           Datum in dagen;

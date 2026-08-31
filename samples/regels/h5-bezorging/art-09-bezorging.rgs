@@ -2,49 +2,59 @@
 // in beide vormen, en een dagsoort als voorwaarde.
 
 // §13.4.16 #38 — "verminderd met" begrenst bij nul, waar "min" dat niet doet.
+// Bron: [art. 9 lid 1](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel bepaal weegverschil
 	geldig altijd
 		Het weegverschil van een Zending moet berekend worden als het gewicht van de Zending verminderd met 0,250 kg richting nul afgerond op 2 decimalen.
 
 // §13.4.17 #18–#24 — de datumonderdelen.
+// Bron: [art. 9 lid 2](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel bepaal bezorgmaand
 	geldig altijd
 		De bezorgmaand van een Zending moet berekend worden als de maand uit (de bezorgdatum van de Zending).
 
+// Bron: [art. 9 lid 2](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel bepaal bezorgjaar
 	geldig altijd
 		Het bezorgjaar van een Zending moet berekend worden als het jaar uit (de bezorgdatum van de Zending).
 
+// Bron: [art. 9 lid 2](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel bepaal bezorgdag
 	geldig altijd
 		De bezorgdag van een Zending moet berekend worden als de dag uit (de bezorgdatum van de Zending).
 
 // §13.4.17 #32 — de absolute tijdsduur, in millisecondes.
+// Bron: [art. 9 lid 3](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel bepaal bezorgvenster
 	geldig altijd
 		Het bezorgvenster van een Zending moet berekend worden als de absolute tijdsduur van het bezorgtijdstip van de Zending tot het beloofde tijdstip van de Zending in millisecondes.
 
+// Bron: [art. 9 lid 4](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Vroege zending
 	geldig altijd
 		Een Zending is een vroege zending
 		indien de bezorgdatum van de Zending eerder is dan dd. 01-03-2027.
 
+// Bron: [art. 9 lid 5](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Late zending
 	geldig altijd
 		Een Zending is een late zending
 		indien het bezorgtijdstip van de Zending later is dan het beloofde tijdstip van de Zending.
 
+// Bron: [art. 9 lid 6](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Beoordeelbare zending
 	geldig altijd
 		Een Zending is een beoordeelbare zending
 		indien de beoordeling van de Zending gevuld is.
 
+// Bron: [art. 9 lid 6](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Onbekende zending
 	geldig altijd
 		Een Zending is een onbekende zending
 		indien de beoordeling van de Zending leeg is.
 
 // §13.4.14 #1 — "er wordt voldaan aan …", waar geen onderwerp voorop staat.
+// Bron: [art. 9 lid 7](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Stipte zending
 	geldig altijd
 		Een Zending is een stipte zending
@@ -53,22 +63,26 @@ Regel Stipte zending
 			• de beoordeling van de Zending is ongelijk aan "afgekeurd".
 
 // §6.11 / §13.4.11 — een dagsoort als voorwaarde, bevestigend en ontkennend.
+// Bron: [art. 9 lid 8](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Zondagsbezorging
 	geldig altijd
 		Een Zending is een feestbezorging
 		indien de bezorgdatum van de Zending een sluitingsdag is.
 
+// Bron: [art. 9 lid 8](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Gewone bezorging
 	geldig altijd
 		Een Zending is een gewone bezorging
 		indien de bezorgdatum van de Zending geen sluitingsdag is.
 
 // §13.4.15 #18 — een regelversie als voorwaarde, met en zonder versieaanduiding.
+// Bron: [art. 9 lid 9](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Nacontrole
 	geldig altijd
 		Een Zending is een nazendingsgeval
 		indien regelversie Controleer bezorgtermijn (altijd) inconsistent is.
 
+// Bron: [art. 9 lid 10](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Herbeoordeling
 	geldig altijd
 		Een Zending is een herbeoordelingsgeval
@@ -78,6 +92,7 @@ Regel Herbeoordeling
 			• de bezorgdatum van de Zending is geen sluitingsdag.
 
 // §13.4.13 #4 — de bullet-loze vorm van een samengesteld predicaat ([D-41]).
+// Bron: [art. 9 lid 11](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Regel Aantal zware zendingen
 	geldig altijd
 		Het aantal zware zendingen van een Lid moet berekend worden als het aantal bezorgde zendingen van het Lid die aan de volgende voorwaarde voldoet:

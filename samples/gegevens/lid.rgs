@@ -2,6 +2,7 @@
 // Bezield, dus regels mogen het met `hij` en `zijn` aanspreken (§13.4.17 #42).
 // De koptekstregels verdelen de leden in groepen (§13.3.1 #5).
 
+// Bron: [art. 1 lid 1](bron/reglement.md#artikel-1-begripsbepalingen)
 Objecttype het Lid (mv: Leden) (bezield)
 	--- identificatie
 	het pasnummer (mv: pasnummers)                         Tekst;

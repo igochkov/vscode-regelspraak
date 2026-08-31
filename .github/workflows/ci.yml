@@ -29,6 +29,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # The example model cites the document it renders (docs/AUTHORING.md).
+      # This needs no language server, so unlike the rest of the model's gates
+      # it can run here.
+      - name: Check the source citations
+        run: npm run source:coverage
+
       - name: Validate contributed JSON
         run: |
           node -e '

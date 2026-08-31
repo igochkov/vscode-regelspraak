@@ -28,4 +28,12 @@ suite('Activatie', () => {
 			'regelspraak.restartServer ontbreekt in het commandoregister'
 		);
 	});
+
+	// The hover's source citation is a `command:` link to this. Registered here
+	// and named in `model/sourceCitations.ts` on the server: two spellings across
+	// a repository boundary, and a citation is dead if they drift.
+	test('het commando dat een bronverwijzing opent is geregistreerd', async () => {
+		const all = await vscode.commands.getCommands(true);
+		assert.ok(all.includes('regelspraak.openBron'), 'regelspraak.openBron ontbreekt');
+	});
 });

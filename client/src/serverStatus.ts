@@ -157,3 +157,36 @@ export class ServerStatus implements Disposable {
 		this.release();
 	}
 }
+
+/**
+ * Which server this window actually started, for whoever has to explain a
+ * mismatch.
+ *
+ * The three facts are written to the output channel on every start and read by
+ * nobody: "check there first when a change appears to have no effect" only helps
+ * someone who already suspects the server. Kept here as well so a failure can
+ * *state* them — a request the server does not know is a version mismatch, and
+ * this is the whole of what a reader needs to see.
+ *
+ * Beside the status item rather than in `extension.ts`, which starts the server:
+ * this module is the one that already answers "what is the server doing", and
+ * putting it there would make every consumer import the module that imports
+ * them.
+ */
+export interface ServerBuild {
+	module: string;
+	origin: string;
+	/** Absent where the file could not be stat'ed. */
+	builtAt?: string;
+}
+
+let started: ServerBuild | undefined;
+
+export function recordServerBuild(build: ServerBuild): void {
+	started = build;
+}
+
+/** The server this window started, or nothing before the first attempt. */
+export function startedServer(): ServerBuild | undefined {
+	return started;
+}

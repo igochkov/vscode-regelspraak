@@ -1,6 +1,7 @@
 // Feittypen (§13.3.9) — de relaties waarlangs een onderwerpketen loopt. De
 // kardinaliteitsregel onderaan elk blok is vrije tekst op de naam van de rol na.
 
+// Bron: [art. 1 lid 7](bron/reglement.md#artikel-1-begripsbepalingen)
 Feittype lidmaatschap van de boekerij
 	de vestiging                                   Boekerijvestiging
 	het ingeschreven lid (mv: ingeschreven leden)  Lid

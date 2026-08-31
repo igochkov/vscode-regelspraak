@@ -1,5 +1,6 @@
-// Dagsoorten (§13.3.10). Welke dag welke soort is, staat in regels/kalender.rgs.
+// Dagsoorten (§13.3.10). Welke dag welke soort is, staat in art-17-sluitingsdagen.rgs.
 
+// Bron: [art. 17](bron/reglement.md#artikel-17-sluitingsdagen)
 Dagsoort de sluitingsdag (mv: sluitingsdagen);
 
 Dagsoort de inventarisdag (mv: inventarisdagen)

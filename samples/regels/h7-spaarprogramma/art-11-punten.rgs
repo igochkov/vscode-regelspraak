@@ -3,27 +3,33 @@
 
 // §13.4.17 #13 — de wortel; §6.1.3 vraagt de afronding erna (RS402).
 
+// Bron: [art. 11](bron/reglement.md#artikel-11-puntenprogramma)
 Regelgroep puntenprogramma
 
+// Bron: [art. 11 lid 1](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal spaarindex
 	geldig altijd
 		De spaarindex van een Lid moet berekend worden als de wortel van zijn spaarfactor naar beneden afgerond op 0 decimalen.
 
 // §13.4.17 #14 — machtsverheffen.
+// Bron: [art. 11 lid 2](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal kwadraatscore
 	geldig altijd
 		De kwadraatscore van een Lid moet berekend worden als zijn spaarfactor tot de macht 2 rekenkundig afgerond op 2 decimalen.
 
 // §13.4.17 #17 — de absolute waarde, met verplichte haakjes.
+// Bron: [art. 11 lid 3](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal schuldpositie
 	geldig altijd
 		De schuldpositie van een Lid moet berekend worden als 0 min de absolute waarde van (zijn inlegtegoed).
 
 // §13.4.17 #15/#16 — de minimale en de maximale waarde van een reeks.
+// Bron: [art. 11 lid 4](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal laagste tegoed
 	geldig altijd
 		Het laagste tegoed van een Lid moet gesteld worden op de minimale waarde van zijn dagtegoed, zijn weektegoed en zijn kwartaaltegoed.
 
+// Bron: [art. 11 lid 4](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal hoogste tegoed
 	geldig altijd
 		Het hoogste tegoed van een Lid moet gesteld worden op de maximale waarde van zijn dagtegoed en zijn weektegoed.
@@ -31,35 +37,42 @@ Regel bepaal hoogste tegoed
 // §13.4.17 #12 — een percentage van een bedrag. §6.1.2 #2 rekent het percentage
 // eerst om naar zijn breuk, die de geschreven decimalen plus twee draagt; een
 // geheel doelattribuut vraagt daarom expliciet om afronding (RS401).
+// Bron: [art. 11 lid 5](bron/reglement.md#artikel-11-puntenprogramma)
 Regel bepaal spaarbonus
 	geldig altijd
 		Het inlegtegoed van een Lid moet berekend worden als 15% van zijn leestegoed rekenkundig afgerond op 0 decimalen.
 
 // §13.3.7 / §5.8.5 — één gedimensioneerd attribuut, drie manieren om over de
 // dimensie te aggregeren: alles, een bereik, en een opsomming.
+// Bron: [art. 11 lid 6](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Puntentotaal alle periodes
 	geldig altijd
 		Het puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over alle spaarperiodes.
 
+// Bron: [art. 11 lid 6](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Puntentotaal recente periodes
 	geldig altijd
 		Het recente puntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over de spaarperiodes vanaf twee periodes geleden t/m vorige periode.
 
+// Bron: [art. 11 lid 6](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Puntentotaal keuzeperiodes
 	geldig altijd
 		Het keuzepuntentotaal van een Lid moet berekend worden als de som van zijn gespaarde punten in periode over de spaarperiodes in {twee periodes geleden, vorige periode en huidige periode}.
 
+// Bron: [art. 11 lid 7](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Hoogste periodetegoed
 	geldig altijd
 		Het hoogste periodetegoed van een Lid moet berekend worden als de maximale waarde van zijn gespaarde punten in periode over alle spaarperiodes.
 
 // §8.2 — de controle over een hele periode, als vragende en als stellende vorm,
 // en in de ontkenning.
+// Bron: [art. 11 lid 8](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Jaarrond gevuld
 	geldig altijd
 		Een Lid is een jaarrondspaarder
 		indien zijn leestegoed gedurende het gehele jaar gevuld is.
 
+// Bron: [art. 11 lid 8](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Maandrond spaarder
 	geldig altijd
 		Een Lid is een maandrondspaarder
@@ -68,10 +81,12 @@ Regel Maandrond spaarder
 			• zijn leestegoed is niet gedurende het gehele jaar gelijk aan 0.
 
 // §7.2 — het aantal dagen in een maand of een jaar dat iets geldt.
+// Bron: [art. 11 lid 9](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Aantal toegangsdagen
 	geldig altijd
 		Het aantal toegangsdagen van een Lid moet gesteld worden op het aantal dagen in de maand dat hij een recht op verlenging heeft.
 
+// Bron: [art. 11 lid 9](bron/reglement.md#artikel-11-puntenprogramma)
 Regel Aantal spaardagen
 	geldig altijd
 		Het aantal spaardagen van een Lid moet gesteld worden op het aantal dagen in het jaar dat hij een actieve deelnemer is.

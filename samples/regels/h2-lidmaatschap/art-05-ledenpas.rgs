@@ -2,22 +2,26 @@
 // elk bevestigend en ontkennend.
 
 // Tabel 16 — de elfproef, bevestigend en ontkennend, en de cijfercontrole.
+// Bron: [art. 5 lid 1](bron/reglement.md#artikel-5-ledenpas)
 Regel Correct pasnummer
 	geldig altijd
 		Een Lid is een correcte pasnummerhouder
 		indien zijn pasnummer aan de elfproef voldoet.
 
+// Bron: [art. 5 lid 2](bron/reglement.md#artikel-5-ledenpas)
 Regel Ongeldig pasnummer
 	geldig altijd
 		Een Lid is een weigeringsgeval
 		indien zijn pasnummer niet aan de elfproef voldoet.
 
+// Bron: [art. 5 lid 3](bron/reglement.md#artikel-5-ledenpas)
 Regel Controleerbaar pasnummer
 	geldig altijd
 		Een Lid is een controleerbare pasnummerhouder
 		indien zijn pasnummer numeriek is met exact 9 cijfers.
 
 // §13.4.14 — "ten hoogste", "ten minste" en "precies" als kwantificatie.
+// Bron: [art. 5 lid 4](bron/reglement.md#artikel-5-ledenpas)
 Regel Verdacht pasnummer
 	geldig altijd
 		Een Lid is een controlegeval

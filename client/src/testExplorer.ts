@@ -86,6 +86,8 @@ export interface RunInconsistency {
 	instance?: string;
 	criteria?: { text: string; holds: boolean }[];
 	operands?: RunOperand[];
+	/** The sub-expressions the check computed on its way (§X7 stage 3). */
+	steps?: RunStep[];
 }
 
 export interface RunOperand {
@@ -127,6 +129,27 @@ export interface RunTraceEntry {
 	rule: string;
 	value: string;
 	operands: RunOperand[];
+	/** The arithmetic between the operands and the value (§X7 stage 3). */
+	steps?: RunStep[];
+}
+
+/**
+ * One sub-expression, as the model writes it and as it came out (§X7 stage 3).
+ *
+ * Where an operand says what a rule *read*, a step says what it *did* — so
+ * `X plus Y maal Z` stops being three leaves and a total. Both values are
+ * rendered by the server; this side has no arithmetic (see the server's
+ * `protocol.ts`).
+ *
+ * **No `parts` does not mean no parts.** Recording stops at a depth and at a
+ * count, and `truncated` is the marker the engine leaves where a subtree was
+ * dropped — without it a cut tree would read as a complete one.
+ */
+export interface RunStep {
+	text: string;
+	value: string;
+	parts?: RunStep[];
+	truncated?: boolean;
 }
 
 export interface TestRun {

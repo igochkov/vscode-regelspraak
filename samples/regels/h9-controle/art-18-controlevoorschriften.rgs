@@ -3,25 +3,31 @@
 
 // §13.4.8 #2–#6 — de enkelvoudige consistentieregel, in vier operatorvormen.
 
+// Bron: [art. 18](bron/reglement.md#artikel-18-controlevoorschriften)
 Regelgroep consistentiecontroles
 
+// Bron: [art. 18 lid 1](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer inschrijfdatum
 	geldig altijd
 		De inschrijfdatum van een Lid moet gevuld zijn.
 
+// Bron: [art. 18 lid 2](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer bezorgtermijn
 	geldig altijd
 		De bezorgtermijn van een Zending moet kleiner of gelijk zijn aan 5 dagen.
 
+// Bron: [art. 18 lid 3](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer paslengte
 	geldig altijd
 		Het pasnummer van een Lid moet numeriek zijn met exact 9 cijfers.
 
+// Bron: [art. 18 lid 4](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer uitleendatum
 	geldig altijd
 		De uitleendatum van een Uitlening moet eerder of gelijk zijn aan de inleverdatum van de Uitlening.
 
 // §13.4.8 #7 — het samengestelde criterium, met een onderwerp ervoor.
+// Bron: [art. 18 lid 5](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer poteisen
 	geldig altijd
 		Een Bonuspot moet voldoen aan ten minste één van de volgende criteria:
@@ -29,12 +35,14 @@ Regel Controleer poteisen
 			• de Bonuspot is een ruime pot.
 
 // Dezelfde constructie zonder onderwerp: "Er moet worden voldaan aan …".
+// Bron: [art. 18 lid 6](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer registratie
 	geldig altijd
 		Er moet worden voldaan aan het volgende criterium:
 			• het vestigingsnummer van een Boekerijvestiging is gevuld.
 
 // §13.4.8 #10 — een genest criterium onder een samengesteld criterium.
+// Bron: [art. 18 lid 7](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Controleer speciale pot
 	geldig altijd
 		Een Bonuspot moet voldoen aan alle van de volgende criteria:
@@ -44,16 +52,19 @@ Regel Controleer speciale pot
 				•• het onverdeelde tegoed van de Bonuspot is gelijk aan 0.
 
 // §13.4.8 #13 — uniciteit over één attribuut van alle exemplaren.
+// Bron: [art. 18 lid 8](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Uniek pasnummer
 	geldig altijd
 		De pasnummers van alle Leden moeten uniek zijn.
 
 // §13.4.8 #14 — de concatenatie van meerdere attributen, en §13.4.8 #11's
 // "verenigd met", dat twee verzamelingen als één namespace toetst.
+// Bron: [art. 18 lid 9](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Unieke titelcombinatie
 	geldig altijd
 		De concatenatie van de titels en de uitgavejaren van alle Publicaties verenigd met de concatenatie van de titels en de uitgavejaren van alle Bundels moeten uniek zijn.
 
+// Bron: [art. 18 lid 10](bron/reglement.md#artikel-18-controlevoorschriften)
 Regel Unieke vestigingsnamen
 	geldig altijd
 		De vestigingsnamen van alle Boekerijvestigingen verenigd met de titels van alle Publicaties moeten uniek zijn.
