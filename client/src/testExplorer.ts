@@ -256,7 +256,12 @@ export class TestExplorer {
 				child.error = new vscode.MarkdownString(
 					one.errors.map(e => `\`${e.code}\` ${e.message}`).join('\n\n'));
 			} else if (!one.testable) {
-				child.description = 'alleen uitvoeren';
+				// **One vocabulary across the two surfaces.** The run lens above the
+				// case offers `scenario uitvoeren` against `test uitvoeren` ([T-6]),
+				// so the item says `scenario` and not a second phrase for the same
+				// fact — a reader meeting one word in the text and another in the
+				// Testing view has to work out that they mean the same thing.
+				child.description = 'scenario';
 			}
 			return child;
 		}));
@@ -452,6 +457,25 @@ export class TestExplorer {
 		}
 		const failed = outcome.assertions.filter(one => !one.passed);
 		const broken = outcome.faults.filter(one => one.kind === 'modelfout');
+		// **A run-only case is not a passing test** ([T-6]): a testgeval without
+		// `Verwacht` lines is a valid situation to run and asserts nothing, so
+		// reporting it green puts it in the suite's pass count and says the model
+		// was checked when nothing was checked. That is "an expectation nobody runs
+		// is not a test" one level up, and the `alleen uitvoeren` description on the
+		// item does not offset a green tick in a total. `skipped` is the honest
+		// state VS Code has — it is visible, it is not a pass, and it is not a
+		// failure either, which is right for a case that did exactly what it said.
+		//
+		// Decided from the **outcome** rather than from the item's `testable` flag:
+		// this is the answer about the run that just happened, so it cannot go stale
+		// against a re-discovery, and after the refusal branch above ([T-41] yields
+		// no assertions for a refusal) an empty list means run-only and nothing else.
+		// A modelfout still fails it — the run deriving less than the model asked for
+		// is news whether or not anything was asserted.
+		if (outcome.assertions.length === 0 && broken.length === 0) {
+			run.skipped(item);
+			return;
+		}
 		if (failed.length === 0 && broken.length === 0) {
 			run.passed(item, duration);
 			return;
