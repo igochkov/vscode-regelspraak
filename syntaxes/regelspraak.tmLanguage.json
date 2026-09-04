@@ -339,6 +339,10 @@
 			"name": "keyword.control.regelspraak"
 		},
 		{
+			"match": "(?<![\\p{L}\\p{N}'-])(?:Gegevensbron)(?![\\p{L}\\p{N}'-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
 			"match": "(?<![\\p{L}\\p{N}'-])(?:gedeeld door)(?![\\p{L}\\p{N}'-])",
 			"name": "keyword.operator.wordlike.regelspraak"
 		},
@@ -529,6 +533,10 @@
 		{
 			"match": "(?<![\\p{L}\\p{N}'-])(?:precies)(?![\\p{L}\\p{N}'-])",
 			"name": "keyword.other.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}'-])(?:sleutel)(?![\\p{L}\\p{N}'-])",
+			"name": "keyword.declaration.regelspraak"
 		},
 		{
 			"match": "(?<![\\p{L}\\p{N}'-])(?:som van)(?![\\p{L}\\p{N}'-])",
