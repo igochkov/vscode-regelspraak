@@ -143,7 +143,8 @@
 11. Van een lid wordt bijgehouden hoeveel van de aan hem bezorgde zendingen
     zwaarder waren dan 10 kg.
 12. De verzendtarieven worden van buiten aangeleverd in een tarieftabel,
-    gesleuteld op zone en gewichtsklasse.
+    gesleuteld op zone en gewichtsklasse; het verzendtarief van een zending
+    wordt daarin opgezocht bij haar zone en gewichtsklasse.
 
 ## Hoofdstuk 6. Collectie
 

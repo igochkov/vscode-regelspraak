@@ -28,6 +28,16 @@ Testgeval Elke literaalvorm op één situatie
 		bezorgtermijn      2 dagen
 		gewicht            1,250 kg
 		beoordeling        "op tijd, netjes bezorgd"
+		zone               1
+		gewichtsklasse     2
+	// EXTENSIE ([D-58], F-4) — de inhoud van een Gegevensbron, als miniatuur: sleutels
+	// in declaratievolgorde, de waarde na de dubbele punt. Wat `Parameters` voor een
+	// parameter doet, doet dit voor een tabel — het model declareert de vorm, de
+	// testset levert de inhoud.
+	Gegeven de tarieftabel met de rijen
+		1, 1 : 4,50 EUR
+		1, 2 : 6,75 EUR
+		2, 1 : 5,25 EUR
 	Gegeven een Publicatie (Roman) met
 		titel          "Het lied van de leeszaal"
 		uitgavejaar    1998
@@ -59,6 +69,7 @@ Testgeval Elke literaalvorm op één situatie
 		bezorgdag      14
 		bezorgvenster  1800000 milliseconde
 		weegverschil   1,00 kg
+		verzendtarief  6,75 EUR
 	Verwacht Roman met
 		drukjaar      2004
 		genrekorting  10 %

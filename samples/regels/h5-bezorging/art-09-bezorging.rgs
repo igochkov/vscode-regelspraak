@@ -98,3 +98,13 @@ Regel Aantal zware zendingen
 		Het aantal zware zendingen van een Lid moet berekend worden als het aantal bezorgde zendingen van het Lid die aan de volgende voorwaarde voldoet:
 			het gewicht is groter dan 10 kg.
 
+// EXTENSIE — geen v2.3.0 ([D-58]). De sleutelopzoeking haalt één waarde uit een
+// van buiten aangeleverde tabel: `<waarde> uit <bron> bij <sleutels>`, met
+// evenveel sleutels als de bron assen heeft en in dezelfde volgorde. De
+// sleutelreeks is de gewone opsomming van de taal (§13.4.17 #2), dus
+// `bij X en Y` — er is geen tweede schrijfwijze voor een rij. Welke inhoud de
+// tabel heeft, geeft de testset mee (`Gegeven de tarieftabel met de rijen`).
+// Bron: [art. 9 lid 12](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
+Regel bepaal verzendtarief
+	geldig altijd
+		Het verzendtarief van een Zending moet gesteld worden op het tarief uit de tarieftabel bij de zone van de Zending en de gewichtsklasse van de Zending.

@@ -355,7 +355,15 @@
 			"name": "keyword.control.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}'-])(?:later is dan|naar beneden|ongelijk aan|richting nul|tot de macht)(?![\\p{L}\\p{N}'-])",
+			"match": "(?<![\\p{L}\\p{N}'-])(?:later is dan)(?![\\p{L}\\p{N}'-])",
+			"name": "keyword.operator.wordlike.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}'-])(?:met de rijen)(?![\\p{L}\\p{N}'-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
+			"match": "(?<![\\p{L}\\p{N}'-])(?:naar beneden|ongelijk aan|richting nul|tot de macht)(?![\\p{L}\\p{N}'-])",
 			"name": "keyword.operator.wordlike.regelspraak"
 		},
 		{

@@ -17,19 +17,12 @@
 // sleutelkolom; de regel zonder die aanduiding is de waarde. De volgorde van de
 // sleutels is de volgorde waarin een opzoeking haar argumenten meegeeft.
 
-// **De opzoeking zelf staat hier nog niet**, en dat is geen omissie. De regel
-// die een tarief uit deze tabel haalt —
-//
-//     Het verzendtarief van een Zending moet gesteld worden op het tarief
-//     uit de tarieftabel bij de zone van de Zending en de gewichtsklasse
-//     van de Zending.
-//
-// — parseert, resolveert en wordt volledig gecontroleerd, maar bij het
-// *uitvoeren* is er nog niets om in op te zoeken: welke levering achter een
-// Gegevensbron hangt, wordt in een testset gebonden, en dat is F-4 van het
-// External Data Plan. Tot dan is elke opzoeking terecht een modelfout, en de
-// testgevallen hier horen groen te blijven — vandaar de declaratie zonder de
-// regel. Die komt met de binding mee.
+// De regel die een tarief uit deze tabel haalt staat in
+// `regels/h5-bezorging/art-09-bezorging.rgs`; welke *inhoud* achter de tabel
+// hangt, staat niet hier maar in de testset — `Gegeven de tarieftabel met de
+// rijen …` in `tests/waardevormen.test.rgs` geeft een miniatuur mee, zoals
+// `Parameters` een parameter een waarde geeft. Een opzoeking op een sleutel
+// die de inhoud niet heeft is een modelfout, nooit `leeg`.
 
 // Bron: [art. 9 lid 12](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Gegevensbron de tarieftabel
