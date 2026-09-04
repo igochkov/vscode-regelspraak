@@ -26,6 +26,6 @@
 
 // Bron: [art. 9 lid 12](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
 Gegevensbron de tarieftabel
-	de tariefzone             Numeriek (geheel getal) (sleutel);
-	de gewichtsklasse         Numeriek (geheel getal) (sleutel);
-	het tarief                Geldbedrag met eenheid €;
+	de tariefzone      Numeriek (geheel getal) (sleutel);
+	de gewichtsklasse  Numeriek (geheel getal) (sleutel);
+	het tarief         Geldbedrag met eenheid €;
