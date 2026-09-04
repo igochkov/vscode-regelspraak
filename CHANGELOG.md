@@ -7,6 +7,33 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased] — 0.9.0 — Tables from outside the model
+
+A model can now declare a table it does not contain. **`Gegevensbron`** is a
+GegevensSpraak declaration for an externally supplied table — its key columns
+marked `(sleutel)`, one value column — and a rule reads from it with
+`<waarde> uit <bron> bij <sleutel>, <sleutel> en <sleutel>`. The model states the
+*shape* and never the content: what the table holds is bound in a testset,
+either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
+or for the whole testset from a delivery on disk (`Gegevensbronnen` /
+`de tarieftabel  uit "extern-tabellen/tarieftabel.json"`), where the path names a
+manifest saying how the file is written. A run says which delivery it read. A
+lookup on a key the content does not carry is a `modelfout`, never `leeg`.
+
+**This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
+The specification declares how instances get their values from the input to be
+outside its scope (§9.3) and leaves it to the execution environment; this
+extension fills exactly that gap, is marked as such in the grammar, is optional,
+and changes nothing for a model that does not use it. `docs/FEATURES.md`
+describes it in full; the decision record is the server repository's [D-58].
+
+Also new: a **parameter with a timeline** (`Parameter … voor elke maand;`, §3.8)
+now takes several period lines in a testset and evaluates as the timeline it
+declares; `RS705` reports a time-dependent value written to an attribute the
+model keeps once; `RS960` reports overlapping periods while you type; and a
+testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
+rather than passed, and its run lens says `scenario uitvoeren`.
+
 ## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
 A model that already exists in **ALEF** — the Belastingdienst's MPS-based
