@@ -7,7 +7,7 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased] — 0.9.0 — Tables from outside the model
+## [0.9.0] — Tables from outside the model
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a
 GegevensSpraak declaration for an externally supplied table — its key columns
@@ -33,6 +33,34 @@ declares; `RS705` reports a time-dependent value written to an attribute the
 model keeps once; `RS960` reports overlapping periods while you type; and a
 testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
 rather than passed, and its run lens says `scenario uitvoeren`.
+
+**The checks that came with it, by code.** `RS121` — a `Gegevensbron` whose shape
+is wrong (no key marked, no value line, or more than one); `RS122` — a lookup
+naming a value the table does not have; `RS123` — the wrong number of keys;
+`RS124` — a table no rule anywhere reads (a warning, as an unused declaration is
+elsewhere); `RS125` — a key whose datatype or unit does not fit the axis it
+addresses, exact rather than convertible, because a key addresses a cell. In a
+testset, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
+of keys, a key stated twice. A lookup expression is typed as the table's value
+column is declared, so the existing datatype, unit and precision checks reason
+about `het tarief uit de tarieftabel bij …` exactly as about the attribute
+`het tarief`. Completion offers the declared tables after `uit`.
+
+**Smaller things.** A kenmerk may carry a **timeline**, as §13.3.2 admits
+(`is verzekerd voor elke dag;`): the model reads it now, so the Tijdlijn it names
+gets colour, navigation and rename, and `RS117` where it names none — the engine
+still refuses a time-dependent kenmerk with a fault. Formatting indents a
+`Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
+workspace gained `extern-tabellen/` with a tariff table, its manifest, the
+declaration that describes it and a testset that binds it.
+
+**Two things this release does not contain, deliberately.** Bulk evaluation —
+running a model over many thousands of rows and aggregating the results outside
+RegelSpraak — was part of the same request and is **parked**: it is a
+requirement of a future runner and its compiler, not of the editor. And the
+extension owed a comparison against ALEF before shipping; the reviewer found
+that ALEF has no concept resembling a declared external table, a key lookup, or a
+test-side binding, so the clearance is a vacuous one and is recorded as such.
 
 ## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
