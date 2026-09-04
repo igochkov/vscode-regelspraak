@@ -1,9 +1,9 @@
 // Voorbeeldtestset (TestSpraak) — een Gegevensbron gebonden aan een levering.
 //
 // EXTENSIE ([D-58], [T-44]). Het model declareert alleen de *vorm* van de
-// tarieftabel (`gegevens/gegevensbronnen.rgs`); welke inhoud erachter hangt is
+// tarieftabel (`gegevens/tabellen.rgs`); welke inhoud erachter hangt is
 // omgeving, en wordt hier gebonden, naast de parameters. Het pad wijst naar een
-// manifest (`bronnen/tarieftabel.json`) dat zegt hoe het gegevensbestand ernaast
+// manifest (`tabellen/tarieftabel.json`) dat zegt hoe het gegevensbestand ernaast
 // is geschreven — scheidingsteken, decimaalteken, kopregel, de bereiken van de
 // sleutels, het aantal decimalen — en wordt gezocht vanaf de map van dit bestand
 // naar boven, zoals een `// Bron:`-verwijzing.
@@ -18,7 +18,7 @@ Testset Tarieftabel
 Rekendatum 01-07-2027
 
 Gegevensbronnen
-	de tarieftabel  uit "bronnen/tarieftabel.json"
+	de tarieftabel  uit "tabellen/tarieftabel.json"
 
 Testgeval Een zending in de verste zone
 	Gegeven een Zending (Ver) met
