@@ -1,0 +1,38 @@
+// Gegevensbronnen — tabellen die van buiten het model worden aangeleverd.
+//
+// EXTENSIE — geen v2.3.0. §9.3 verklaart uitdrukkelijk buiten de scope van de
+// specificatie hoe instanties hun waarden uit de invoer krijgen, en laat dat aan
+// de uitvoeringsomgeving. Deze extensie vult precies dat gat: het model legt de
+// *vorm* van een aangeleverde tabel vast, de omgeving levert de inhoud. Zie
+// [D-58] en §5a bis van de clean-roombrief.
+//
+// Waarom hiervoor geen bestaand construct volstaat: een dimensie (§3.6) sleutelt
+// op labels die het model zelf opsomt, een parameter (§3.10) is één waarde, en
+// een beslistabel (H12) is een schrijfwijze voor regels. Wat ontbreekt is de
+// tabel *van buiten*: veel rijen, gesleuteld op meerdere assen, met een inhoud
+// die per levering verschilt en dus niet in een `.rgs`-bestand thuishoort.
+//
+// Een ledenregel is een gewone attribuutdeclaratie, dus datatype, domein en
+// eenheid werken hier precies zoals overal elders. `(sleutel)` merkt een
+// sleutelkolom; de regel zonder die aanduiding is de waarde. De volgorde van de
+// sleutels is de volgorde waarin een opzoeking haar argumenten meegeeft.
+
+// **De opzoeking zelf staat hier nog niet**, en dat is geen omissie. De regel
+// die een tarief uit deze tabel haalt —
+//
+//     Het verzendtarief van een Zending moet gesteld worden op het tarief
+//     uit de tarieftabel bij de zone van de Zending en de gewichtsklasse
+//     van de Zending.
+//
+// — parseert, resolveert en wordt volledig gecontroleerd, maar bij het
+// *uitvoeren* is er nog niets om in op te zoeken: welke levering achter een
+// Gegevensbron hangt, wordt in een testset gebonden, en dat is F-4 van het
+// External Data Plan. Tot dan is elke opzoeking terecht een modelfout, en de
+// testgevallen hier horen groen te blijven — vandaar de declaratie zonder de
+// regel. Die komt met de binding mee.
+
+// Bron: [art. 9 lid 12](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
+Gegevensbron de tarieftabel
+	de tariefzone             Numeriek (geheel getal) (sleutel);
+	de gewichtsklasse         Numeriek (geheel getal) (sleutel);
+	het tarief                Geldbedrag met eenheid €;

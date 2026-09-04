@@ -142,6 +142,8 @@
     is meer dan 10 kg, of de bezorging viel niet op een sluitingsdag.
 11. Van een lid wordt bijgehouden hoeveel van de aan hem bezorgde zendingen
     zwaarder waren dan 10 kg.
+12. De verzendtarieven worden van buiten aangeleverd in een tarieftabel,
+    gesleuteld op zone en gewichtsklasse.
 
 ## Hoofdstuk 6. Collectie
 
