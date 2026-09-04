@@ -19,6 +19,7 @@ bron/         the document the model renders
 gegevens/     GegevensSpraak — what the model is made of
 regels/       RegelSpraak — what it derives, checks and creates
 tests/        TestSpraak — what it is supposed to produce
+bronnen/      deliveries — the content of a Gegevensbron, and its manifest
 ```
 
 Three of those are the language's three jobs, and a file only ever does one of
@@ -195,6 +196,32 @@ a testgeval composes a whole situation and routinely exercises several articles
 at once, so numbering one after a single article would be a claim that is not
 true. `tests/waardevormen.test.rgs` exercises every literal form there is and
 belongs to no single rule file at all.
+
+**A Gegevensbron gets its content from the testset, not from the model.** A
+`Gegevensbron` in `gegevens/` declares only the *shape* of an externally supplied
+table — its keys and its value. What the table holds is bound where a
+parameter's value is: either as a miniature inside a testgeval
+(`Gegeven de tarieftabel met de rijen …`, see `tests/waardevormen.test.rgs`), or
+for the whole testset from a delivery on disk:
+
+```
+Gegevensbronnen
+	de tarieftabel  uit "bronnen/tarieftabel.json"
+```
+
+The path names a **manifest** beside the data file, resolved from the test
+file's folder upward exactly as a `// Bron:` citation is. The manifest says how
+the file is written — separator, decimal mark, header, the range of each key,
+the number of decimals — and nothing about any industry; see
+`bronnen/tarieftabel.json`. A miniature in a testgeval replaces the testset's
+binding for that case, whole. The run says which delivery it read (name,
+manifest, sha256) in its output, and a lookup on a key the content does not
+carry is a `modelfout`, never `leeg`.
+
+A delivery is parsed once and kept in **`.regelspraak/cache/`** under the model
+root, keyed by the file's hash; the folder is rebuilt on demand and is
+ignored by this repository's `.gitignore`. Nothing in it is authored, and
+deleting it costs one parse.
 
 **Every `Verwacht` value is a value somebody ran.** Write the expectation, run
 it, and correct whichever of the two is wrong — usually the expectation, but not

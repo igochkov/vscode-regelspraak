@@ -152,6 +152,16 @@ export interface RunStep {
 	truncated?: boolean;
 }
 
+/** One delivery a run read from a manifest — the audit trail (F-4). */
+export interface BoundSource {
+	source: string;
+	manifest: string;
+	sha256: string;
+	filled: number;
+	size: number;
+	metadata?: Record<string, unknown>;
+}
+
 export interface TestRun {
 	case: string;
 	outcome: 'uitgevoerd' | 'geweigerd';
@@ -160,6 +170,7 @@ export interface TestRun {
 	assertions: TestAssertion[];
 	faults: TestFault[];
 	detail?: RunDetail;
+	sources?: BoundSource[];
 }
 
 function rangeOf(wire: WireRange): vscode.Range {
@@ -443,6 +454,17 @@ export class TestExplorer {
 		outcome: TestRun,
 		duration: number
 	): void {
+		// F-4's audit trail: which delivery each Gegevensbron was read from, so a
+		// green run says what it was green against. The manifest's metadata is
+		// echoed as written and never interpreted ([R-6]).
+		for (const source of outcome.sources ?? []) {
+			const metadata = source.metadata
+				? ' · ' + Object.entries(source.metadata).map(([key, value]) => `${key}: ${String(value)}`).join(', ')
+				: '';
+			run.appendOutput(`gegevensbron ${source.source} uit ${source.manifest} `
+				+ `(sha256 ${source.sha256.slice(0, 12)}…, ${source.filled} van ${source.size} sleutels${metadata})\r\n`,
+				undefined, item);
+		}
 		for (const fault of outcome.faults) {
 			run.appendOutput(`fout in ${fault.rule}${fault.instance ? ` · ${fault.instance}` : ''}: `
 				+ `${fault.message}\r\n`, undefined, item);

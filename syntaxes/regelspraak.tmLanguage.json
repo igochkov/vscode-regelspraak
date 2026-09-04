@@ -259,6 +259,10 @@
 			"name": "keyword.control.regelspraak"
 		},
 		{
+			"match": "(?<![\\p{L}\\p{N}'-])(?:Gegevensbronnen)(?![\\p{L}\\p{N}'-])",
+			"name": "keyword.declaration.regelspraak"
+		},
+		{
 			"match": "(?<![\\p{L}\\p{N}'-])(?:aan de elfproef|aantal dagen in)(?![\\p{L}\\p{N}'-])",
 			"name": "keyword.operator.wordlike.regelspraak"
 		},

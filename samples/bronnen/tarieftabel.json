@@ -1,0 +1,34 @@
+{
+	"naam": "tarieftabel",
+	"bestand": "tarieftabel.csv",
+	"dialect": {
+		"veldscheiding": ";",
+		"decimaalteken": ",",
+		"kopregel": true
+	},
+	"dimensies": [
+		{
+			"kolom": "Zone",
+			"type": "geheel",
+			"van": 1,
+			"tot": 3
+		},
+		{
+			"kolom": "Gewichtsklasse",
+			"type": "geheel",
+			"van": 1,
+			"tot": 2
+		}
+	],
+	"waarde": {
+		"kolom": "Tarief",
+		"domein": "Geldbedrag",
+		"decimalen": 2
+	},
+	"volledig": true,
+	"sha256": "2eeb2185b6001fef9368c5103414937acf69aa5a6f775ce7c764810ff5401722",
+	"metadata": {
+		"levering": "2026-01",
+		"herkomst": "De Boekerij"
+	}
+}
