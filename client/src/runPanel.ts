@@ -34,7 +34,7 @@ import {
 
 import { WireRange } from './model';
 import { SHOW_RUN_AS_TEXT_COMMAND } from './runDocument';
-import { RunLink, RunView, buildView } from './runView';
+import { RunFocus, RunLink, RunView, buildView } from './runView';
 import { TestRun } from './testExplorer';
 
 /**
@@ -102,7 +102,7 @@ export class RunPanels implements Disposable {
 	 * number in the wrong file. The panel opens beside whatever is active, so the
 	 * gesture's document is not needed for anything.
 	 */
-	async show(testset: Uri, run: TestRun, focus?: string): Promise<void> {
+	async show(testset: Uri, run: TestRun, focus?: RunFocus): Promise<void> {
 		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
 		let panel = this.open.get(view.name);
 		if (!panel) {
@@ -133,7 +133,7 @@ class Panel {
 	private readonly subscriptions: Disposable[] = [];
 	private disposed = false;
 	/** The run as last drawn, which is what **Als tekst openen** re-renders. */
-	private drawn: { source: Uri; run: TestRun; focus?: string } | undefined;
+	private drawn: { source: Uri; run: TestRun; focus?: RunFocus } | undefined;
 
 	constructor(private readonly panel: WebviewPanel, forget: () => void) {
 		panel.webview.html = page(panel.webview.cspSource, nonce());
@@ -145,7 +145,7 @@ class Panel {
 		});
 	}
 
-	async draw(testset: Uri, run: TestRun, view: RunView, focus?: string): Promise<void> {
+	async draw(testset: Uri, run: TestRun, view: RunView, focus?: RunFocus): Promise<void> {
 		this.drawn = { source: testset, run, focus };
 		this.panel.title = `${view.name} (uitkomst)`;
 		this.panel.reveal(this.panel.viewColumn, true);
@@ -281,6 +281,9 @@ function page(cspSource: string, scriptNonce: string): string {
 	   because it is attribution and not part of the value. */
 	.rule { font-size: .9rem; }
 	.rule::before { content: "\\2190 "; color: var(--vscode-descriptionForeground); }
+	/* The qualifier reads as a note about the attribution, not as part of the
+	   name — so it is set like a note and never carries the link's colour. */
+	.ruleDetail { color: var(--vscode-descriptionForeground); font-size: .9rem; }
 	.plain { color: var(--vscode-descriptionForeground); font-style: italic; }
 	/* Clickable, and it has to look it: a jump nobody discovers is not a feature. */
 	button.link {
@@ -382,6 +385,11 @@ function page(cspSource: string, scriptNonce: string): string {
 		}
 		if (row.ruleAt === 'beside' && row.rule) {
 			line.append(piece('rule', row.rule, on('beside')));
+		}
+		// After the name and outside the link: the link matches a declared name
+		// exactly, and 'Contributiestaffel (rij 2)' declares nothing.
+		if (row.ruleDetail) {
+			line.append(piece('ruleDetail', '(' + row.ruleDetail + ')'));
 		}
 		return line;
 	}

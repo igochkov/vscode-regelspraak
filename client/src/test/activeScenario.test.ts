@@ -109,7 +109,8 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 	test('en die uitkomst is die van het actieve testgeval, gericht op de regel', async function () {
 		this.timeout(60000);
 		const text = renderText(
-			buildView('lidmaatschap.test.rgs', await runActive(), 'bepaal lidmaatschapsduur'));
+			buildView('lidmaatschap.test.rgs', await runActive(),
+				{ kind: 'regel', rule: 'bepaal lidmaatschapsduur' }));
 		assert.ok(text.startsWith("// Wat 'bepaal lidmaatschapsduur' deed, in testgeval 'Een kort"),
 			text.slice(0, 120));
 		assert.match(text, /Geschreven door 'bepaal lidmaatschapsduur'/);
@@ -127,7 +128,8 @@ suite('Regel uitvoeren tegen het actieve testgeval (X2b)', () => {
 		// testgeval does not have — so the honest answer is that it did nothing,
 		// and a view that showed nothing at all would look like a failed run.
 		const text = renderText(
-			buildView('lidmaatschap.test.rgs', await runActive(), 'Slapende inschrijving'));
+			buildView('lidmaatschap.test.rgs', await runActive(),
+				{ kind: 'regel', rule: 'Slapende inschrijving' }));
 		assert.match(text, /\(niets — deze regel vuurde niet in dit testgeval\)/);
 		assert.match(text, /Vuurde\r?\n\tniet in dit testgeval/);
 	});

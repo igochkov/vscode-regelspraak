@@ -12,7 +12,7 @@ import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
 import { RunPanels, ruleLocation } from '../runPanel';
-import { RunSection, buildView } from '../runView';
+import { RunFocus, RunSection, buildView } from '../runView';
 import { RunDetail, TestRun } from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
@@ -47,8 +47,11 @@ suite('Uitkomst van een run (X4, W3)', () => {
 		return outcome;
 	}
 
-	const textOf = async (caseName: string, focus?: string): Promise<string> =>
+	const textOf = async (caseName: string, focus?: RunFocus): Promise<string> =>
 		renderText(buildView('lidmaatschap.test.rgs', await run(caseName), focus));
+
+	/** X2b's focus, which is the commonest one in this suite. */
+	const onRule = (rule: string): RunFocus => ({ kind: 'regel', rule });
 
 	test('noemt het testgeval, de rekendatum en elke afdeling', async function () {
 		this.timeout(60000);
@@ -76,7 +79,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 
 	test('leidt een regelweergave met wat die regel schreef', async function () {
 		this.timeout(60000);
-		const text = await textOf(PASSING, 'bepaal lidmaatschapsduur');
+		const text = await textOf(PASSING, onRule('bepaal lidmaatschapsduur'));
 		assert.ok(text.startsWith("// Wat 'bepaal lidmaatschapsduur' deed, in testgeval"),
 			text.slice(0, 120));
 		assert.match(text, /Geschreven door 'bepaal lidmaatschapsduur'/);
@@ -167,7 +170,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				inconsistencies: [], trace: []
 			}
 		};
-		const text = renderText(buildView('x.test.rgs', ran, 'deze regel'));
+		const text = renderText(buildView('x.test.rgs', ran, onRule('deze regel')));
 		// Both halves say so, and neither is redundant: the first is that it wrote
 		// nothing, the second that it was not applied to a single instance. An
 		// absent section would read as a run that failed, which is a worse lie.

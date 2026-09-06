@@ -19,7 +19,7 @@ import {
 	Uri, ViewColumn, window, workspace
 } from 'vscode';
 
-import { RunRow, RunSection, RunView, buildView } from './runView';
+import { RunFocus, RunRow, RunSection, RunView, buildView } from './runView';
 import { TestRun } from './testExplorer';
 
 export const RUN_SCHEME = 'regelspraak-uitkomst';
@@ -77,7 +77,7 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 	 * `testset` and not the document the gesture was made in — see `RunPanels.show`
 	 * for why that distinction is load-bearing.
 	 */
-	async show(testset: Uri, run: TestRun, focus?: string): Promise<void> {
+	async show(testset: Uri, run: TestRun, focus?: RunFocus): Promise<void> {
 		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
 		const uri = runUri(testset, view);
 		this.rendered.set(uri.toString(), renderText(view));
@@ -159,7 +159,13 @@ function rowLines(row: RunRow, depth: number): string[] {
  * "door" would read as part of the sentence the value is in.
  */
 function beside(row: RunRow): string {
-	return row.ruleAt === 'beside' && row.rule ? `   ← ${row.rule}` : '';
+	const detail = row.ruleDetail ? ` (${row.ruleDetail})` : '';
+	if (row.ruleAt === 'beside' && row.rule) {
+		return `   ← ${row.rule}${detail}`;
+	}
+	// A qualifier with no name beside it still says something — which case of the
+	// rule this heading already names acted — so it is not dropped with it.
+	return detail ? `  ${detail.trim()}` : '';
 }
 
 /**

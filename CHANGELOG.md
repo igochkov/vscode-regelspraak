@@ -7,6 +7,38 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased]
+
+**Leg uit** — one gesture from a value to the derivation that produced it (UX-1).
+The run panel already drew the whole chain: which rule wrote a value, the
+arithmetic it did on the way, and where each operand came from, as far back as
+the run can say. What was missing was the way in — a rules writer starts from a
+red `Verwacht` line or a number they did not expect, not from a wish to step
+through rules. Three entry points now open the panel with that value's own
+derivation at the top, expanded: a **leg uit** link on the `Verwacht` line that
+just failed, beside the run links you already have; the editor's context menu on
+a value; and **RegelSpraak: Leg uit** in the palette. The link appears when a run
+leaves a failure and is gone again the moment the expectation passes or you edit
+the line. In a
+testset the explanation is about the instance the `Verwacht`/`Gegeven` block
+names; in a rule file it is about every instance the run has. Where no rule wrote
+the value, the panel states which of the recorded facts holds instead of guessing
+why. The editor entry appears only where there is an answer.
+
+**And a decision table now says what it read.** A conclusion cell is usually a
+literal, so a table's write recorded no operands and no arithmetic — the one
+write in a model you could not open, and the derivation stopped there. It now
+carries the rows it tried, each with the conditions that decided it and their
+values, so *why 40 and not 25* reads as `rij 1 = onwaar` over
+`indien zijn lidmaatschapsduur kleiner is dan 3 jaar`, with
+`lidmaatschapsduur = 8 jaar` beside it and the rule that derived it one click
+further. The rows **tried** rather than the row that won, because the winning row
+is routinely the `n.v.t.` catch-all, which states no condition and so explains
+nothing. The write also names the deciding row beside the
+table — `← Contributiestaffel (rij 2)` — so which case answered is readable
+without opening anything. It is part of the run detail a trace already asks for,
+so an ordinary Test Explorer run does no more work than before.
+
 ## [0.9.0] — Tables from outside the model
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a

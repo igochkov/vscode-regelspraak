@@ -60,6 +60,16 @@ export interface RunRow {
 	 * Absent — the rule is not shown, and so is not a way to anywhere.
 	 */
 	ruleAt?: 'label' | 'beside';
+	/**
+	 * A qualifier drawn after the rule's name, where the run knows which part of
+	 * it acted — a beslistabel's deciding row (§12), and nothing else today.
+	 *
+	 * Beside `rule` rather than folded into it, because `rule` is a **name**: it
+	 * is what `revealRule` matches exactly against the workspace symbols, and
+	 * `Contributiestaffel (rij 2)` declares nothing. So the qualifier is drawn
+	 * and never clicked.
+	 */
+	ruleDetail?: string;
 	/** Where this row is written in the testset, for the rows that are. */
 	range?: WireRange;
 	/** Operands under a write, periods under a timeline value. */
@@ -100,8 +110,27 @@ export interface RunSection {
 	aligned?: boolean;
 }
 
+/**
+ * What a view is *about*, where it is about less than the whole run.
+ *
+ * Two kinds, and they are two questions rather than two shapes of one:
+ *
+ *   - `regel` is X2b — the run read as an answer about one rule. It leads with
+ *     what that rule wrote and whether it fired at all.
+ *   - `waarde` is UX-1 — the run read as an answer about one value, which is the
+ *     question a rules writer actually starts from. It leads with the derivation
+ *     of that slot, opened, so the tree is already standing where they clicked
+ *     instead of forty rows down a trace.
+ *
+ * Both leave everything below them untouched, because the whole run *is* the
+ * context: a rule's inputs are whatever the rules before it derived ([E-7]).
+ */
+export type RunFocus =
+	| { kind: 'regel'; rule: string }
+	| { kind: 'waarde'; attribute: string; instance?: string };
+
 export interface RunView {
-	/** The tab's name: the rule where the view is about one, else the testgeval. */
+	/** The tab's name: what the view is about, else the testgeval. */
 	name: string;
 	/** One line saying what this is, and one saying which run it was. */
 	heading: string;
@@ -120,12 +149,10 @@ export interface RunView {
  * whatever the rules before it derived ([E-7]), so the numbers under it are how
  * the number above it came about.
  */
-export function buildView(fileName: string, run: TestRun, focus?: string): RunView {
+export function buildView(fileName: string, run: TestRun, focus?: RunFocus): RunView {
 	const view: RunView = {
-		name: focus ?? run.case,
-		heading: focus
-			? `Wat '${focus}' deed, in testgeval '${run.case}'`
-			: `Uitkomst van '${run.case}'`,
+		name: focus ? focusName(focus) : run.case,
+		heading: headingFor(run, focus),
 		meta: `${fileName}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`,
 		sections: []
 	};
@@ -139,7 +166,9 @@ export function buildView(fileName: string, run: TestRun, focus?: string): RunVi
 	}
 
 	if (focus && run.detail) {
-		view.sections.push(...focusSections(focus, run.detail));
+		view.sections.push(...(focus.kind === 'regel'
+			? ruleSections(focus.rule, run.detail)
+			: valueSections(focus, run.detail)));
 	}
 
 	view.sections.push({
@@ -318,8 +347,158 @@ function reasons(one: RunDetail['inconsistencies'][number]): RunRow[] {
 	];
 }
 
-/** The two sections a focused view leads with (X2b). */
-function focusSections(focus: string, detail: RunDetail): RunSection[] {
+/** What the tab is called, and what the heading says it answers. */
+function focusName(focus: RunFocus): string {
+	return focus.kind === 'regel' ? focus.rule : slotLabel(focus);
+}
+
+function headingFor(run: TestRun, focus?: RunFocus): string {
+	if (!focus) {
+		return `Uitkomst van '${run.case}'`;
+	}
+	return focus.kind === 'regel'
+		? `Wat '${focus.rule}' deed, in testgeval '${run.case}'`
+		: `Hoe '${slotLabel(focus)}' tot stand kwam, in testgeval '${run.case}'`;
+}
+
+/** `<instantie> · <naam>`, or the name alone where the focus names no instance. */
+function slotLabel(focus: { attribute: string; instance?: string }): string {
+	return focus.instance ? `${focus.instance} · ${focus.attribute}` : focus.attribute;
+}
+
+/**
+ * The section a value-focused view leads with (UX-1) — the derivation of one
+ * slot, already open.
+ *
+ * **It is `writeRow` and nothing else.** The tree a reader wants was built by
+ * §X7 stages 2 and 3 and is drawn forty rows down the trace; the whole of UX-1
+ * is putting it at the top, opened, for the value they pointed at. Composing a
+ * second rendering of the same fact here is the thing `runView.ts` exists to
+ * prevent — so this selects rows, it does not draw them.
+ *
+ * **A slot written more than once yields a row each**, in write order, because
+ * that is ordinary (an initialisation and then the rule that supersedes it) and
+ * the value a reader is looking at is the last one's. Hiding the earlier writes
+ * would hide exactly the case where a surprising number is a rule overwriting
+ * another.
+ *
+ * **And it says which of them still stands**, which is the whole question the
+ * section is opened to answer and was missing from the first cut: four rules
+ * writing `contributie` came out as four equal rows, all expanded, with nothing
+ * saying that only the last one accounts for the number in the failing
+ * expectation. So the standing write is marked `eindwaarde` and **is the only
+ * one opened**; the rest are marked `overschreven` and stay folded. Both facts
+ * are read the way `Afgeleid` already reads them — the last write in the trace,
+ * per instance — so the section cannot disagree with the attribution on the
+ * value below it. Nothing is reordered: write order *is* the derivation, and a
+ * reader who is told which row won can still see what ran before it.
+ *
+ * **Where nothing wrote it, the recorded fact is stated and no more.** That is
+ * IR-4 at this surface: the run knows whether the value was given, whether it is
+ * in the situation at all, and nothing else without asking further questions —
+ * which is UX-2's verdict list and is not built here. A section that was simply
+ * absent would read as a run that failed.
+ */
+function valueSections(
+	focus: { attribute: string; instance?: string },
+	detail: RunDetail
+): RunSection[] {
+	const mine = <T extends { instance?: string }>(one: T): boolean =>
+		focus.instance === undefined || one.instance === focus.instance;
+	const writes = detail.trace.filter(one => one.target === focus.attribute && mine(one));
+	const producers = producedBy(detail);
+	// Per instance, because a focus with no instance covers all of them and each
+	// keeps its own last write — one `standing` set for the lot would mark every
+	// instance's history as superseded by whichever wrote last overall.
+	const lastPerInstance = new Map<string, RunDetail['trace'][number]>();
+	for (const one of writes) {
+		lastPerInstance.set(one.instance ?? '', one);
+	}
+	const standing = new Set(lastPerInstance.values());
+	// Only where something actually was superseded: on the ordinary slot written
+	// once, `eindwaarde` states the obvious and reads as a distinction being drawn.
+	const contested = writes.length > lastPerInstance.size;
+	return [{
+		title: `Afleiding van '${slotLabel(focus)}'`,
+		rows: writes.length > 0
+			? writes.map(one => {
+				const row = writeRow(one, true, producers);
+				if (!standing.has(one)) {
+					return contested ? { ...row, note: 'overschreven' } : row;
+				}
+				// Two levels: the write and what it was computed out of. Deeper would
+				// unfold a whole chain the reader has not asked to follow yet, and the
+				// point of opening at all is that the first answer is on screen.
+				return opened(contested ? { ...row, note: 'eindwaarde' } : row, 2);
+			})
+			: terminal(focus, detail)
+	}];
+}
+
+/**
+ * What the run records about a slot no rule wrote.
+ *
+ * Three cases and they are three different bugs: a value the testgeval *gave*
+ * (so a rule was expected to overwrite it and none did), a value in the
+ * situation that nothing derived, and a slot the run never had at all — which on
+ * a `Verwacht` line usually means the expectation names an instance or an
+ * attribute the model does not put together.
+ */
+function terminal(
+	focus: { attribute: string; instance?: string },
+	detail: RunDetail
+): RunRow[] {
+	const value = detail.values.find(one =>
+		one.attribute === focus.attribute
+		&& (focus.instance === undefined || one.instance === focus.instance));
+	const kenmerk = detail.kenmerken.find(one =>
+		one.kenmerk === focus.attribute
+		&& (focus.instance === undefined || one.instance === focus.instance));
+	if (value) {
+		return [
+			valueRow(value, value.derived, new Map()),
+			{
+				kind: 'note',
+				label: value.derived
+					? '(geen schrijving vastgelegd voor deze waarde)'
+					: '(gegeven in dit testgeval — geen regel heeft deze waarde geschreven)'
+			}
+		];
+	}
+	if (kenmerk) {
+		return [{
+			kind: 'note',
+			label: kenmerk.derived
+				? '(geen toekenning vastgelegd voor dit kenmerk)'
+				: '(gegeven in dit testgeval — geen regel heeft dit kenmerk toegekend)'
+		}];
+	}
+	return [{
+		kind: 'note',
+		label: '(niets — deze uitvoering kent deze waarde niet)'
+	}];
+}
+
+/**
+ * The row and its children opened, `levels` deep.
+ *
+ * Set here rather than by `writeRow`, because whether a derivation stands open
+ * is a property of *this* view and not of a write: the same row in the trace
+ * below is collapsed, which is right there and would be forty open chains here.
+ */
+function opened(row: RunRow, levels: number): RunRow {
+	if (levels <= 0 || !row.children || row.children.length === 0) {
+		return row;
+	}
+	return {
+		...row,
+		open: true,
+		children: row.children.map(one => opened(one, levels - 1))
+	};
+}
+
+/** The two sections a rule-focused view leads with (X2b). */
+function ruleSections(focus: string, detail: RunDetail): RunSection[] {
 	const wrote = detail.trace.filter(one => one.rule === focus);
 	const fired = detail.firedRules.find(one => one.rule === focus);
 	// Once, for the same reason the trace section builds it once: it is a walk of
@@ -379,6 +558,11 @@ function writeRow(
 		label: withInstance(target(one.target, one.coordinates), one.instance, true),
 		value: one.value,
 		...(attributed ? { rule: one.rule, ruleAt: 'beside' as const } : {}),
+		// **Even where the rule is not attributed.** A rule-focused view already
+		// names the rule in its heading and so draws no `← <regel>`, but *which
+		// case of it* fired is not in the heading and is the whole question a
+		// table raises — so it is shown either way.
+		...(one.row ? { ruleDetail: one.row } : {}),
 		// **Steps first, then operands, at the same level and behind the one
 		// click** (§X7 stage 3). They answer the two halves of "why is this value
 		// what it is" and they answer them in this order: what this rule *did*,

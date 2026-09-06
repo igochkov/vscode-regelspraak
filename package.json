@@ -96,6 +96,11 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.legUit",
+				"title": "Leg uit",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.kiesTestgeval",
 				"title": "Actief testgeval kiezen",
 				"category": "RegelSpraak"
@@ -143,6 +148,10 @@
 				{
 					"command": "regelspraak.showUitkomst",
 					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak"
 				}
 			],
 			"editor/context": [
@@ -150,6 +159,17 @@
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak",
 					"group": "1_modification"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak && regelspraak.uitlegbaar",
+					"group": "navigation@9"
+				}
+			],
+			"testing/message/context": [
+				{
+					"command": "regelspraak.legUit",
+					"when": "testMessage == regelspraakVerwachting"
 				}
 			],
 			"editor/title": [

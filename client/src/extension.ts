@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-	commands, window, workspace, ExtensionContext, FileSystemWatcher, Location,
-	OutputChannel, Position, Range, SnippetString, Uri
+	commands, languages, window, workspace, ExtensionContext, FileSystemWatcher,
+	Location, OutputChannel, Position, Range, SnippetString, Uri
 } from 'vscode';
 
 import {
@@ -22,8 +22,10 @@ import { registerDebugging } from './debugAdapter';
 import { TestExplorer } from './testExplorer';
 import { RunDocuments, SHOW_RUN_AS_TEXT_COMMAND, caseAtCursor } from './runDocument';
 import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
+import { RunFocus } from './runView';
 import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
+import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses } from './explain';
 import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
@@ -184,6 +186,21 @@ const testExplorer = new TestExplorer();
 const runDocuments = new RunDocuments();
 /** W3. The panel is what a run opens; the text form is one click away in it. */
 const runPanels = new RunPanels();
+/**
+ * UX-1. Holds the client for its own gate, so the context menu entry appears
+ * exactly where the command has an answer — and disappears when the server does.
+ */
+const explain = new Explain(testExplorer, runPanels, () => activeScenario);
+/**
+ * UX-1's own lens, over the expectations the last run left failing.
+ *
+ * This side and not the server, unlike every other lens in this extension: what
+ * failed is a fact about a run the client made, and the server is not told the
+ * outcome. It is registered for the language rather than for `*.test.rgs`,
+ * since both are one language id ([T-1]) and a model document simply has no
+ * failures to report.
+ */
+const failureLenses = new FailureLenses(testExplorer);
 
 /** X2b's, and the only one of these that needs the extension context. */
 let activeScenario: ActiveScenario | undefined;
@@ -291,10 +308,29 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		// X4. From the palette, on the testgeval the cursor is in: a second lens
 		// per case would double the noise above every one of them.
 		commands.registerCommand(SHOW_RUN_COMMAND, showRunOutcome),
+		// UX-1. Three menus reach this one command, and the argument is whatever
+		// the entry point had: a `testing/message/context` menu hands over the
+		// failing expectation, and the palette and the editor menu hand over
+		// nothing, so the active editor answers. Registered here and owned by
+		// `explain`, which is also what keeps the gate's context key in step.
+		explain,
+		failureLenses,
+		languages.registerCodeLensProvider(
+			{ language: 'regelspraak' }, failureLenses),
+		// A recorded line is a fact about the text that produced it, so an edit
+		// retires it: after one the lens would sit on whatever moved into that
+		// line, which is a confident wrong answer rather than a missing one.
+		workspace.onDidChangeTextDocument(event => {
+			if (event.contentChanges.length > 0) {
+				testExplorer.forgetFailures(event.document.uri.toString());
+			}
+		}),
+		commands.registerCommand(EXPLAIN_COMMAND,
+			(args?: ExplainArgs) => explain.explain(args)),
 		// The panel's own **Als tekst openen**, and its only caller: a trace is
 		// something people paste, and a webview cannot be copied out of.
 		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
-			(uri: string, run: TestRun, focus?: string) =>
+			(uri: string, run: TestRun, focus?: RunFocus) =>
 				runDocuments.show(Uri.parse(uri), run, focus)));
 
 	// X5. The adapter is inline — no second process, and no
@@ -424,7 +460,7 @@ async function runRule(_uri: string, ruleName: string): Promise<void> {
 		// landed wherever that line happened to be in the model. The lens's own
 		// URI is not needed: the panel opens beside whatever is active, and the
 		// jump back to a rule goes through the workspace symbols by name.
-		await runPanels.show(Uri.parse(scenario.uri), run, ruleName);
+		await runPanels.show(Uri.parse(scenario.uri), run, { kind: 'regel', rule: ruleName });
 	}
 }
 
@@ -654,6 +690,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	});
 	modelSource.setClient(client);
 	testExplorer.setClient(client);
+	explain.setClient(client);
 	modelExplorer.refresh();
 }
 
@@ -664,6 +701,7 @@ async function stopClient(): Promise<void> {
 	watcher = undefined;
 	modelSource.setClient(undefined);
 	testExplorer.setClient(undefined);
+	explain.setClient(undefined);
 	modelExplorer.refresh();
 	// Only where one was running: a failed start already said something more
 	// useful, and `stopClient` runs on the way into every restart.

@@ -19,6 +19,37 @@ import { WireRange } from './model';
 const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
 
+/**
+ * What a failing expectation's message is tagged with, so UX-1's **Leg uit** can
+ * be contributed to it and to nothing else.
+ *
+ * The manifest's `when: testMessage == …` reads this exact string, which is the
+ * one thing the two halves have to agree on by hand — the same shape as a wire
+ * method's name, one level down.
+ */
+export const EXPLAINABLE_MESSAGE = 'regelspraakVerwachting';
+
+/**
+ * One expectation that failed in the last run (UX-1's lens).
+ *
+ * Kept because **the failure has to be visible where the reader is**, and the
+ * two places VS Code lets an extension put something on a failure — the peek's
+ * button and the results-tree menu — both need a gesture first. The inline
+ * decoration, which is what a reader actually sees, takes no contribution at
+ * all. So the affordance is a CodeLens, and a lens needs a line and a case.
+ *
+ * `case` travels with it because the lens has to run *something*, and the case
+ * that failed is the one that produced this line — asking the cursor again
+ * would be a second reading of a question this already answers.
+ */
+export interface FailedExpectation {
+	uri: string;
+	case: string;
+	/** The `Verwacht` line the expectation is written on. */
+	line: number;
+	label: string;
+}
+
 interface TestProblem { code: string; message: string; range: WireRange }
 
 interface TestCaseInfo {
@@ -131,6 +162,13 @@ export interface RunTraceEntry {
 	operands: RunOperand[];
 	/** The arithmetic between the operands and the value (§X7 stage 3). */
 	steps?: RunStep[];
+	/**
+	 * Which case of a beslistabel decided this write (§12) — `rij 2`.
+	 *
+	 * A label the server built, not an index: the word is the one the row's own
+	 * step carries, so the two cannot say the same row two ways.
+	 */
+	row?: string;
 }
 
 /**
@@ -186,6 +224,17 @@ export class TestExplorer {
 	private generation = 0;
 	/** Each case's whole extent by item id — the item itself carries only its name. */
 	private readonly spans = new Map<string, [number, number]>();
+	/**
+	 * What failed in the last run, by item id (UX-1's lens).
+	 *
+	 * **Per item, not per document**, because several testgevallen live in one
+	 * testset and a run is of one case: keyed by document, reporting one case
+	 * would drop the failures of its siblings, which are still true.
+	 */
+	private readonly failures = new Map<string, FailedExpectation[]>();
+	private readonly failuresChanged = new vscode.EventEmitter<void>();
+	/** Fires whenever `failuresIn` would answer differently. */
+	readonly onDidChangeFailures = this.failuresChanged.event;
 
 	constructor() {
 		this.controller = vscode.tests.createTestController(
@@ -203,6 +252,46 @@ export class TestExplorer {
 		return this.controller;
 	}
 
+	/** Every expectation of one document that failed when its case last ran. */
+	failuresIn(uri: string): readonly FailedExpectation[] {
+		const found: FailedExpectation[] = [];
+		for (const one of this.failures.values()) {
+			found.push(...one.filter(each => each.uri === uri));
+		}
+		return found;
+	}
+
+	/**
+	 * Forgets what failed in one document.
+	 *
+	 * Called when the text changes, because a recorded line number is a fact
+	 * about the text that produced it: after an edit the lens would sit on
+	 * whatever moved into that line, which is a confident wrong answer rather
+	 * than a missing one. Re-run and it comes back.
+	 */
+	forgetFailures(uri: string): void {
+		let changed = false;
+		for (const [id, one] of [...this.failures]) {
+			if (one.some(each => each.uri === uri)) {
+				this.failures.delete(id);
+				changed = true;
+			}
+		}
+		if (changed) {
+			this.failuresChanged.fire();
+		}
+	}
+
+	/** Replaces what one case last reported, and says so. */
+	private recordFailures(item: vscode.TestItem, found: FailedExpectation[]): void {
+		if (found.length > 0) {
+			this.failures.set(item.id, found);
+		} else if (!this.failures.delete(item.id)) {
+			return;
+		}
+		this.failuresChanged.fire();
+	}
+
 	/**
 	 * The one run profile, exposed for the reason `rangeOfGesture` is (W4): a
 	 * `TestController` does not hand its profiles back, and the run is the half of
@@ -218,6 +307,8 @@ export class TestExplorer {
 		this.generation++;
 		if (!client) {
 			this.controller.items.replace([]);
+			this.failures.clear();
+			this.failuresChanged.fire();
 			return;
 		}
 		void this.refresh();
@@ -474,6 +565,7 @@ export class TestExplorer {
 				outcome.reason ?? 'Dit testgeval kon niet worden uitgevoerd.',
 				...(outcome.details ?? [])
 			].join('\n'));
+			this.recordFailures(item, []);
 			run.errored(item, message, duration);
 			return;
 		}
@@ -495,10 +587,16 @@ export class TestExplorer {
 		// A modelfout still fails it — the run deriving less than the model asked for
 		// is news whether or not anything was asserted.
 		if (outcome.assertions.length === 0 && broken.length === 0) {
+			this.recordFailures(item, []);
 			run.skipped(item);
 			return;
 		}
 		if (failed.length === 0 && broken.length === 0) {
+			// **Cleared on every terminal path, not only on failure.** A lens that
+			// outlived the failure it names would send a reader to explain a value
+			// that is now right, which is the worst kind of stale: it reads as a
+			// feature saying the test still fails.
+			this.recordFailures(item, []);
 			run.passed(item, duration);
 			return;
 		}
@@ -512,6 +610,13 @@ export class TestExplorer {
 		// error is most likely to be the *cause* of the expectation failing, so it is
 		// the last place to leave it out. Ahead of the diffs, because "the run could
 		// not do what the model asked" is the thing to read first.
+		const source = item.uri ?? vscode.Uri.parse(splitId(item.id)[0]);
+		this.recordFailures(item, failed.map((one): FailedExpectation => ({
+			uri: source.toString(),
+			case: item.label,
+			line: one.range.start.line,
+			label: one.label
+		})));
 		run.failed(item, [...brokenMessages, ...failed.map(one => {
 			// A diff, so the editor renders "expected/actual" itself rather than
 			// leaving a reader to spot the difference in a sentence.
@@ -519,19 +624,34 @@ export class TestExplorer {
 				one.rule ? `${one.label} (${one.rule})` : one.label,
 				one.expected ?? 'leeg',
 				one.actual ?? 'leeg');
-			message.location = new vscode.Location(
-				item.uri ?? vscode.Uri.parse(splitId(item.id)[0]), rangeOf(one.range));
+			message.location = new vscode.Location(source, rangeOf(one.range));
+			// UX-1, and what it is *not*: this tag reaches the Test Results tree's
+			// context menu and nothing else, because the peek's button — the other
+			// contribution point that reads it — needs the peek opened first and was
+			// therefore never found. The affordance a reader meets is the lens
+			// `recordFailures` above feeds. The tag is on a **failed expectation
+			// only**: a modelfout message carries no location, which is exactly the
+			// problem it reports, so there is no position for `explainTarget` to read.
+			message.contextValue = EXPLAINABLE_MESSAGE;
 			return message;
 		})], duration);
 	}
 
 	dispose(): void {
+		this.failuresChanged.dispose();
 		this.controller.dispose();
 	}
 }
 
-/** `file:///x.test.rgs#Een geval` → the two halves. */
-function splitId(id: string): [string, string] {
+/**
+ * `file:///x.test.rgs#Een geval` → the two halves.
+ *
+ * Exported because UX-1 reaches a testgeval from a `TestItem` handed to it by a
+ * `testing/message/context` menu, and the item's id is the only thing that names
+ * both the file and the case. One reading of the format, so the two cannot
+ * disagree about where the `#` is.
+ */
+export function splitId(id: string): [string, string] {
 	const at = id.lastIndexOf('#');
 	return at < 0 ? [id, ''] : [id.slice(0, at), id.slice(at + 1)];
 }
