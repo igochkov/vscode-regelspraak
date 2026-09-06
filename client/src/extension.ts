@@ -693,7 +693,24 @@ async function startClient(context: ExtensionContext): Promise<void> {
 			module: serverModule,
 			transport: TransportKind.ipc,
 			// Lets a debugger attach to the server process the extension spawns.
-			options: { execArgv: ['--nolazy', '--inspect=6009'] }
+			//
+			// **An ephemeral port, and never a fixed one** (6 September 2026). This
+			// read `--inspect=6009`, which fails in two ways that both look like the
+			// extension being broken rather than the port being taken. A *second*
+			// Extension Development Host cannot start its server at all: Node
+			// refuses to bind an inspector port already in use and exits before the
+			// LSP handshake, so the window comes up with no language features and
+			// nothing saying why. And when a host exits without running
+			// `deactivate` — a crash, or Stop while it is starting — the server
+			// child is **orphaned on Windows** and keeps the port, so the *next*
+			// F5 fails for a reason belonging to the previous run. Neither is worth
+			// diagnosing twice.
+			//
+			// Nothing is lost: `.vscode/launch.json` sets
+			// `autoAttachChildProcesses`, so js-debug attaches to whatever port
+			// Node reports, and the output channel prints the `Debugger listening
+			// on ws://…` line for an attach by hand.
+			options: { execArgv: ['--nolazy', '--inspect=0'] }
 		}
 	};
 

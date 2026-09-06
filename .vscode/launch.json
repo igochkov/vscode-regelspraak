@@ -28,10 +28,17 @@
 		{
 			// "Launch Client" auto-attaches to the server it spawns. Use this
 			// only to attach manually, e.g. to debug server startup.
+			//
+			// By process rather than by port: the server is spawned with
+			// `--inspect=0` so that a second development host, or one whose
+			// predecessor left an orphaned server behind, still gets an inspector
+			// — which means there is no port known in advance to attach to. The
+			// picker lists the running server; its own output channel prints the
+			// `Debugger listening on ws://…` line as well.
 			"type": "node",
 			"request": "attach",
 			"name": "Attach to Server",
-			"port": 6009,
+			"processId": "${command:PickProcess}",
 			"restart": true,
 			"sourceMaps": true,
 			"outFiles": [
