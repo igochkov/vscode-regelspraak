@@ -25,7 +25,7 @@ import { RunPanels, SHOW_RUN_COMMAND } from './runPanel';
 import { RunFocus } from './runView';
 import { TestRun } from './testExplorer';
 import { ActiveScenario, CHOOSE_SCENARIO_COMMAND, SCENARIO_SETTING } from './activeScenario';
-import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses } from './explain';
+import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses, siteOf } from './explain';
 import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
@@ -161,6 +161,17 @@ const RUN_TESTGEVAL_COMMAND = 'regelspraak.runTestgeval';
  */
 const RUN_REGEL_COMMAND = 'regelspraak.runRegel';
 
+/**
+ * UX-6 — this run of a testgeval against the previous one.
+ *
+ * Reached from the palette, from the results-tree menu on a failure, and from
+ * the panel's own toolbar. The first two run the case (there being nothing in
+ * hand to compare) and the third compares what is already drawn — one command
+ * either way, so the two halves of the feature cannot come to mean different
+ * things.
+ */
+const COMPARE_RUN_COMMAND = 'regelspraak.vergelijkUitvoering';
+
 /** The view id, and so also the id of the `.focus` command VS Code derives. */
 const MODEL_EXPLORER_VIEW = 'regelspraak.modelExplorer';
 
@@ -184,8 +195,14 @@ const modelDocuments = new ModelDocuments(modelSource);
 const decisionTablePreviews = new DecisionTablePreviews(modelSource);
 const testExplorer = new TestExplorer();
 const runDocuments = new RunDocuments();
-/** W3. The panel is what a run opens; the text form is one click away in it. */
-const runPanels = new RunPanels();
+/**
+ * W3. The panel is what a run opens; the text form is one click away in it.
+ *
+ * It is handed the Test Explorer, which answers the two things a panel cannot:
+ * UX-4's expansion, which is a request to the server, and UX-6's previous run,
+ * which is the history every detailed run already passes through.
+ */
+const runPanels = new RunPanels(testExplorer);
 /**
  * UX-1. Holds the client for its own gate, so the context menu entry appears
  * exactly where the command has an answer — and disappears when the server does.
@@ -327,11 +344,21 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		}),
 		commands.registerCommand(EXPLAIN_COMMAND,
 			(args?: ExplainArgs) => explain.explain(args)),
+		// UX-6. The argument is whatever the entry point had: a
+		// `testing/message/context` menu hands over the failing expectation, the
+		// palette hands over nothing and the active editor answers.
+		commands.registerCommand(COMPARE_RUN_COMMAND,
+			(args?: ExplainArgs) => compareRuns(args)),
 		// The panel's own **Als tekst openen**, and its only caller: a trace is
 		// something people paste, and a webview cannot be copied out of.
 		commands.registerCommand(SHOW_RUN_AS_TEXT_COMMAND,
-			(uri: string, run: TestRun, focus?: RunFocus) =>
-				runDocuments.show(Uri.parse(uri), run, focus)));
+			(uri: string, run: TestRun, focus?: RunFocus, previous?: TestRun) =>
+				previous
+					// UX-6's native layer: two rendered runs in VS Code's own diff
+					// editor, which is every difference marked with no diffing code
+					// on this side at all.
+					? runDocuments.showDiff(Uri.parse(uri), previous, run, focus)
+					: runDocuments.show(Uri.parse(uri), run, focus)));
 
 	// X5. The adapter is inline — no second process, and no
 	// `@vscode/debugadapter` dependency, so the bundle stays the size it is. It
@@ -434,6 +461,48 @@ async function showRunOutcome(): Promise<void> {
 	if (run) {
 		await runPanels.show(editor.document.uri, run);
 	}
+}
+
+/**
+ * UX-6 — runs a testgeval and shows it against the previous run of it.
+ *
+ * **A run and then a comparison**, in that order: the reader pressed this after
+ * changing something, so the interesting half is the run they have not made
+ * yet. The other half is the one `TestExplorer` retained, which is why this can
+ * be pressed twice in a row and mean two different things — the second press
+ * compares against the first press's run.
+ *
+ * Where there is no previous run it says so and opens the run anyway: a first
+ * comparison that showed nothing at all would read as a broken command, and the
+ * run itself is what makes the *next* press work.
+ */
+async function compareRuns(args?: ExplainArgs): Promise<void> {
+	const site = siteOf(args);
+	if (!site) {
+		void window.showInformationMessage('Open eerst een testset (*.test.rgs).');
+		return;
+	}
+	const uri = site.case?.uri ?? site.uri.toString();
+	const caseName = site.case?.case
+		?? caseAtCursor(testExplorer.casesOfDocument(uri), site.position);
+	if (!caseName) {
+		void window.showInformationMessage(
+			'Zet de cursor in het testgeval dat u met de vorige uitvoering wilt vergelijken.');
+		return;
+	}
+	// Read *before* the run, which moves the history along: what "the previous
+	// uitvoering" means is the one before the one now being made.
+	const previous = testExplorer.previousRun(uri, caseName);
+	const run = await testExplorer.runForDetail(uri, caseName);
+	if (!run) {
+		return;
+	}
+	if (!previous) {
+		void window.showInformationMessage(
+			`Er is nog geen eerdere uitvoering van '${caseName}' om mee te vergelijken. `
+			+ 'Pas het model aan en vergelijk opnieuw.');
+	}
+	await runPanels.show(Uri.parse(uri), run, undefined, previous);
 }
 
 /**

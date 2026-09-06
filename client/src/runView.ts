@@ -33,7 +33,11 @@ import { RunDetail, RunSegment, RunStep, TestRun } from './testExplorer';
 export type RunRowKind =
 	| 'pass' | 'fail' | 'fault' | 'inconsistency'
 	| 'given' | 'derived' | 'segment'
-	| 'write' | 'operand' | 'step' | 'fired' | 'skipped' | 'note';
+	| 'write' | 'operand' | 'step' | 'fired' | 'skipped' | 'note'
+	// UX-6. Three, because they are three statements: a value that moved, a fact
+	// that appeared, and one that is gone. A renderer marks them differently and
+	// a reader reads them differently, which is what makes them kinds.
+	| 'changed' | 'appeared' | 'vanished';
 
 /**
  * One end of a period: the day a track lays it out by, and the date a reader
@@ -106,6 +110,17 @@ export interface RunRow {
 	 * server spelled.
 	 */
 	empty?: boolean;
+	/**
+	 * The collection this row's value is, where it is one (UX-4).
+	 *
+	 * **Everything needed to ask again, and nothing that is an answer.** An
+	 * expansion is recomputed rather than read back, so what a row carries is the
+	 * question — the sentence, the rule whose scope it is read in, and the
+	 * instance the write was about. The elements arrive later and are the
+	 * renderer's to hold, because they are a fact about a click and not about the
+	 * run: two readers of one view may have opened different rows.
+	 */
+	expand?: { expression: string; rule: string; instance?: string };
 	/** Operands under a write, periods under a timeline value. */
 	children?: RunRow[];
 	/**
@@ -130,7 +145,18 @@ export interface RunRow {
  */
 export type RunLink =
 	| { on: 'label' | 'beside'; kind: 'reveal'; range: WireRange }
-	| { on: 'label' | 'beside'; kind: 'revealRule'; rule: string };
+	| { on: 'label' | 'beside'; kind: 'revealRule'; rule: string }
+	/**
+	 * UX-6 → UX-1: this run, read as an answer about this slot.
+	 *
+	 * The one link that opens a *view* rather than a place, and it is here rather
+	 * than in the renderer because it is the same decision every other link is:
+	 * what a row states is what it can be followed to. A changed value states a
+	 * slot, and the next question about a value that moved is always how it came
+	 * about — which is the section **Leg uit** already draws, over a run this
+	 * side is already holding.
+	 */
+	| { on: 'label' | 'beside'; kind: 'explain'; attribute: string; instance?: string };
 
 export interface RunSection {
 	title: string;
@@ -210,11 +236,26 @@ export interface RunView {
  * whatever the rules before it derived ([E-7]), so the numbers under it are how
  * the number above it came about.
  */
-export function buildView(fileName: string, run: TestRun, focus?: RunFocus): RunView {
+export function buildView(
+	fileName: string,
+	run: TestRun,
+	focus?: RunFocus,
+	/**
+	 * The previous run of this testgeval, where the view is a comparison (UX-6).
+	 *
+	 * A fourth argument rather than a kind of focus, because it is not what the
+	 * view is *about*: a comparison is still a view of this run, with one section
+	 * in front saying what moved. Absent is the ordinary case and draws nothing —
+	 * a first run has nothing to be compared with, and a section saying so would
+	 * be furniture on every panel.
+	 */
+	previous?: TestRun
+): RunView {
 	const view: RunView = {
 		name: focus ? focusName(focus) : run.case,
 		heading: headingFor(run, focus),
-		meta: `${fileName}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`,
+		meta: `${fileName}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`
+			+ (previous ? ' · vergeleken met de vorige uitvoering' : ''),
 		...(run.detail?.rekendatumDay === undefined
 			? {}
 			: { rekendatumDay: run.detail.rekendatumDay, rekendatum: run.detail.rekendatum }),
@@ -227,6 +268,13 @@ export function buildView(fileName: string, run: TestRun, focus?: RunFocus): Run
 			details: run.details ?? []
 		};
 		return view;
+	}
+
+	// **Ahead of the focus**, which is the only place it can be: a reader who
+	// asked what changed asked about the whole run, and a section under a
+	// derivation would be an answer to a narrower question than the one put.
+	if (previous) {
+		view.sections.push(changes(run, previous));
 	}
 
 	if (focus && run.detail) {
@@ -347,6 +395,176 @@ export function buildView(fileName: string, run: TestRun, focus?: RunFocus): Run
 }
 
 /**
+ * UX-6 — *wat is er veranderd?*, between this run and the one before it.
+ *
+ * **A list of differences and nothing else.** Everything it compares is already
+ * on the wire, so this composes rather than computes: two runs of one testgeval
+ * are two situations, and what a reader wants after an edit is the handful of
+ * places they differ rather than two panels to hold side by side.
+ *
+ * **Comparison is by rendered literal, and that is exact rather than lax.**
+ * Every value on this wire came from `showValue` on the server, so one value
+ * spells one way — `1,00 EUR` and `1 EUR` cannot both arrive for one slot,
+ * because the same renderer wrote both runs. That is what lets this side compare
+ * without arithmetic it does not have, and it is the same guarantee `assert.ts`
+ * relies on one level down.
+ *
+ * **Four kinds of change, in the order a reader asks about them**: the values,
+ * then the kenmerken, then which rules fired, then the faults. A rule that
+ * stopped firing usually explains the value above it, and a fault that appeared
+ * usually explains both — but saying so would be an inference, and this states
+ * what it recorded (IR-4).
+ *
+ * A run that was refused compares against nothing: `TestExplorer` keeps only a
+ * run that proceeded as the previous one, so a diff never reports a whole model
+ * as having appeared because the last attempt would not compose.
+ */
+function changes(run: TestRun, previous: TestRun): RunSection {
+	const rows = [
+		...valueChanges(run.detail, previous.detail),
+		...kenmerkChanges(run.detail, previous.detail),
+		...ruleChanges(run.detail, previous.detail),
+		...faultChanges(run, previous)
+	];
+	return {
+		title: rows.length === 0
+			? 'Veranderd — niets'
+			: `Veranderd (${rows.length})`,
+		aligned: true,
+		rows: rows.length > 0
+			? rows
+			// Said rather than left out, for the reason a rule that did not fire
+			// says so: an absent section reads as a comparison that failed, and
+			// "nothing moved" is the answer somebody pressed for.
+			: [{ kind: 'note', label: '(deze uitvoering leverde precies hetzelfde op als de vorige)' }]
+	};
+}
+
+/** One derived or given value as one comparable string — periods included. */
+function stateOf(one: RunDetail['values'][number]): string {
+	return one.segments
+		? one.segments.map(each => `${period(each.from, each.to)}: ${each.value}`).join('; ')
+		: (one.value ?? 'leeg');
+}
+
+function valueChanges(now?: RunDetail, before?: RunDetail): RunRow[] {
+	if (!now || !before) {
+		return [];
+	}
+	const was = new Map(before.values.map(one =>
+		[stateKey(one.instance, target(one.attribute, one.coordinates)), one]));
+	const rows: RunRow[] = [];
+	for (const one of now.values) {
+		const named = target(one.attribute, one.coordinates);
+		const key = stateKey(one.instance, named);
+		const then = was.get(key);
+		was.delete(key);
+		const link = {
+			on: 'label' as const,
+			kind: 'explain' as const,
+			attribute: one.attribute,
+			instance: one.instance
+		};
+		if (!then) {
+			rows.push({
+				kind: 'appeared',
+				label: `${one.instance} · ${named}`,
+				note: `nieuw: ${stateOf(one)}`,
+				link
+			});
+			continue;
+		}
+		if (stateOf(then) !== stateOf(one)) {
+			rows.push({
+				kind: 'changed',
+				label: `${one.instance} · ${named}`,
+				note: `${stateOf(then)} → ${stateOf(one)}`,
+				link
+			});
+		}
+	}
+	for (const [, gone] of was) {
+		rows.push({
+			kind: 'vanished',
+			label: `${gone.instance} · ${target(gone.attribute, gone.coordinates)}`,
+			note: `weg (was ${stateOf(gone)})`
+		});
+	}
+	return rows;
+}
+
+function kenmerkChanges(now?: RunDetail, before?: RunDetail): RunRow[] {
+	if (!now || !before) {
+		return [];
+	}
+	const held = (detail: RunDetail): Set<string> => new Set(detail.kenmerken
+		.filter(one => one.present)
+		.map(one => stateKey(one.instance, one.kenmerk)));
+	const was = held(before);
+	const is = held(now);
+	return [
+		...[...is].filter(one => !was.has(one)).map((one): RunRow =>
+			({ kind: 'appeared', label: one, note: 'heeft dit kenmerk nu wel' })),
+		...[...was].filter(one => !is.has(one)).map((one): RunRow =>
+			({ kind: 'vanished', label: one, note: 'heeft dit kenmerk niet meer' }))
+	];
+}
+
+function ruleChanges(now?: RunDetail, before?: RunDetail): RunRow[] {
+	if (!now || !before) {
+		return [];
+	}
+	const counts = (detail: RunDetail): Map<string, number> =>
+		new Map(detail.firedRules.map(one => [one.rule, one.count]));
+	const was = counts(before);
+	const is = counts(now);
+	const rows: RunRow[] = [];
+	for (const [rule, count] of is) {
+		const then = was.get(rule);
+		if (then === undefined) {
+			rows.push({ kind: 'appeared', label: rule, rule, ruleAt: 'label', note: 'vuurt nu wel' });
+		} else if (then !== count) {
+			rows.push({
+				kind: 'changed',
+				label: rule,
+				rule,
+				ruleAt: 'label',
+				note: `${then}× → ${count}×`
+			});
+		}
+	}
+	for (const [rule] of was) {
+		if (!is.has(rule)) {
+			rows.push({ kind: 'vanished', label: rule, rule, ruleAt: 'label', note: 'vuurt niet meer' });
+		}
+	}
+	return rows;
+}
+
+function faultChanges(run: TestRun, previous: TestRun): RunRow[] {
+	const key = (one: TestRun['faults'][number]): string =>
+		`${one.rule} · ${one.instance ?? ''} · ${one.message}`;
+	const was = new Map(previous.faults.map(one => [key(one), one]));
+	const is = new Map(run.faults.map(one => [key(one), one]));
+	return [
+		...[...is].filter(([at]) => !was.has(at)).map(([, one]): RunRow => ({
+			kind: 'fault',
+			label: withInstance(one.rule, one.instance),
+			rule: one.rule,
+			ruleAt: 'label',
+			note: `nieuwe fout: ${one.message}`
+		})),
+		...[...was].filter(([at]) => !is.has(at)).map(([, one]): RunRow => ({
+			kind: 'vanished',
+			label: withInstance(one.rule, one.instance),
+			rule: one.rule,
+			ruleAt: 'label',
+			note: `fout verdwenen: ${one.message}`
+		}))
+	];
+}
+
+/**
  * Gives every row its one click-through, which follows from what the row states.
  *
  * A pass rather than a field set at each site, so the rule is in one place and a
@@ -365,6 +583,12 @@ export function buildView(fileName: string, run: TestRun, focus?: RunFocus): Run
  */
 export function withLinks(view: RunView): RunView {
 	const link = (row: RunRow): RunLink | undefined => {
+		// Set outright by the section that knows what it is about (UX-6), and then
+		// it wins: a changed value has no range and no rule of its own, and its
+		// answer is a view rather than a place.
+		if (row.link) {
+			return row.link;
+		}
 		if (row.range) {
 			return { on: 'label', kind: 'reveal', range: row.range };
 		}
@@ -761,7 +985,11 @@ function writeRow(
 		// there. A scalar write states its value on the row itself and has none.
 		children: [
 			...segmentRows(one.segments ?? []),
-			...stepRows(one.steps),
+			// The rule and the instance travel down with the steps (UX-4): an
+			// expansion is evaluated in the scope of the rule the sentence was
+			// written in and about the instance the write was about, and a step
+			// knows neither — it is one node of an expression.
+			...stepRows(one.steps, { rule: one.rule, instance: one.instance }),
 			...one.operands.map(operand => operandRow(operand, produced, seen))
 		]
 	};
@@ -778,14 +1006,32 @@ function writeRow(
  * it is drawn as a plain note, because "and more below here" is a statement
  * about the *view* and not about the model.
  */
-function stepRows(steps: RunStep[] | undefined): RunRow[] {
+function stepRows(
+	steps: RunStep[] | undefined,
+	/** Whose arithmetic this is, so a collection among it can be opened (UX-4). */
+	within?: { rule: string; instance?: string }
+): RunRow[] {
 	return (steps ?? []).map((one): RunRow => one.truncated && one.value === ''
 		? { kind: 'note', label: '… (verder niet vastgelegd)' }
 		: {
 			kind: 'step',
 			label: one.text,
 			value: one.value,
-			...(one.parts?.length ? { children: stepRows(one.parts) } : {})
+			// **Only where both halves are present.** The server offers the sentence
+			// where the node's value is a collection; without a rule to read it in
+			// there is nowhere to evaluate it, so the row simply does not offer the
+			// gesture — which is the rule an inconsistency's steps fall under, they
+			// being about a check rather than about a write.
+			...(one.expand && within
+				? {
+					expand: {
+						expression: one.expand,
+						rule: within.rule,
+						...(within.instance === undefined ? {} : { instance: within.instance })
+					}
+				}
+				: {}),
+			...(one.parts?.length ? { children: stepRows(one.parts, within) } : {})
 		});
 }
 

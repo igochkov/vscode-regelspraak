@@ -18,6 +18,7 @@ import { WireRange } from './model';
 
 const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
+const EXPAND_REQUEST = 'regelspraak/expandCollection';
 
 /**
  * What a failing expectation's message is tagged with, so UX-1's **Leg uit** can
@@ -240,6 +241,35 @@ export interface RunStep {
 	value: string;
 	parts?: RunStep[];
 	truncated?: boolean;
+	/**
+	 * This node's own sentence, where its value is a collection (UX-4).
+	 *
+	 * Present is the whole of "this row can be opened", and what it carries is
+	 * the **expression**: an expansion recomputes rather than reading a record,
+	 * so the text goes back to the server to be parsed. Whole and unclipped,
+	 * unlike `text`.
+	 */
+	expand?: string;
+}
+
+/** The elements behind one collection (UX-4) — see the server's `protocol.ts`. */
+export interface CollectionElements {
+	expression: string;
+	value: string;
+	size: number;
+	elements: CollectionElement[];
+	truncated?: boolean;
+	/** Whether `elements` is in value order — the server's, since order is arithmetic. */
+	sorted?: boolean;
+	refusal?: string;
+}
+
+export interface CollectionElement {
+	label: string;
+	instance?: string;
+	value: string;
+	/** Its place in the collection's own order, which is not this one. */
+	position: number;
 }
 
 /** One delivery a run read from a manifest — the audit trail (F-4). */
@@ -284,6 +314,14 @@ export class TestExplorer {
 	 * would drop the failures of its siblings, which are still true.
 	 */
 	private readonly failures = new Map<string, FailedExpectation[]>();
+	/**
+	 * The last two detailed runs per testgeval (UX-6).
+	 *
+	 * Held here because this is where every detailed run passes, and a second
+	 * place that watched for runs would be free to remember a different pair —
+	 * "the previous uitvoering" is a fact with one answer.
+	 */
+	private readonly history = new Map<string, { latest: TestRun; previous?: TestRun }>();
 	private readonly failuresChanged = new vscode.EventEmitter<void>();
 	/** Fires whenever `failuresIn` would answer differently. */
 	readonly onDidChangeFailures = this.failuresChanged.event;
@@ -436,10 +474,67 @@ export class TestExplorer {
 			void vscode.window.showWarningMessage('Er draait geen RegelSpraak-taalserver.');
 			return undefined;
 		}
-		return await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
+		const outcome = await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
 			textDocument: { uri },
 			case: caseName,
 			detail: true
+		});
+		this.remember(uri, caseName, outcome);
+		return outcome;
+	}
+
+	/**
+	 * UX-4 — the elements behind one collection of a run.
+	 *
+	 * A request and not a reading of the reply, because a run does not record
+	 * the per-element work: §X7 stage 3 declines it on cost, correctly, so the
+	 * server recomputes the sentence in the scope of the rule it was written in.
+	 * That means a run per gesture, exactly as **Leg uit** does until UX-3.
+	 */
+	async expandCollection(
+		uri: string,
+		caseName: string,
+		what: { rule: string; instance?: string; expression: string }
+	): Promise<CollectionElements | undefined> {
+		const client = this.client;
+		if (!client) {
+			void vscode.window.showWarningMessage('Er draait geen RegelSpraak-taalserver.');
+			return undefined;
+		}
+		return await client.sendRequest<CollectionElements>(EXPAND_REQUEST, {
+			textDocument: { uri },
+			case: caseName,
+			rule: what.rule,
+			...(what.instance === undefined ? {} : { instance: what.instance }),
+			expression: what.expression
+		});
+	}
+
+	/**
+	 * The run before the one now in hand, where this testgeval has been run twice
+	 * (UX-6).
+	 *
+	 * **Recorded on every detailed run**, not on a gesture of its own: what the
+	 * diff claims to show is *the previous uitvoering of this testgeval*, and a
+	 * history that only remembered the runs somebody meant to compare would be
+	 * making a different claim. A Testing-view run is deliberately not in it —
+	 * it asks for no detail, so there is nothing in it to compare.
+	 */
+	previousRun(uri: string, caseName: string): TestRun | undefined {
+		return this.history.get(runKey(uri, caseName))?.previous;
+	}
+
+	/** Moves the latest run down and puts this one in its place. */
+	private remember(uri: string, caseName: string, run: TestRun): void {
+		const key = runKey(uri, caseName);
+		const held = this.history.get(key);
+		this.history.set(key, {
+			// A refusal is not a run to compare against: it derived nothing, so a
+			// diff over it would report the whole model as having appeared.
+			...(held?.latest && held.latest.outcome === 'uitgevoerd'
+				? { previous: held.latest }
+				: (held?.previous ? { previous: held.previous } : {})),
+			latest: run
 		});
 	}
 
@@ -703,6 +798,11 @@ export class TestExplorer {
  * both the file and the case. One reading of the format, so the two cannot
  * disagree about where the `#` is.
  */
+/** One key for a testgeval, which is a document and a name (UX-6's history). */
+function runKey(uri: string, caseName: string): string {
+	return `${uri}\u0000${caseName}`;
+}
+
 export function splitId(id: string): [string, string] {
 	const at = id.lastIndexOf('#');
 	return at < 0 ? [id, ''] : [id.slice(0, at), id.slice(at + 1)];

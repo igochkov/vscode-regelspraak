@@ -35,7 +35,7 @@ import {
 import { WireRange } from './model';
 import { SHOW_RUN_AS_TEXT_COMMAND } from './runDocument';
 import { RunFocus, RunLink, RunRow, RunView, buildView } from './runView';
-import { TestRun } from './testExplorer';
+import { CollectionElements, TestRun } from './testExplorer';
 
 /**
  * The palette command: the outcome of the testgeval the cursor is in.
@@ -52,7 +52,31 @@ export const SHOW_RUN_COMMAND = 'regelspraak.showUitkomst';
  * the view did not offer — which piece of a row is clickable, and what it opens,
  * is `runView.ts`'s decision and is checked there.
  */
-export type RunGesture = RunLink | { kind: 'asText' };
+export type RunGesture =
+	| RunLink
+	| { kind: 'asText' }
+	/** UX-6, from the panel's own toolbar: this run against the one before it. */
+	| { kind: 'compare' }
+	/** UX-4: open one collection, answered back into the row that asked. */
+	| { kind: 'expand'; at: string; expression: string; rule: string; instance?: string };
+
+/**
+ * What the panel needs from the rest of the extension, and no more.
+ *
+ * Two questions, both `TestExplorer`'s: one is a request to the server and the
+ * other is the run history it already keeps. Injected rather than reached for,
+ * for the reason every pure half of this module is exported — a webview cannot
+ * be driven from a test, so what the panel *decides* stays testable and what it
+ * *needs* is handed to it.
+ */
+export interface RunServices {
+	expandCollection(
+		uri: string,
+		caseName: string,
+		what: { rule: string; instance?: string; expression: string }
+	): Promise<CollectionElements | undefined>;
+	previousRun(uri: string, caseName: string): TestRun | undefined;
+}
 
 /**
  * The rule's own declaration, looked up rather than carried.
@@ -294,6 +318,13 @@ export class RunPanels implements Disposable {
 	private readonly open = new Map<string, Panel>();
 
 	/**
+	 * `services` is optional so a test can open a panel without a server: the
+	 * suite asserts that it opens, and the two gestures that need one then
+	 * answer that they cannot rather than throwing.
+	 */
+	constructor(private readonly services?: RunServices) { }
+
+	/**
 	 * Draws a finished run, focused on `focus` where there is one.
 	 *
 	 * `testset` is **the document the run came from**, not the one the gesture was
@@ -303,8 +334,8 @@ export class RunPanels implements Disposable {
 	 * number in the wrong file. The panel opens beside whatever is active, so the
 	 * gesture's document is not needed for anything.
 	 */
-	async show(testset: Uri, run: TestRun, focus?: RunFocus): Promise<void> {
-		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
+	async show(testset: Uri, run: TestRun, focus?: RunFocus, previous?: TestRun): Promise<void> {
+		const view = buildView(testset.path.split('/').pop() ?? '', run, focus, previous);
 		let panel = this.open.get(view.name);
 		if (!panel) {
 			const created = window.createWebviewPanel(
@@ -316,10 +347,10 @@ export class RunPanels implements Disposable {
 				// Kept alive while hidden, so flipping away and back does not lose the
 				// scroll position of a long trace or the chains left open in it.
 				{ enableScripts: true, retainContextWhenHidden: true });
-			panel = new Panel(created, () => this.open.delete(view.name));
+			panel = new Panel(created, () => this.open.delete(view.name), this.services);
 			this.open.set(view.name, panel);
 		}
-		await panel.draw(testset, run, view, focus);
+		await panel.draw(testset, run, view, focus, previous);
 	}
 
 	dispose(): void {
@@ -334,9 +365,15 @@ class Panel {
 	private readonly subscriptions: Disposable[] = [];
 	private disposed = false;
 	/** The run as last drawn, which is what **Als tekst openen** re-renders. */
-	private drawn: { source: Uri; run: TestRun; focus?: RunFocus } | undefined;
+	private drawn: {
+		source: Uri; run: TestRun; focus?: RunFocus; previous?: TestRun
+	} | undefined;
 
-	constructor(private readonly panel: WebviewPanel, forget: () => void) {
+	constructor(
+		private readonly panel: WebviewPanel,
+		forget: () => void,
+		private readonly services?: RunServices
+	) {
 		panel.webview.html = page(panel.webview.cspSource, nonce());
 		this.subscriptions.push(
 			panel.webview.onDidReceiveMessage((gesture: RunGesture) => void this.act(gesture)));
@@ -346,8 +383,14 @@ class Panel {
 		});
 	}
 
-	async draw(testset: Uri, run: TestRun, view: RunView, focus?: RunFocus): Promise<void> {
-		this.drawn = { source: testset, run, focus };
+	async draw(
+		testset: Uri,
+		run: TestRun,
+		view: RunView,
+		focus?: RunFocus,
+		previous?: TestRun
+	): Promise<void> {
+		this.drawn = { source: testset, run, focus, previous };
 		this.panel.title = `${view.name} (uitkomst)`;
 		this.panel.reveal(this.panel.viewColumn, true);
 		// Tracks attached on the way out, so the webview draws and computes
@@ -373,12 +416,39 @@ class Panel {
 			return;
 		}
 		if (gesture.kind === 'asText') {
-			await commands.executeCommand(
-				SHOW_RUN_AS_TEXT_COMMAND, drawn.source.toString(), drawn.run, drawn.focus);
+			// **A comparison opens as a diff** (UX-6). The panel names the
+			// differences and the diff editor shows both runs with them marked, and
+			// those are two readings of one comparison rather than two features: a
+			// reader who already knows what they are looking for wants the first,
+			// and one who does not wants the second. Which they get follows from
+			// what the panel is currently drawing.
+			await commands.executeCommand(SHOW_RUN_AS_TEXT_COMMAND,
+				drawn.source.toString(), drawn.run, drawn.focus, drawn.previous);
 			return;
 		}
 		if (gesture.kind === 'reveal') {
 			await this.jump(drawn.source, toRange(gesture.range));
+			return;
+		}
+		if (gesture.kind === 'explain') {
+			// UX-6 → UX-1, over the run already in hand: no second run is made,
+			// because the question is about *this* one. The comparison is dropped —
+			// the reader has moved from "what changed" to "how did this come about",
+			// and keeping a diff section above the derivation would answer the
+			// question they have just left.
+			await this.redraw(drawn, {
+				kind: 'waarde',
+				attribute: gesture.attribute,
+				...(gesture.instance === undefined ? {} : { instance: gesture.instance })
+			});
+			return;
+		}
+		if (gesture.kind === 'compare') {
+			await this.compare(drawn);
+			return;
+		}
+		if (gesture.kind === 'expand') {
+			await this.open(drawn, gesture);
 			return;
 		}
 		// The rule's declaration, which is routinely in another file than the
@@ -392,6 +462,72 @@ class Panel {
 			void window.showInformationMessage(
 				`'${gesture.rule}' is niet als declaratie te vinden in deze werkruimte.`);
 		}
+	}
+
+	/** The same run, read as an answer about something else. */
+	private async redraw(
+		drawn: { source: Uri; run: TestRun },
+		focus: RunFocus
+	): Promise<void> {
+		const view = buildView(drawn.source.path.split('/').pop() ?? '', drawn.run, focus);
+		await this.draw(drawn.source, drawn.run, view, focus);
+	}
+
+	/**
+	 * UX-6 — this run against the previous one, drawn in place.
+	 *
+	 * **The retained run and not a fresh one**: what the reader is looking at is
+	 * the run in front of them, and re-running to obtain the other half would
+	 * compare a third run against a second. Where there is no previous run it
+	 * says so, which is the honest answer to a first press.
+	 */
+	private async compare(
+		drawn: { source: Uri; run: TestRun; focus?: RunFocus }
+	): Promise<void> {
+		const previous = this.services?.previousRun(drawn.source.toString(), drawn.run.case);
+		if (!previous) {
+			void window.showInformationMessage(
+				`Er is nog geen eerdere uitvoering van '${drawn.run.case}' om mee te vergelijken. `
+				+ 'Pas het model aan en voer opnieuw uit.');
+			return;
+		}
+		const view = buildView(
+			drawn.source.path.split('/').pop() ?? '', drawn.run, drawn.focus, previous);
+		await this.draw(drawn.source, drawn.run, view, drawn.focus, previous);
+	}
+
+	/**
+	 * UX-4 — one collection, opened and answered back into the row that asked.
+	 *
+	 * The row's id travels out and back so a second click while the first is
+	 * still out cannot fill the wrong row: an expansion is a run, and a reader
+	 * opening two of them does not wait in between.
+	 */
+	private async open(
+		drawn: { source: Uri; run: TestRun },
+		gesture: Extract<RunGesture, { kind: 'expand' }>
+	): Promise<void> {
+		const answer = this.services
+			? await this.services.expandCollection(drawn.source.toString(), drawn.run.case, {
+				rule: gesture.rule,
+				...(gesture.instance === undefined ? {} : { instance: gesture.instance }),
+				expression: gesture.expression
+			})
+			: undefined;
+		if (this.disposed) {
+			return;
+		}
+		await this.panel.webview.postMessage({
+			type: 'elements',
+			at: gesture.at,
+			answer: answer ?? {
+				expression: gesture.expression,
+				value: '',
+				size: 0,
+				elements: [],
+				refusal: 'Deze verzameling kon niet worden uitgeklapt.'
+			}
+		});
 	}
 
 	/** Puts the cursor on what was clicked, and gives it the focus. */
@@ -569,6 +705,40 @@ function page(cspSource: string, scriptNonce: string): string {
 		color: var(--vscode-descriptionForeground);
 	}
 	.refusal { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
+	/*
+	 * UX-6's three kinds of change. The workbench's own diff colours, because a
+	 * reader already knows what they mean here — added is green and removed is
+	 * red in every diff editor they open — and a value that merely *moved* is
+	 * neither, so it takes the ordinary note colour and says so in words.
+	 */
+	.appeared .mark, .appeared .note { color: var(--vscode-gitDecoration-addedResourceForeground, var(--vscode-charts-green)); }
+	.vanished .mark, .vanished .note { color: var(--vscode-gitDecoration-deletedResourceForeground, var(--vscode-charts-red)); }
+	.changed .mark { color: var(--vscode-gitDecoration-modifiedResourceForeground, var(--vscode-charts-blue)); }
+	.changed .note { color: var(--vscode-foreground); }
+	/*
+	 * UX-4's opened collection. A table, because two columns of five hundred rows
+	 * is what it is — and scrollable in its own right, so a long one does not
+	 * push the trace under it out of reach.
+	 */
+	.elements { margin: .2rem 0 .4rem 1.6rem; max-height: 22rem; overflow: auto; }
+	.elements table { border-collapse: collapse; font-size: .9rem; }
+	.elements th {
+		text-align: left;
+		font-weight: 400;
+		color: var(--vscode-descriptionForeground);
+		border-bottom: 1px solid var(--vscode-panel-border);
+		padding: .1rem .8rem .1rem 0;
+		position: sticky;
+		top: 0;
+		background: var(--vscode-editor-background);
+	}
+	.elements td { padding: .05rem .8rem .05rem 0; }
+	.elements td.num {
+		text-align: right;
+		font-family: var(--vscode-editor-font-family);
+		color: var(--vscode-debugTokenExpression-number, var(--vscode-charts-blue));
+	}
+	.elements .why { color: var(--vscode-editorWarning-foreground); }
 	/* In the header, where a reader looks for what to do with a view — not at the
 	   bottom, which for a long trace is a scroll away from the question. */
 	.tools { margin: .4rem 0 1.4rem; }
@@ -580,7 +750,10 @@ function page(cspSource: string, scriptNonce: string): string {
 	<p class="meta" id="meta"></p>
 	<p class="hint">Alleen-lezen, en de stand van één run. Klik een regelnaam om hem te openen;
 		klap een schrijving open om te zien wat er gerekend is en waaruit.</p>
-	<p class="tools"><button class="link" id="asText">Als tekst openen</button></p>
+	<p class="tools">
+		<button class="link" id="asText">Als tekst openen</button> ·
+		<button class="link" id="compare">Vergelijk met vorige uitvoering</button>
+	</p>
 </header>
 <main id="body"></main>
 <script nonce="${scriptNonce}">
@@ -590,6 +763,18 @@ function page(cspSource: string, scriptNonce: string): string {
 	document.getElementById('asText').addEventListener('click', () => {
 		vscode.postMessage({ kind: 'asText' });
 	});
+	document.getElementById('compare').addEventListener('click', () => {
+		vscode.postMessage({ kind: 'compare' });
+	});
+
+	/** A button that does something here, rather than asking the extension. */
+	function clickable(className, text, act) {
+		const node = document.createElement('button');
+		node.className = className + ' link';
+		node.textContent = text;
+		node.addEventListener('click', act);
+		return node;
+	}
 
 	/** A span, or a button where the row has somewhere to go. */
 	function piece(className, text, gesture) {
@@ -620,7 +805,11 @@ function page(cspSource: string, scriptNonce: string): string {
 		mark.textContent = foldable ? '' : (row.kind === 'pass' ? '\\u2713'
 			: row.kind === 'fail' ? '\\u2717'
 			: row.kind === 'fault' || row.kind === 'inconsistency' ? '\\u26A0'
-			: row.kind === 'skipped' ? '\\u2298' : '');
+			: row.kind === 'skipped' ? '\\u2298'
+			// UX-6: what happened to this fact between the two runs, in one glyph.
+			: row.kind === 'appeared' ? '+'
+			: row.kind === 'vanished' ? '\\u2212'
+			: row.kind === 'changed' ? '\\u2192' : '');
 		line.append(mark);
 
 		const on = where => row.link && row.link.on === where ? row.link : undefined;
@@ -639,7 +828,99 @@ function page(cspSource: string, scriptNonce: string): string {
 		if (row.ruleDetail) {
 			line.append(piece('ruleDetail', '(' + row.ruleDetail + ')'));
 		}
+		// UX-4. A separate affordance and never the row's own link: this row
+		// already states a value and may already be a way somewhere, and what the
+		// button does is fetch — which is a different kind of act from a jump and
+		// has to look like one.
+		if (row.expand) {
+			const at = 'uitklap-' + (++expansions);
+			const open = clickable('note', 'uitklappen', () => {
+				open.textContent = 'bezig…';
+				open.disabled = true;
+				vscode.postMessage({
+					kind: 'expand',
+					at: at,
+					expression: row.expand.expression,
+					rule: row.expand.rule,
+					instance: row.expand.instance
+				});
+			});
+			line.append(open);
+			const holder = document.createElement('div');
+			holder.className = 'elements';
+			holder.id = at;
+			holder.hidden = true;
+			awaiting.set(at, { holder: holder, button: open });
+			line.append(holder);
+		}
 		return line;
+	}
+
+	/** One counter per page, so two rows asking at once cannot share an id. */
+	let expansions = 0;
+	const awaiting = new Map();
+
+	/*
+	 * UX-4 — the elements of an opened collection.
+	 *
+	 * **Nothing is computed here and nothing is re-ordered by value.** The server
+	 * sent them largest first, because ordering is arithmetic over units and
+	 * rationals and this side has none; what it *can* offer is the collection's
+	 * own order, which each row carries as its position. So the two headers
+	 * toggle between two readings the answer already contains.
+	 */
+	const PAINTED = 20;
+
+	function elementsTable(answer) {
+		const table = document.createElement('table');
+		const head = document.createElement('tr');
+		const byOrder = document.createElement('th');
+		const byValue = document.createElement('th');
+		table.append(head);
+		head.append(byOrder, byValue);
+
+		const body = document.createElement('tbody');
+		table.append(body);
+		let ordered = false;
+		let painted = PAINTED;
+
+		function draw() {
+			byOrder.replaceChildren(clickable('', 'instantie' + (ordered ? ' \u25B4' : ''),
+				() => { ordered = true; draw(); }));
+			byValue.replaceChildren(clickable('', 'waarde' + (ordered ? '' : ' \u25BE'),
+				() => { ordered = false; draw(); }));
+			const rows = ordered
+				? answer.elements.slice().sort((a, b) => a.position - b.position)
+				: answer.elements;
+			body.replaceChildren();
+			for (const one of rows.slice(0, painted)) {
+				const line = document.createElement('tr');
+				const who = document.createElement('td');
+				who.textContent = one.instance || one.label;
+				const what = document.createElement('td');
+				what.className = 'num';
+				what.textContent = one.value;
+				line.append(who, what);
+				body.append(line);
+			}
+			if (rows.length > painted) {
+				const more = document.createElement('tr');
+				const cell = document.createElement('td');
+				cell.colSpan = 2;
+				cell.append(clickable('note', 'toon alle ' + rows.length, () => {
+					painted = rows.length;
+					draw();
+				}));
+				more.append(cell);
+				body.append(more);
+			}
+		}
+
+		// The server's order is the one it arrives in, and it is the one a reader
+		// opened the collection for: the outlier is row one.
+		ordered = answer.sorted !== true;
+		draw();
+		return table;
 	}
 
 	/*
@@ -803,11 +1084,29 @@ function page(cspSource: string, scriptNonce: string): string {
 		}
 	});
 
+	/*
+	 * Lifts an expansion's table out of the row it was built in (UX-4).
+	 *
+	 * The row is a flex line and, where it folds, a summary — and a table is
+	 * neither an item of the first nor legal content of the second. So the
+	 * button stays on the line, where it belongs, and what it fills sits under
+	 * the whole row.
+	 */
+	function lift(line, item) {
+		const holder = line.querySelector('.elements');
+		if (holder) {
+			holder.remove();
+			item.append(holder);
+		}
+	}
+
 	function rowItem(row) {
 		const item = document.createElement('li');
 		const foldable = Boolean(row.children && row.children.length > 0);
 		if (!foldable) {
-			item.append(rowLine(row, false));
+			const line = rowLine(row, false);
+			item.append(line);
+			lift(line, item);
 			return item;
 		}
 		// Collapsed unless the row says otherwise: a write's operands matter for the
@@ -816,7 +1115,8 @@ function page(cspSource: string, scriptNonce: string): string {
 		const details = document.createElement('details');
 		details.open = row.open === true;
 		const summary = document.createElement('summary');
-		summary.append(rowLine(row, true));
+		const line = rowLine(row, true);
+		summary.append(line);
 		details.append(summary);
 		const nested = document.createElement('ul');
 		if (row.track) {
@@ -833,14 +1133,46 @@ function page(cspSource: string, scriptNonce: string): string {
 		}
 		details.append(nested);
 		item.append(details);
+		lift(line, item);
 		return item;
 	}
 
 	window.addEventListener('message', event => {
 		const message = event.data;
+		if (message.type === 'elements') {
+			const waiting = awaiting.get(message.at);
+			if (!waiting) {
+				return;
+			}
+			const answer = message.answer;
+			waiting.button.disabled = false;
+			waiting.button.textContent = 'uitklappen';
+			waiting.holder.hidden = false;
+			waiting.holder.replaceChildren();
+			if (answer.refusal || answer.elements.length === 0) {
+				const why = document.createElement('div');
+				why.className = 'why';
+				why.textContent = answer.refusal || 'Deze verzameling heeft geen elementen.';
+				waiting.holder.append(why);
+				return;
+			}
+			waiting.holder.append(elementsTable(answer));
+			if (answer.truncated) {
+				const cut = document.createElement('div');
+				cut.className = 'note';
+				cut.textContent = 'Niet alles is opgehaald: deze verzameling telt '
+					+ answer.size + ' elementen.';
+				waiting.holder.append(cut);
+			}
+			return;
+		}
 		if (message.type !== 'run') {
 			return;
 		}
+		// A redraw replaces every row, so the ids the old ones handed out are
+		// gone with them — and an answer still in flight then has nowhere to land,
+		// which is what this map being cleared says.
+		awaiting.clear();
 		const view = message.view;
 		document.getElementById('heading').textContent = view.heading;
 		document.getElementById('meta').textContent = view.meta;

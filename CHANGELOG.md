@@ -25,6 +25,38 @@ names; in a rule file it is about every instance the run has. Where no rule wrot
 the value, the panel states which of the recorded facts holds instead of guessing
 why. The editor entry appears only where there is an answer.
 
+**Een verzameling uitklappen.** `de som van de premies van alle deelnemers`
+over vijfhonderd instanties, een klein beetje verkeerd, is de bug waar je een
+middag mee kwijt bent: de som staat in de trace en het element dat de
+uitschieter is staat nergens. Een aggregatie in de trace draagt nu een
+**uitklappen**-knop, en die opent de elementen erachter — één rij per element,
+met de instantie waar het bij hoort en zijn waarde, **grootste eerst**, omdat je
+op een uitschieter jaagt. De kop *instantie* geeft je de eigen volgorde van het
+model terug en *waarde* de gesorteerde; een lange lijst toont er twintig met
+**toon alle …** eronder. Waar de waarden niet met elkaar te vergelijken zijn —
+tekst, of twee eenheden — blijft de volgorde van het model staan in plaats van
+dat er een verzonnen wordt. Er wordt niets extra's vastgelegd tijdens een
+uitvoering: klikken rekent de zin opnieuw uit tegen dezelfde situatie, dus een
+gewone run wordt er geen byte zwaarder van. In de **debugger** doet hetzelfde
+zich voor waar het al hoorde: een Watch-antwoord dat een verzameling is krijgt
+het uitklappijltje van de Variabelen-lade, en een verzameling schrijft zich daar
+nu als *512 waarden* in plaats van als een regel van vijfhonderd getallen.
+
+**Vergelijk met vorige uitvoering.** De tweede vraag na *waarom* is *wat is er
+veranderd*, en tot nu toe moest je daarvoor twee panelen naast elkaar houden.
+**RegelSpraak: Vergelijk met vorige uitvoering** — in het palet, in het
+Test Results-menu op een mislukte verwachting, en als knop in het uitkomstpaneel
+— voert het testgeval uit en zet er een afdeling **Veranderd (n)** boven: één rij
+per waarde die verschoven is (`25 euro → 30 euro`), per kenmerk dat erbij kwam of
+wegging, per regel die nu wel of niet meer vuurt of vaker vuurde, en per fout die
+verscheen of verdween. Klik een verschoven waarde en je krijgt de afleiding
+ervan, over dezelfde uitvoering — dus zonder opnieuw te draaien. Is er niets
+verschoven, dan zegt het dat ook. En **Als tekst openen** geeft je in een
+vergelijking de twee uitvoeringen naast elkaar in VS Code's eigen diff-venster,
+compleet, met elk verschil rood en groen gemarkeerd. De vorige uitvoering is de
+vorige *volledige* uitvoering van dat testgeval — die uit de Testing-weergave
+telt niet mee, want daar wordt geen detail opgehaald.
+
 **Time-dependent values are drawn as a track.** A period list is faithful and
 unreadable the moment a knip lands one day off, so the panel now draws them above the
 list as a dated timeline: blocks in proportion to their length with their values

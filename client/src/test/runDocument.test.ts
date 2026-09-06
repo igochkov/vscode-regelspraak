@@ -13,7 +13,7 @@ import * as vscode from 'vscode';
 import { renderText } from '../runDocument';
 import { RunPanels, ruleLocation, trackOf } from '../runPanel';
 import { RunFocus, RunSection, buildView } from '../runView';
-import { RunDetail, TestRun } from '../testExplorer';
+import { CollectionElements, RunDetail, TestRun } from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
 
@@ -24,6 +24,12 @@ const AS_TEXT_COMMAND = 'regelspraak.showUitkomstAlsTekst';
 interface Api {
 	testExplorer: {
 		runForDetail(uri: string, caseName: string): Promise<TestRun | undefined>;
+		/** UX-4 — the ninth custom method, exercised across the repository boundary. */
+		expandCollection(
+			uri: string,
+			caseName: string,
+			what: { rule: string; instance?: string; expression: string }
+		): Promise<CollectionElements | undefined>;
 	};
 }
 
@@ -637,6 +643,227 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(
 				ruleLocation([symbol('boete', vscode.SymbolKind.Field)], 'boete'),
 				undefined);
+		});
+	});
+
+	// UX-4 — welke rij aanbiedt om uitgeklapt te worden, en waarmee.
+	//
+	// De server zegt *of* een knoop een verzameling is en levert de zin terug;
+	// wat deze kant beslist is dat een rij die zin alleen aanbiedt als er ook een
+	// regel is om hem in te lezen. Zonder die tweede helft is er nergens om te
+	// evalueren, en dan biedt de rij het gebaar simpelweg niet aan.
+	suite('een verzameling die uitgeklapt kan worden (UX-4)', () => {
+		const withStep = (step: {
+			text: string; value: string; expand?: string
+		}): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+			detail: {
+				rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace: [{
+					instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+					value: '45 euro', operands: [], steps: [step]
+				}]
+			}
+		});
+
+		test('draagt de zin, de regel en de instantie mee', () => {
+			const rows = buildView('x.test.rgs', withStep({
+				text: 'de som van de boetes van zijn gedane uitleningen',
+				value: '45 euro',
+				expand: 'de boetes van zijn gedane uitleningen'
+			})).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			const step = rows[0].children?.find(one => one.kind === 'step');
+			// Alles wat nodig is om het opnieuw te vragen, en niets wat een antwoord
+			// is: de elementen komen later en zijn van de tekenaar.
+			assert.deepEqual(step?.expand, {
+				expression: 'de boetes van zijn gedane uitleningen',
+				rule: 'bepaal contributie',
+				instance: 'Noor'
+			});
+		});
+
+		test('biedt niets aan waar de server geen zin meestuurt', () => {
+			const rows = buildView('x.test.rgs', withStep({
+				text: '2 maal 3', value: '6'
+			})).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			assert.equal(rows[0].children?.find(one => one.kind === 'step')?.expand, undefined);
+		});
+
+		test('een inconsistentie biedt het niet aan, want er is geen schrijving', () => {
+			// De stappen van een controle zitten onder een bevinding en niet onder
+			// een schrijving, dus er is geen regel-en-instantie om de zin in te
+			// lezen — en dan is geen gebaar het eerlijke antwoord.
+			const rows = buildView('x.test.rgs', {
+				case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+				detail: {
+					rekendatum: '01-01-2027', values: [], kenmerken: [],
+					firedRules: [], trace: [], inconsistencies: [{
+						rule: 'Controleer poteisen',
+						steps: [{ text: 'de som van de tegoeden', value: '4', expand: 'de tegoeden' }]
+					}]
+				}
+			}).sections.find(one => one.title === 'Inconsistent bevonden')!.rows;
+			assert.equal(rows[0].children?.find(one => one.kind === 'step')?.expand, undefined);
+		});
+	});
+
+	// UX-6 — wat er veranderd is tussen twee uitvoeringen van één testgeval.
+	//
+	// Alles wat vergeleken wordt staat al op de draad, dus dit stelt samen en
+	// rekent niet: elke waarde is door dezelfde `showValue` op de server
+	// geschreven, en dat is precies wat vergelijken op de letterlijke notatie
+	// hier exact maakt in plaats van slordig.
+	suite('wat er veranderd is (UX-6)', () => {
+		const ranWith = (detail: Partial<RunDetail>, faults: TestRun['faults'] = []): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults,
+			detail: {
+				rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace: [], ...detail
+			}
+		});
+
+		const value = (instance: string, attribute: string, shown: string) =>
+			({ instance, attribute, value: shown, derived: true });
+
+		const changed = (now: TestRun, before: TestRun): RunSection =>
+			buildView('x.test.rgs', now, undefined, before).sections[0];
+
+		test('noemt een waarde die verschoven is, met beide kanten', () => {
+			const section = changed(
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.match(section.title, /^Veranderd \(1\)$/);
+			assert.equal(section.rows[0].kind, 'changed');
+			assert.equal(section.rows[0].label, 'Noor · contributie');
+			assert.equal(section.rows[0].note, '25 euro → 30 euro');
+		});
+
+		test('leidt een verschoven waarde naar haar eigen afleiding', () => {
+			// De volgende vraag na "deze is veranderd" is altijd "hoe kwam hij tot
+			// stand", en dat is de afdeling die **Leg uit** al tekent — over de run
+			// die deze kant al vasthoudt, dus zonder tweede uitvoering.
+			const section = changed(
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.deepEqual(section.rows[0].link, {
+				on: 'label', kind: 'explain', attribute: 'contributie', instance: 'Noor'
+			});
+		});
+
+		test('scheidt verschenen van verdwenen', () => {
+			const section = changed(
+				ranWith({ values: [value('Sam', 'korting', '5 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.deepEqual(section.rows.map(one => [one.kind, one.label]), [
+				['appeared', 'Sam · korting'],
+				['vanished', 'Noor · contributie']
+			]);
+		});
+
+		test('zegt welke regel nu wel en welke niet meer vuurt', () => {
+			const section = changed(
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 2 }] }),
+				ranWith({ firedRules: [{ rule: 'bepaal boete', count: 1 }] }));
+			assert.deepEqual(section.rows.map(one => [one.kind, one.label, one.note]), [
+				['appeared', 'Jeugdlid', 'vuurt nu wel'],
+				['vanished', 'bepaal boete', 'vuurt niet meer']
+			]);
+			// En een regel die *anders vaak* vuurde is verschoven, niet verschenen.
+			const more = changed(
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 3 }] }),
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 2 }] }));
+			assert.deepEqual([more.rows[0].kind, more.rows[0].note], ['changed', '2× → 3×']);
+		});
+
+		test('meldt een fout die erbij kwam en een die wegging', () => {
+			const section = changed(
+				ranWith({}, [{ rule: 'bepaal boete', message: 'deling door leeg', kind: 'fout' }]),
+				ranWith({}, [{ rule: 'Jeugdlid', message: 'onbekende verwijzing', kind: 'modelfout' }]));
+			assert.deepEqual(section.rows.map(one => one.kind), ['fault', 'vanished']);
+		});
+
+		test('zegt het ook wanneer er niets veranderd is', () => {
+			// Een afwezige afdeling leest als een vergelijking die mislukt is, en
+			// "er is niets verschoven" is het antwoord waar iemand op drukte.
+			const same = ranWith({ values: [value('Noor', 'contributie', '25 euro')] });
+			const section = changed(same, same);
+			assert.match(section.title, /^Veranderd — niets$/);
+			assert.equal(section.rows[0].kind, 'note');
+		});
+
+		test('staat vóór de afleiding, want de vraag ging over de hele run', () => {
+			const view = buildView('x.test.rgs',
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				{ kind: 'waarde', attribute: 'contributie', instance: 'Noor' },
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.match(view.sections[0].title, /^Veranderd/);
+			assert.match(view.meta, /vergeleken met de vorige uitvoering/);
+		});
+
+		test('tekent niets waar er geen vorige uitvoering is', () => {
+			const view = buildView('x.test.rgs',
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }));
+			assert.ok(!view.sections.some(one => one.title.startsWith('Veranderd')));
+			assert.ok(!view.meta.includes('vergeleken'));
+		});
+
+		test('de tekstvorm markeert elke verandering met haar eigen teken', () => {
+			const text = renderText(buildView('x.test.rgs',
+				ranWith({ values: [value('Sam', 'korting', '5 euro')] }),
+				undefined,
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] })));
+			assert.match(text, /\+ Sam · korting/);
+			assert.match(text, /− Noor · contributie/);
+		});
+	});
+
+	// UX-4 — de negende eigen methode, over de repogrens heen.
+	//
+	// Dit is het enige wat de twee helften tegen elkaar houdt: de server merkt
+	// een knoop als verzameling en levert de zin terug, deze kant stuurt hem
+	// onveranderd op en krijgt de elementen. Er wordt niets vastgelegd tijdens
+	// de run — het werk per element is precies wat §X7 fase 3 met opzet niet
+	// bijhoudt — dus dit is een uitvoering plus één vraag over de winkel die zij
+	// achterliet.
+	suite('een verzameling uitklappen tegen een echte server (UX-4)', () => {
+		const vestigingen = getDocUri('tests/kenmerken.test.rgs');
+		const CASE = 'Twee leden bij één vestiging';
+
+		test('klapt een aantal uit naar de instanties die het telde', async function () {
+			this.timeout(60000);
+			const outcome = await api.testExplorer.runForDetail(vestigingen.toString(), CASE);
+			assert.ok(outcome?.detail, 'het testgeval hoort te draaien');
+			const write = outcome.detail.trace.find(one => one.target === 'ledenaantal');
+			assert.ok(write, 'de vestigingsregel hoort te vuren');
+			const counted = (write.steps ?? []).find(one => one.expand);
+			// De zin is die van het *argument*, niet die van de telling zelf:
+			// `het aantal …` opnieuw rekenen levert weer één getal op.
+			assert.ok(counted?.expand, JSON.stringify(write.steps));
+			assert.ok(!counted.expand.startsWith('het aantal'), counted.expand);
+
+			const opened = await api.testExplorer.expandCollection(
+				vestigingen.toString(), CASE, {
+					rule: write.rule,
+					instance: write.instance,
+					expression: counted.expand
+				});
+			assert.ok(opened, 'er hoort een antwoord te komen');
+			assert.equal(opened.refusal, undefined, opened.refusal);
+			// Twee leden bij één vestiging, elk bij naam — wat een lijst getallen
+			// pas een antwoord maakt.
+			assert.equal(opened.size, 2);
+			assert.deepEqual(opened.elements.map(one => one.instance).sort(), ['Noor', 'Sam']);
+		});
+
+		test('weigert met een zin, in plaats van met een lege lijst', async function () {
+			this.timeout(60000);
+			const opened = await api.testExplorer.expandCollection(
+				vestigingen.toString(), CASE, {
+					rule: 'een regel die niet bestaat',
+					expression: 'ingeschreven leden van de Boekerijvestiging'
+				});
+			assert.ok(opened?.refusal, 'een onbekende regel hoort een reden op te leveren');
+			assert.deepEqual(opened.elements, []);
 		});
 	});
 

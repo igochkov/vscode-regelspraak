@@ -96,6 +96,8 @@ interface DebugState {
 	 * definition; nothing checks that automatically, so widen both together.
 	 */
 	answerSteps?: DebugStep[];
+	/** The elements behind that answer, where it is a collection (UX-4). */
+	answerElements?: { label: string; instance?: string; value: string }[];
 	expression?: {
 		text: string;
 		range: {
@@ -165,8 +167,17 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 	 * the testset were forgotten the moment a rule file was sent after it.
 	 */
 	private readonly marksBySource = new Map<string, number>();
-	/** Sub-expression trees handed out as `variablesReference`s (§X7 stage 3). */
+	/**
+	 * What has been handed out as a `variablesReference`.
+	 *
+	 * Two shapes, because there are two things worth opening under one Watch
+	 * answer: §X7 stage 3's sub-expression tree, and UX-4's elements. They share
+	 * the counter so a reference means one thing, and the row's own shape decides
+	 * how it is read.
+	 */
 	private readonly expanded = new Map<number, DebugStep[]>();
+	private readonly elements =
+		new Map<number, { label: string; instance?: string; value: string }[]>();
 	private nextReference = EXPANDED_FROM;
 
 	private get marks(): number {
@@ -435,10 +446,20 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 			case 'variables': {
 				const args = (request.arguments ?? {}) as { variablesReference?: number };
 				const reference = args.variablesReference ?? SCOPE_SITUATION;
+				const opened = this.elements.get(reference);
 				this.reply(request, {
 					variables: reference === SCOPE_SITUATION
 						? this.situation()
-						: this.stepVariables(this.expanded.get(reference) ?? [])
+						// UX-4: a collection opens into its elements, each named by the
+						// instance it belongs to — which is what makes a list of five
+						// hundred numbers an answer rather than a wall.
+						: opened
+							? opened.map(one => ({
+								name: one.instance ?? one.label,
+								value: one.value,
+								variablesReference: 0
+							}))
+							: this.stepVariables(this.expanded.get(reference) ?? [])
 				});
 				return;
 			}
@@ -463,9 +484,17 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 				// reader and the only thing they cannot already see.
 				const roots = state.answerSteps ?? [];
 				const parts = roots.length === 1 ? roots[0].parts ?? [] : roots;
+				// **The elements win where there are any** (UX-4). One row has one
+				// expansion arrow, and where the answer is a collection its own
+				// elements are what a reader opened it for — the arithmetic that
+				// produced a list is usually the list. Where it is a number, the tree
+				// is the only thing there is to open.
+				const collection = state.answerElements ?? [];
 				this.reply(request, {
 					result: state.answer ?? '',
-					variablesReference: parts.length > 0 ? this.hold(parts) : 0
+					variablesReference: collection.length > 0
+						? this.holdElements(collection)
+						: (parts.length > 0 ? this.hold(parts) : 0)
 				});
 				return;
 			}
@@ -587,9 +616,19 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 		return reference;
 	}
 
+	/** The same, for an opened collection (UX-4) — one counter, two shapes. */
+	private holdElements(
+		opened: { label: string; instance?: string; value: string }[]
+	): number {
+		const reference = ++this.nextReference;
+		this.elements.set(reference, opened);
+		return reference;
+	}
+
 	/** Drops every reference handed out at the stop the run has just left. */
 	private forget(): void {
 		this.expanded.clear();
+		this.elements.clear();
 	}
 
 	/**
