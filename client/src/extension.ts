@@ -692,25 +692,33 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		debug: {
 			module: serverModule,
 			transport: TransportKind.ipc,
-			// Lets a debugger attach to the server process the extension spawns.
+			// **The server opens no inspector of its own** (6 September 2026), and
+			// this is the one place the two halves of debugging could ask for the
+			// same thing twice.
 			//
-			// **An ephemeral port, and never a fixed one** (6 September 2026). This
-			// read `--inspect=6009`, which fails in two ways that both look like the
-			// extension being broken rather than the port being taken. A *second*
-			// Extension Development Host cannot start its server at all: Node
-			// refuses to bind an inspector port already in use and exits before the
-			// LSP handshake, so the window comes up with no language features and
-			// nothing saying why. And when a host exits without running
-			// `deactivate` — a crash, or Stop while it is starting — the server
-			// child is **orphaned on Windows** and keeps the port, so the *next*
-			// F5 fails for a reason belonging to the previous run. Neither is worth
-			// diagnosing twice.
+			// It read `--inspect=6009` and then `--inspect=0`, on the reasoning
+			// that a debugger needs a port to attach to. It does not:
+			// `.vscode/launch.json` sets `autoAttachChildProcesses`, so js-debug
+			// attaches to this fork by injecting its own bootloader into the
+			// child's environment, and it does that whether or not the child was
+			// told to listen. Passing `--inspect` as well means **two mechanisms
+			// attaching a debugger to one process**, which is a race rather than a
+			// belt and braces — and the extension host, which is an Electron
+			// UtilityProcess and the thing doing the forking, was aborting with
+			// SIGABRT about a second into activation, most launches but not all.
 			//
-			// Nothing is lost: `.vscode/launch.json` sets
-			// `autoAttachChildProcesses`, so js-debug attaches to whatever port
-			// Node reports, and the output channel prints the `Debugger listening
-			// on ws://…` line for an attach by hand.
-			options: { execArgv: ['--nolazy', '--inspect=0'] }
+			// The fixed port was worth removing on its own account and the
+			// reasoning is kept, because it is the shape of thing that gets
+			// reinstated: a second development host could not start its server at
+			// all (Node refuses a port in use and exits before the LSP handshake,
+			// so the window comes up with no language features and nothing saying
+			// why), and a host that dies without running `deactivate` orphans the
+			// server on Windows, which then holds the port and breaks the *next*
+			// F5 for a reason belonging to the run before it.
+			//
+			// What is left is `--nolazy`, which is about V8 compiling eagerly so
+			// breakpoints bind, and has nothing to do with the inspector.
+			options: { execArgv: ['--nolazy'] }
 		}
 	};
 
