@@ -113,6 +113,32 @@ export function ruleLocation(
 }
 
 /**
+ * Which of an opened collection's two names tells its elements apart (UX-4).
+ *
+ * A collection is built two ways and they want opposite columns. `de premies van
+ * alle deelnemers` is one attribute over many instances — every label is
+ * `premie` and the instance is the answer — while `zijn X, zijn Y en zijn Z` is
+ * many attributes of one instance, where the instance is the same word on every
+ * row and the label is what a reader is reading. Naming the wrong one gives a
+ * column reading *Noor, Noor, eerste kalenderdag*, which distinguishes nothing
+ * and looks broken.
+ *
+ * So it is decided by counting: **the column that tells the elements apart** is
+ * the one with more distinct values. A tie goes to the instance, that being the
+ * identity a reader can go and look at.
+ *
+ * Pure and exported for `trackOf`'s reason — a webview cannot be driven from a
+ * test, and this is a decision.
+ */
+export function elementColumn(
+	elements: readonly { label: string; instance?: string }[]
+): 'instantie' | 'naam' {
+	const distinct = (of: (one: { label: string; instance?: string }) => string | undefined): number =>
+		new Set(elements.map(one => of(one) ?? '')).size;
+	return distinct(one => one.instance) >= distinct(one => one.label) ? 'instantie' : 'naam';
+}
+
+/**
  * One segment of a track, placed as a percentage of the track's width (UX-5).
  *
  * Percentages rather than a viewBox, because the track is as wide as the panel
@@ -596,6 +622,8 @@ class Panel {
 		await this.panel.webview.postMessage({
 			type: 'elements',
 			at: gesture.at,
+			// Decided here, where a test reaches it — see `elementColumn`.
+			column: answer ? elementColumn(answer.elements) : 'instantie',
 			answer: answer ?? {
 				expression: gesture.expression,
 				value: '',
@@ -1014,7 +1042,7 @@ function page(cspSource: string, scriptNonce: string): string {
 	 */
 	const PAINTED = 20;
 
-	function elementsTable(answer) {
+	function elementsTable(answer, column) {
 		const table = document.createElement('table');
 		const head = document.createElement('tr');
 		const byOrder = document.createElement('th');
@@ -1028,7 +1056,7 @@ function page(cspSource: string, scriptNonce: string): string {
 		let painted = PAINTED;
 
 		function draw() {
-			byOrder.replaceChildren(clickable('', 'instantie' + (ordered ? ' \u25B4' : ''),
+			byOrder.replaceChildren(clickable('', column + (ordered ? ' \u25B4' : ''),
 				() => { ordered = true; draw(); }));
 			byValue.replaceChildren(clickable('', 'waarde' + (ordered ? '' : ' \u25BE'),
 				() => { ordered = false; draw(); }));
@@ -1039,7 +1067,10 @@ function page(cspSource: string, scriptNonce: string): string {
 			for (const one of rows.slice(0, painted)) {
 				const line = document.createElement('tr');
 				const who = document.createElement('td');
-				who.textContent = one.instance || one.label;
+				// Whichever of the two names tells the elements apart — decided in
+				// 'elementColumn', never here.
+				who.textContent = (column === 'instantie' ? one.instance : one.label)
+					|| one.instance || one.label;
 				const what = document.createElement('td');
 				what.className = 'num';
 				what.textContent = one.value;
@@ -1329,7 +1360,7 @@ function page(cspSource: string, scriptNonce: string): string {
 				waiting.holder.append(why);
 				return;
 			}
-			waiting.holder.append(elementsTable(answer));
+			waiting.holder.append(elementsTable(answer, message.column || 'instantie'));
 			if (answer.truncated) {
 				const cut = document.createElement('div');
 				cut.className = 'note';

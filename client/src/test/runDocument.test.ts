@@ -11,7 +11,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
-import { RunPanels, ruleLocation, trackOf } from '../runPanel';
+import { RunPanels, elementColumn, ruleLocation, trackOf } from '../runPanel';
 import { RunFocus, RunRow, RunSection, buildView, childrenOf } from '../runView';
 import {
 	CollectionElements, RunDetail, RunDetailAnswer, RunDetailSelector, TestRun
@@ -710,6 +710,26 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				rule: 'bepaal contributie',
 				instance: 'Noor'
 			});
+		});
+
+		// Een verzameling wordt op twee manieren gebouwd en die willen tegengestelde
+		// kolommen. De verkeerde noemen levert een kolom op die niets onderscheidt
+		// en er kapot uitziet: *Noor, Noor, eerste kalenderdag*.
+		test('noemt de kolom die de elementen uit elkaar houdt', () => {
+			// Eén attribuut over veel instanties: het label is overal 'premie'.
+			assert.equal(elementColumn([
+				{ label: 'premie', instance: 'Lid 1' },
+				{ label: 'premie', instance: 'Lid 2' },
+				{ label: 'premie', instance: 'Lid 3' }
+			]), 'instantie');
+			// Veel attributen van één instantie — en de parameter ertussen, die
+			// helemaal geen instantie heeft, is precies waarom tellen beter werkt
+			// dan "zijn ze allemaal gelijk".
+			assert.equal(elementColumn([
+				{ label: 'aanvraagdatum', instance: 'Noor' },
+				{ label: 'betaaldatum', instance: 'Noor' },
+				{ label: 'eerste kalenderdag' }
+			]), 'naam');
 		});
 
 		test('biedt niets aan waar de server geen zin meestuurt', () => {
