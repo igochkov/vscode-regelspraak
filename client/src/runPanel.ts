@@ -34,8 +34,10 @@ import {
 
 import { WireRange } from './model';
 import { SHOW_RUN_AS_TEXT_COMMAND } from './runDocument';
-import { RunFocus, RunLink, RunRow, RunView, buildView } from './runView';
-import { CollectionElements, TestRun } from './testExplorer';
+import { RunFocus, RunLink, RunNeeds, RunRow, RunView, buildView, childrenOf } from './runView';
+import {
+	CollectionElements, RunDetailAnswer, RunDetailSelector, RunTraceEntry, TestRun
+} from './testExplorer';
 
 /**
  * The palette command: the outcome of the testgeval the cursor is in.
@@ -58,7 +60,9 @@ export type RunGesture =
 	/** UX-6, from the panel's own toolbar: this run against the one before it. */
 	| { kind: 'compare' }
 	/** UX-4: open one collection, answered back into the row that asked. */
-	| { kind: 'expand'; at: string; expression: string; rule: string; instance?: string };
+	| { kind: 'expand'; at: string; expression: string; rule: string; instance?: string }
+	/** UX-3: fill in a write that was not sent, into the row that asked. */
+	| { kind: 'fetch'; at: string; needs: RunNeeds };
 
 /**
  * What the panel needs from the rest of the extension, and no more.
@@ -70,6 +74,10 @@ export type RunGesture =
  * *needs* is handed to it.
  */
 export interface RunServices {
+	/** UX-3 — a piece of a retained run; `undefined` where nothing answered. */
+	runDetail(runId: string, want: RunDetailSelector): Promise<RunDetailAnswer | undefined>;
+	/** UX-3 — running the drawn testgeval again, where its run has been dropped. */
+	runForDetail(uri: string, caseName: string): Promise<TestRun | undefined>;
 	expandCollection(
 		uri: string,
 		caseName: string,
@@ -335,6 +343,11 @@ export class RunPanels implements Disposable {
 	 * gesture's document is not needed for anything.
 	 */
 	async show(testset: Uri, run: TestRun, focus?: RunFocus, previous?: TestRun): Promise<void> {
+		// **The focused section is drawn open, so it is filled before it is drawn**
+		// (UX-3). Everything else waits for the click that opens it; this one row
+		// is the answer the reader asked for, and arriving a moment after the
+		// panel would read as a panel that had nothing to say.
+		await this.prefetch(run, focus);
 		const view = buildView(testset.path.split('/').pop() ?? '', run, focus, previous);
 		let panel = this.open.get(view.name);
 		if (!panel) {
@@ -353,12 +366,49 @@ export class RunPanels implements Disposable {
 		await panel.draw(testset, run, view, focus, previous);
 	}
 
+	/** The writes a value-focused view leads with, fetched into the run (UX-3). */
+	private async prefetch(run: TestRun, focus?: RunFocus): Promise<void> {
+		const runId = run.detail?.runId;
+		if (!runId || !this.services || focus?.kind !== 'waarde') {
+			return;
+		}
+		const answer = await this.services.runDetail(runId, {
+			kind: 'waarde',
+			attribute: focus.attribute,
+			...(focus.instance === undefined ? {} : { instance: focus.instance })
+		});
+		if (answer && !answer.gone) {
+			mergeTrace(run, answer.entries);
+		}
+	}
+
 	dispose(): void {
 		for (const panel of [...this.open.values()]) {
 			panel.dispose();
 		}
 		this.open.clear();
 	}
+}
+
+/**
+ * Puts fetched entries into the run the panel holds, replacing the lean ones.
+ *
+ * **Mutates the held run rather than copying it**, because that run *is* what
+ * every later gesture reads: the text form, a re-focus, a second fold of the
+ * same row. A copy would leave the panel filling one trace and drawing another.
+ * The array is replaced in place, so anything already holding a reference to the
+ * run sees the fuller version.
+ */
+function mergeTrace(run: TestRun, entries: readonly RunTraceEntry[]): RunTraceEntry[] {
+	const detail = run.detail;
+	if (!detail) {
+		return [];
+	}
+	const key = (one: RunTraceEntry): string =>
+		[one.instance ?? '', one.rule, one.target, (one.coordinates ?? []).join('\u0000')].join('\u0001');
+	const fetched = new Map(entries.map(one => [key(one), one]));
+	detail.trace = detail.trace.map(one => fetched.get(key(one)) ?? one);
+	return detail.trace;
 }
 
 class Panel {
@@ -416,6 +466,16 @@ class Panel {
 			return;
 		}
 		if (gesture.kind === 'asText') {
+			// **Complete first** (UX-3). A webview fetches as a reader opens rows
+			// and a text document cannot, so the one surface that has to be whole
+			// up front asks to be — which is also what makes the text form still
+			// the thing you paste into a ticket.
+			// **Both sides of a comparison**, since the diff renders two runs and a
+			// half-filled one beside a full one would read as a difference.
+			await this.complete(drawn.run);
+			if (drawn.previous) {
+				await this.complete(drawn.previous);
+			}
 			// **A comparison opens as a diff** (UX-6). The panel names the
 			// differences and the diff editor shows both runs with them marked, and
 			// those are two readings of one comparison rather than two features: a
@@ -449,6 +509,22 @@ class Panel {
 		}
 		if (gesture.kind === 'expand') {
 			await this.open(drawn, gesture);
+			return;
+		}
+		if (gesture.kind === 'fetch') {
+			await this.fill(drawn, gesture);
+			return;
+		}
+		if (gesture.kind === 'opnieuw') {
+			// The same testgeval, drawn in the same panel with the same focus: what
+			// the reader lost is the *run*, not the question they were asking of it.
+			const again = await this.services?.runForDetail(
+				drawn.source.toString(), drawn.run.case);
+			if (again && !this.disposed) {
+				const view = buildView(
+					drawn.source.path.split('/').pop() ?? '', again, drawn.focus);
+				await this.draw(drawn.source, again, view, drawn.focus);
+			}
 			return;
 		}
 		// The rule's declaration, which is routinely in another file than the
@@ -528,6 +604,65 @@ class Panel {
 				refusal: 'Deze verzameling kon niet worden uitgeklapt.'
 			}
 		});
+	}
+
+	/**
+	 * UX-3 — fills in one write that was left out of the run, in place.
+	 *
+	 * **In place and not by redrawing.** A redraw folds away everything the
+	 * reader opened on the way down, and following a chain is the one thing this
+	 * feature is for — so the rows come back addressed to the DOM node that asked
+	 * for them, and `childrenOf` decides what they are so no decision moves into
+	 * the webview.
+	 *
+	 * The fetched entries are **merged into the run the panel is holding**, so a
+	 * write is fetched once however often its row is folded and unfolded, and so
+	 * **Als tekst openen** grows more complete as a reader explores rather than
+	 * starting again.
+	 */
+	private async fill(
+		drawn: { run: TestRun },
+		gesture: Extract<RunGesture, { kind: 'fetch' }>
+	): Promise<void> {
+		const runId = drawn.run.detail?.runId;
+		const answer = runId && this.services
+			? await this.services.runDetail(runId, {
+				kind: 'schrijving',
+				rule: gesture.needs.rule,
+				target: gesture.needs.target,
+				...(gesture.needs.instance === undefined ? {} : { instance: gesture.needs.instance }),
+				...(gesture.needs.coordinates ? { coordinates: gesture.needs.coordinates } : {})
+			})
+			: undefined;
+		if (this.disposed) {
+			return;
+		}
+		const trace = answer && !answer.gone
+			? mergeTrace(drawn.run, answer.entries)
+			: (drawn.run.detail?.trace ?? []);
+		await this.panel.webview.postMessage({
+			type: 'children',
+			at: gesture.at,
+			rows: childrenOf(gesture.needs, trace, answer === undefined || answer.gone === true)
+		});
+	}
+
+	/**
+	 * Fills in every write of a run that is still lean (UX-3).
+	 *
+	 * Asked for in one request rather than one per row: `alles` is not a
+	 * different question from `schrijving`, it is the same question with a wider
+	 * selector, and a loop here would be a second way of saying it.
+	 */
+	private async complete(run: TestRun): Promise<void> {
+		const runId = run.detail?.runId;
+		if (!runId || !this.services || !run.detail?.trace.some(one => one.more && !one.operands)) {
+			return;
+		}
+		const answer = await this.services.runDetail(runId, { kind: 'alles' });
+		if (answer && !answer.gone) {
+			mergeTrace(run, answer.entries);
+		}
 	}
 
 	/** Puts the cursor on what was clicked, and gives it the focus. */
@@ -739,6 +874,13 @@ function page(cspSource: string, scriptNonce: string): string {
 		color: var(--vscode-debugTokenExpression-number, var(--vscode-charts-blue));
 	}
 	.elements .why { color: var(--vscode-editorWarning-foreground); }
+	/*
+	 * UX-3's "still coming". A word rather than a spinning codicon: the fetch is
+	 * a lookup in a run this session already holds, so it is over before an
+	 * animation has turned once, and a spinner that flashes reads as something
+	 * having gone wrong.
+	 */
+	.pending { color: var(--vscode-descriptionForeground); font-style: italic; }
 	/* In the header, where a reader looks for what to do with a view — not at the
 	   bottom, which for a long trace is a scroll away from the question. */
 	.tools { margin: .4rem 0 1.4rem; }
@@ -858,6 +1000,7 @@ function page(cspSource: string, scriptNonce: string): string {
 
 	/** One counter per page, so two rows asking at once cannot share an id. */
 	let expansions = 0;
+	let fetches = 0;
 	const awaiting = new Map();
 
 	/*
@@ -1102,7 +1245,10 @@ function page(cspSource: string, scriptNonce: string): string {
 
 	function rowItem(row) {
 		const item = document.createElement('li');
-		const foldable = Boolean(row.children && row.children.length > 0);
+		// **A row with something still to fetch folds like any other** (UX-3): a
+		// reader cannot tell the two apart and must not have to. What differs is
+		// only that its children arrive on the way open.
+		const foldable = Boolean((row.children && row.children.length > 0) || row.needs);
 		if (!foldable) {
 			const line = rowLine(row, false);
 			item.append(line);
@@ -1119,6 +1265,33 @@ function page(cspSource: string, scriptNonce: string): string {
 		summary.append(line);
 		details.append(summary);
 		const nested = document.createElement('ul');
+		if (row.needs) {
+			const at = 'ophalen-' + (++fetches);
+			nested.id = at;
+			const waiting = document.createElement('li');
+			waiting.className = 'pending';
+			waiting.textContent = 'ophalen…';
+			nested.append(waiting);
+			// Fetched once, on the first opening: the answer is merged into the run
+			// the panel holds, so folding and unfolding again costs nothing.
+			const ask = () => {
+				if (nested.dataset.asked) {
+					return;
+				}
+				nested.dataset.asked = 'ja';
+				vscode.postMessage({ kind: 'fetch', at: at, needs: row.needs });
+			};
+			details.addEventListener('toggle', () => {
+				if (details.open) {
+					ask();
+				}
+			});
+			// Drawn open — UX-1's own section — so it is asked for at once rather
+			// than waiting for a toggle that has already happened.
+			if (details.open) {
+				ask();
+			}
+		}
 		if (row.track) {
 			const holder = document.createElement('li');
 			const svg = trackNode(row.track);
@@ -1163,6 +1336,17 @@ function page(cspSource: string, scriptNonce: string): string {
 				cut.textContent = 'Niet alles is opgehaald: deze verzameling telt '
 					+ answer.size + ' elementen.';
 				waiting.holder.append(cut);
+			}
+			return;
+		}
+		if (message.type === 'children') {
+			const holder = document.getElementById(message.at);
+			if (!holder) {
+				return;
+			}
+			holder.replaceChildren();
+			for (const row of message.rows) {
+				holder.append(rowItem(row));
 			}
 			return;
 		}

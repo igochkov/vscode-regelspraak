@@ -111,6 +111,22 @@ export interface RunRow {
 	 */
 	empty?: boolean;
 	/**
+	 * The write behind this row, where it has not been fetched yet (UX-3).
+	 *
+	 * A detailed run names every write and carries the inside of none of them —
+	 * the arithmetic and the operands are 82% of a trace's bytes and matter for
+	 * the one write a reader is chasing. So a row that has something behind it
+	 * says which write that is, in the four fields that identify one, and the
+	 * renderer fetches it on the click that opens the row.
+	 *
+	 * **Set only where the data is genuinely absent.** Where the entry arrived
+	 * complete — a caller that asked for everything, or a server retaining
+	 * nothing — the children are already there and this is unset, so `buildView`
+	 * has one code path and the two shapes are told apart by the data rather than
+	 * by a mode nobody can see in a test.
+	 */
+	needs?: RunNeeds;
+	/**
 	 * The collection this row's value is, where it is one (UX-4).
 	 *
 	 * **Everything needed to ask again, and nothing that is an answer.** An
@@ -143,6 +159,23 @@ export interface RunRow {
  * rule with a count unclickable and one without a count printing its own name
  * behind itself as the link. A row states what it has; `withLinks` decides.
  */
+/**
+ * Which write to fetch, and what to do with it when it arrives (UX-3).
+ *
+ * `kind` is not about the fetch — one write is one write — but about the row
+ * asking: a **write** row shows what the rule did and out of what, and an
+ * **operand** row shows only the operands of the rule behind it, which is what
+ * the eager chain already did. Two readings of one entry, decided here rather
+ * than by whoever draws it.
+ */
+export interface RunNeeds {
+	kind: 'schrijving' | 'operand';
+	rule: string;
+	target: string;
+	instance?: string;
+	coordinates?: string[];
+}
+
 export type RunLink =
 	| { on: 'label' | 'beside'; kind: 'reveal'; range: WireRange }
 	| { on: 'label' | 'beside'; kind: 'revealRule'; rule: string }
@@ -156,7 +189,19 @@ export type RunLink =
 	 * about — which is the section **Leg uit** already draws, over a run this
 	 * side is already holding.
 	 */
-	| { on: 'label' | 'beside'; kind: 'explain'; attribute: string; instance?: string };
+	| { on: 'label' | 'beside'; kind: 'explain'; attribute: string; instance?: string }
+	/**
+	 * UX-3: run this testgeval again, because the run this panel is drawing is
+	 * no longer one the server can be asked about.
+	 *
+	 * The one link that is not about a place *or* a view but about doing
+	 * something, and it exists because a reader who has hit that state has no
+	 * obvious way back — the panel is a projection of a run and the lens that
+	 * made it is in a file they may not have open. It appears only on the row
+	 * that says the run is gone, so it is never an invitation to re-run a run
+	 * that is perfectly good.
+	 */
+	| { on: 'label' | 'beside'; kind: 'opnieuw' };
 
 export interface RunSection {
 	title: string;
@@ -582,29 +627,43 @@ function faultChanges(run: TestRun, previous: TestRun): RunRow[] {
  * writes and timeline values, and their rule is shown `beside`.
  */
 export function withLinks(view: RunView): RunView {
-	const link = (row: RunRow): RunLink | undefined => {
-		// Set outright by the section that knows what it is about (UX-6), and then
-		// it wins: a changed value has no range and no rule of its own, and its
-		// answer is a view rather than a place.
-		if (row.link) {
-			return row.link;
-		}
-		if (row.range) {
-			return { on: 'label', kind: 'reveal', range: row.range };
-		}
-		return row.rule && row.ruleAt
-			? { on: row.ruleAt, kind: 'revealRule', rule: row.rule }
-			: undefined;
-	};
-	const walk = (row: RunRow): RunRow => ({
-		...row,
-		link: link(row),
-		children: row.children?.map(walk)
-	});
 	return {
 		...view,
-		sections: view.sections.map(section => ({ ...section, rows: section.rows.map(walk) }))
+		sections: view.sections.map(section =>
+			({ ...section, rows: section.rows.map(linked) }))
 	};
+}
+
+/**
+ * One row and everything under it, each given its one click-through.
+ *
+ * Separate from `withLinks` because UX-3 fetches rows *after* the view was
+ * built: a row that arrives on a click has to be given its link by the same
+ * rule as one that was there from the start, and a second reading of that rule
+ * beside this one is exactly the divergence `withLinks` exists to prevent. So
+ * `childrenOf` calls this and the section pass calls it too.
+ */
+export function linked(row: RunRow): RunRow {
+	return {
+		...row,
+		link: linkOf(row),
+		children: row.children?.map(linked)
+	};
+}
+
+function linkOf(row: RunRow): RunLink | undefined {
+	// Set outright by the section that knows what it is about (UX-6), and then
+	// it wins: a changed value has no range and no rule of its own, and its
+	// answer is a view rather than a place.
+	if (row.link) {
+		return row.link;
+	}
+	if (row.range) {
+		return { on: 'label', kind: 'reveal', range: row.range };
+	}
+	return row.rule && row.ruleAt
+		? { on: row.ruleAt, kind: 'revealRule', rule: row.rule }
+		: undefined;
 }
 
 /**
@@ -720,6 +779,9 @@ function valueSections(
 				// Two levels: the write and what it was computed out of. Deeper would
 				// unfold a whole chain the reader has not asked to follow yet, and the
 				// point of opening at all is that the first answer is on screen.
+				// A row still to be fetched (UX-3) is opened all the same — a renderer
+				// that can fetch does so on the way in, which is why the section is
+				// drawn open in the first place.
 				return opened(contested ? { ...row, note: 'eindwaarde' } : row, 2);
 			})
 			// **Where no rule wrote it, the question changes** and so does the
@@ -983,6 +1045,12 @@ function writeRow(
 		// **The periods first, where the write was time-dependent**: they are what
 		// the rule wrote, and the steps and operands below them are how it got
 		// there. A scalar write states its value on the row itself and has none.
+		// **Not fetched yet, so it says which write it is** (UX-3). `more` is the
+		// server's word for "there was something here"; without it a write that
+		// genuinely read nothing would grow a chevron that opens onto nothing.
+		...(one.operands === undefined && one.more
+			? { needs: needsOf('schrijving', one) }
+			: {}),
 		children: [
 			...segmentRows(one.segments ?? []),
 			// The rule and the instance travel down with the steps (UX-4): an
@@ -990,9 +1058,69 @@ function writeRow(
 			// written in and about the instance the write was about, and a step
 			// knows neither — it is one node of an expression.
 			...stepRows(one.steps, { rule: one.rule, instance: one.instance }),
-			...one.operands.map(operand => operandRow(operand, produced, seen))
+			...(one.operands ?? []).map(operand => operandRow(operand, produced, seen))
 		]
 	};
+}
+
+/** The four fields that identify one write in a trace. */
+function needsOf(
+	kind: RunNeeds['kind'],
+	one: { rule: string; target: string; instance?: string; coordinates?: string[] }
+): RunNeeds {
+	return {
+		kind,
+		rule: one.rule,
+		target: one.target,
+		...(one.instance === undefined ? {} : { instance: one.instance }),
+		...(one.coordinates?.length ? { coordinates: [...one.coordinates] } : {})
+	};
+}
+
+/**
+ * The children of a row whose write has just been fetched (UX-3).
+ *
+ * Exported so the renderer can fill a row in place instead of rebuilding the
+ * view around it — a redraw would fold away everything the reader had opened on
+ * the way down, which for a feature whose whole point is following a chain is
+ * the one thing it must not do. What it does *not* do is decide anything new:
+ * it is `writeRow`'s own children and `operandRow`'s own children, reached from
+ * outside.
+ *
+ * A run that has been dropped since it was drawn answers with one row saying so
+ * rather than with none, which is the same rule the rest of this module follows:
+ * an empty answer reads as a write that computed nothing.
+ */
+export function childrenOf(
+	needs: RunNeeds,
+	trace: readonly RunDetail['trace'][number][],
+	gone = false
+): RunRow[] {
+	if (gone) {
+		return [linked({
+			kind: 'note',
+			label: 'Deze uitvoering is niet meer beschikbaar — voer opnieuw uit.',
+			link: { on: 'label', kind: 'opnieuw' }
+		})];
+	}
+	const found = trace.find(one =>
+		one.rule === needs.rule
+		&& target(one.target, one.coordinates) === target(needs.target, needs.coordinates)
+		&& (one.instance ?? '') === (needs.instance ?? ''));
+	if (!found || found.operands === undefined) {
+		return [{ kind: 'note', label: '(deze schrijving is niet meer op te halen)' }];
+	}
+
+	const produced = producedBy({ trace: [...trace] } as RunDetail);
+	const rows = needs.kind === 'operand'
+		// The eager chain nested an operand under the operands of the rule behind
+		// it, and no further — so this is the same reading, one fetch later.
+		? found.operands.map(each => operandRow(each, produced, []))
+		: writeRow(found, false, produced).children ?? [];
+	// **Through the same link pass a section's rows go through.** A row that
+	// arrives on a click is a row like any other, and one whose rule does not
+	// open is the kind of difference nobody notices until they need it.
+	return rows.map(linked);
 }
 
 /**
@@ -1044,7 +1172,7 @@ function stepRows(
  * reader to wonder whether it was cut short.
  */
 function operandRow(
-	operand: RunDetail['trace'][number]['operands'][number],
+	operand: NonNullable<RunDetail['trace'][number]['operands']>[number],
 	produced: Map<string, RunDetail['trace'][number]> | undefined,
 	seen: readonly string[]
 ): RunRow {
@@ -1068,6 +1196,15 @@ function operandRow(
 	// was handed is worse than one that stops early.
 	if (!behind || seen.includes(key)) {
 		return attributed;
+	}
+	// **Lean, so it says which write is behind it** (UX-3): the entry is in the
+	// trace, its operands are not, and following the chain one step further is a
+	// fetch rather than a lookup. The eager reading below is what a complete
+	// trace still gets, unchanged.
+	if (behind.operands === undefined) {
+		return behind.more
+			? { ...attributed, needs: needsOf('operand', behind) }
+			: attributed;
 	}
 	return {
 		...attributed,

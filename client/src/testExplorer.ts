@@ -19,6 +19,7 @@ import { WireRange } from './model';
 const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
 const EXPAND_REQUEST = 'regelspraak/expandCollection';
+const RUN_DETAIL_REQUEST = 'regelspraak/runDetail';
 
 /**
  * What a failing expectation's message is tagged with, so UX-1's **Leg uit** can
@@ -97,6 +98,8 @@ interface TestFault {
  * written in.
  */
 export interface RunDetail {
+	/** What this run is called, so pieces of it can be fetched later (UX-3). */
+	runId?: string;
 	rekendatum: string;
 	/** The same date as a day number, for the cursor a track draws (UX-5). */
 	rekendatumDay?: number;
@@ -212,7 +215,15 @@ export interface RunTraceEntry {
 	value?: string;
 	/** The periods written, where the write was time-dependent ([E-33]). */
 	segments?: RunSegment[];
-	operands: RunOperand[];
+	/**
+	 * What the rule read — **absent on a lean entry** (UX-3).
+	 *
+	 * This and `steps` are the bulk of a trace's bytes and matter for the one
+	 * write a reader is chasing, so a detailed run names every write and carries
+	 * the inside of none of them. Absent with `more` set means one fetch away;
+	 * absent without it means the rule genuinely read nothing.
+	 */
+	operands?: RunOperand[];
 	/** The arithmetic between the operands and the value (§X7 stage 3). */
 	steps?: RunStep[];
 	/**
@@ -222,6 +233,20 @@ export interface RunTraceEntry {
 	 * step carries, so the two cannot say the same row two ways.
 	 */
 	row?: string;
+	/** Whether there is something behind this write that was not sent (UX-3). */
+	more?: boolean;
+}
+
+/** UX-3 — which write to fetch, in the four fields that identify one. */
+export type RunDetailSelector =
+	| { kind: 'schrijving'; rule: string; target: string; instance?: string; coordinates?: string[] }
+	| { kind: 'waarde'; attribute: string; instance?: string }
+	| { kind: 'alles' };
+
+export interface RunDetailAnswer {
+	/** The run is no longer retained — one row says so rather than none. */
+	gone?: boolean;
+	entries: RunTraceEntry[];
 }
 
 /**
@@ -481,6 +506,32 @@ export class TestExplorer {
 		});
 		this.remember(uri, caseName, outcome);
 		return outcome;
+	}
+
+	/**
+	 * UX-3 — the inside of one write of a run that has already happened.
+	 *
+	 * **It runs nothing**, which is the whole of what this buys: the alternative
+	 * to asking for a piece of a retained run is running the model again, and
+	 * that answers about whatever the reader has typed since the panel was drawn.
+	 * A run that has been dropped answers `gone` rather than emptily.
+	 */
+	async runDetail(
+		runId: string,
+		want: RunDetailSelector
+	): Promise<RunDetailAnswer | undefined> {
+		const client = this.client;
+		if (!client) {
+			return undefined;
+		}
+		try {
+			return await client.sendRequest<RunDetailAnswer>(RUN_DETAIL_REQUEST, { runId, want });
+		} catch {
+			// A server that is starting, restarting or gone answers nothing, and a
+			// row that says it could not be fetched is better than an exception in
+			// a message handler.
+			return undefined;
+		}
 	}
 
 	/**

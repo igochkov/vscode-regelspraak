@@ -12,8 +12,10 @@ import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
 import { RunPanels, ruleLocation, trackOf } from '../runPanel';
-import { RunFocus, RunSection, buildView } from '../runView';
-import { CollectionElements, RunDetail, TestRun } from '../testExplorer';
+import { RunFocus, RunRow, RunSection, buildView, childrenOf } from '../runView';
+import {
+	CollectionElements, RunDetail, RunDetailAnswer, RunDetailSelector, TestRun
+} from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
 
@@ -30,6 +32,11 @@ interface Api {
 			caseName: string,
 			what: { rule: string; instance?: string; expression: string }
 		): Promise<CollectionElements | undefined>;
+		/** UX-3 — the tenth, likewise. */
+		runDetail(
+			runId: string,
+			want: RunDetailSelector
+		): Promise<RunDetailAnswer | undefined>;
 	};
 }
 
@@ -46,11 +53,34 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			.activate() as Api;
 	});
 
-	/** A real run of a real testgeval, which is what the view is built from. */
+	/**
+	 * A real run of a real testgeval, which is what the view is built from.
+	 *
+	 * **Filled in** (UX-3): the trace crosses lean, and everything this suite
+	 * asserts about what is *inside* a write is what a reader gets after opening
+	 * one. Doing it here rather than per test also makes this the suite's own
+	 * check that the tenth method works across the repository boundary — the
+	 * assertions below fail the moment it stops answering.
+	 */
 	async function run(caseName: string): Promise<TestRun> {
 		const outcome = await api.testExplorer.runForDetail(testsUri.toString(), caseName);
 		assert.ok(outcome, `${caseName} leverde geen uitkomst op`);
+		await fill(outcome);
 		return outcome;
+	}
+
+	/** Every lean write of a run, fetched and merged — what the text form does. */
+	async function fill(outcome: TestRun): Promise<void> {
+		const detail = outcome.detail;
+		if (!detail?.runId) {
+			return;
+		}
+		const answer = await api.testExplorer.runDetail(detail.runId, { kind: 'alles' });
+		assert.ok(answer && !answer.gone, 'de bewaarde run hoort op te halen te zijn');
+		const key = (one: RunDetail['trace'][number]): string =>
+			`${one.instance ?? ''}|${one.rule}|${one.target}`;
+		const fetched = new Map(answer.entries.map(one => [key(one), one]));
+		detail.trace = detail.trace.map(one => fetched.get(key(one)) ?? one);
 	}
 
 	const textOf = async (caseName: string, focus?: RunFocus): Promise<string> =>
@@ -707,6 +737,133 @@ suite('Uitkomst van een run (X4, W3)', () => {
 		});
 	});
 
+	// UX-3 — de trace komt mager mee en wordt aangevuld op de klik die haar
+	// opent. Er is geen *modus*: welke van de twee vormen een rij krijgt volgt
+	// uit de data, zodat `buildView` één pad houdt en een test het verschil kan
+	// lezen.
+	suite('de trace op afroep (UX-3)', () => {
+		const entry = (extra: Partial<RunDetail['trace'][number]> = {}) => ({
+			instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+			value: '45 euro', ...extra
+		});
+
+		const withTrace = (trace: RunDetail['trace']): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+			detail: {
+				runId: 'run-1', rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace
+			}
+		});
+
+		const traceRows = (run: TestRun): RunRow[] =>
+			buildView('x.test.rgs', run).sections.find(one => one.title.startsWith('Trace'))!.rows;
+
+		test('een magere schrijving zegt welke schrijving zij is', () => {
+			const rows = traceRows(withTrace([entry({ more: true })]));
+			assert.deepEqual(rows[0].needs, {
+				kind: 'schrijving', rule: 'bepaal contributie',
+				target: 'contributie', instance: 'Noor'
+			});
+			assert.deepEqual(rows[0].children, []);
+		});
+
+		test('een schrijving die niets las vraagt niets op', () => {
+			// `more` is het woord van de server voor "hier zat iets": zonder dat zou
+			// een schrijving die werkelijk niets las een pijltje krijgen dat op
+			// niets opengaat.
+			const rows = traceRows(withTrace([entry({ operands: [] })]));
+			assert.equal(rows[0].needs, undefined);
+			const lean = traceRows(withTrace([entry()]));
+			assert.equal(lean[0].needs, undefined);
+		});
+
+		test('een complete schrijving houdt haar kinderen, zoals altijd', () => {
+			const rows = traceRows(withTrace([entry({
+				operands: [{ label: 'basiscontributie', instance: 'Noor', value: '50 euro' }],
+				steps: [{ text: '50 min 5', value: '45 euro' }]
+			})]));
+			assert.equal(rows[0].needs, undefined);
+			assert.deepEqual(rows[0].children?.map(one => one.kind), ['step', 'operand']);
+		});
+
+		test('een operand met een magere schrijving erachter vraagt die op', () => {
+			// De ketting één stap verder volgen is een ophaalslag in plaats van een
+			// opzoeking, en de rij zegt welke schrijving zij nodig heeft.
+			const rows = traceRows(withTrace([
+				entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				}),
+				{
+					instance: 'Noor', target: 'basiscontributie', rule: 'bepaal basiscontributie',
+					value: '50 euro', more: true
+				}
+			]));
+			const operand = rows[0].children!.find(one => one.kind === 'operand')!;
+			assert.deepEqual(operand.needs, {
+				kind: 'operand', rule: 'bepaal basiscontributie',
+				target: 'basiscontributie', instance: 'Noor'
+			});
+			assert.equal(operand.children, undefined);
+		});
+
+		test('childrenOf leest de opgehaalde schrijving, in beide lezingen', () => {
+			const fetched: RunDetail['trace'] = [entry({
+				operands: [{ label: 'basiscontributie', instance: 'Noor', value: '50 euro' }],
+				steps: [{ text: '50 min 5', value: '45 euro' }]
+			})];
+			// Een schrijvingsrij toont wat de regel deed én waaruit; een
+			// operandrij toont alleen de operanden van de regel erachter, wat
+			// precies is wat de gretige ketting deed.
+			assert.deepEqual(
+				childrenOf({ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' }, fetched)
+					.map(one => one.kind),
+				['step', 'operand']);
+			assert.deepEqual(
+				childrenOf({ kind: 'operand', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' }, fetched)
+					.map(one => one.kind),
+				['operand']);
+		});
+
+		test('een opgehaalde rij krijgt dezelfde doorklik als een gewone', () => {
+			// Een rij die op een klik binnenkomt is een rij als alle andere, en een
+			// waarvan de regel niet opengaat is het soort verschil dat niemand
+			// opmerkt tot hij het nodig heeft.
+			const rows = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' },
+				[entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				})]);
+			const operand = rows.find(one => one.kind === 'operand')!;
+			assert.deepEqual(operand.link,
+				{ on: 'beside', kind: 'revealRule', rule: 'bepaal basiscontributie' });
+		});
+
+		test('een run die weg is zegt dat, in plaats van niets', () => {
+			// Alleen het ophalen kan ontdekken dat een bewaarde run niet meer
+			// bewaard wordt; een lege lijst zou lezen als een schrijving die niets
+			// berekende.
+			const gone = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie' }, [], true);
+			assert.equal(gone.length, 1);
+			assert.match(gone[0].label, /niet meer beschikbaar/);
+			// En hij biedt de weg terug aan: een lezer die hier belandt heeft geen
+			// voor de hand liggende manier om opnieuw uit te voeren.
+			assert.deepEqual(gone[0].link, { on: 'label', kind: 'opnieuw' });
+			// En een schrijving die er wél is maar nog steeds mager zegt het ook.
+			const stale = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' },
+				[entry({ more: true })]);
+			assert.equal(stale.length, 1);
+			assert.equal(stale[0].kind, 'note');
+		});
+	});
+
 	// UX-6 — wat er veranderd is tussen twee uitvoeringen van één testgeval.
 	//
 	// Alles wat vergeleken wordt staat al op de draad, dus dit stelt samen en
@@ -833,6 +990,9 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			this.timeout(60000);
 			const outcome = await api.testExplorer.runForDetail(vestigingen.toString(), CASE);
 			assert.ok(outcome?.detail, 'het testgeval hoort te draaien');
+			// UX-3: de trace komt mager mee, en de stappen zijn wat een lezer krijgt
+			// als hij de schrijving opent.
+			await fill(outcome);
 			const write = outcome.detail.trace.find(one => one.target === 'ledenaantal');
 			assert.ok(write, 'de vestigingsregel hoort te vuren');
 			const counted = (write.steps ?? []).find(one => one.expand);

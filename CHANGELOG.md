@@ -25,6 +25,21 @@ names; in a rule file it is about every instance the run has. Where no rule wrot
 the value, the panel states which of the recorded facts holds instead of guessing
 why. The editor entry appears only where there is an answer.
 
+**De trace komt op afroep.** Een uitgebreide uitvoering noemt nu elke schrijving
+maar draagt de binnenkant van geen enkele mee — de rekenstappen en de operanden
+zijn het grootste deel van een trace en tellen voor de ene schrijving die je aan
+het najagen bent. Ze komen op de klik die de rij opent, uit de uitvoering die het
+paneel al tekende. Je merkt er weinig van: een rij vouwt open zoals altijd en
+zegt heel even *ophalen…*. Wat het wél verandert is dat een klik in het paneel
+over **die** uitvoering gaat en niet over een verse — tot nu toe voerde elk
+gebaar het model opnieuw uit, dus een klik antwoordde over het model zoals je het
+intussen had getypt. Op de modellen die hier draaien scheelt het 33 tot 52% aan
+overdracht per uitvoering; op een model met duizenden instanties is het het
+verschil tussen megabytes en niet. **Als tekst openen** haalt eerst alles op, want
+een tekstdocument kan niet nahalen terwijl je leest — de tekstvorm blijft dus
+compleet, en blijft wat je in een ticket plakt. Is een uitvoering niet meer
+beschikbaar, dan zegt de rij dat en biedt aan het testgeval opnieuw uit te voeren.
+
 **Een verzameling uitklappen.** `de som van de premies van alle deelnemers`
 over vijfhonderd instanties, een klein beetje verkeerd, is de bug waar je een
 middag mee kwijt bent: de som staat in de trace en het element dat de
