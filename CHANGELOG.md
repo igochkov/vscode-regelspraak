@@ -25,6 +25,23 @@ names; in a rule file it is about every instance the run has. Where no rule wrot
 the value, the panel states which of the recorded facts holds instead of guessing
 why. The editor entry appears only where there is an answer.
 
+**Waarom leeg?** — *leeg* is the commonest confusion and has five causes with
+five different fixes, and the run recorded all of them separately. Where no rule
+wrote the value you asked about, **Leg uit** now answers with a verdict list
+instead of a derivation: one row per rule that could have filled it, saying what
+that rule did — *overgeslagen*, with the criterion that decided and the values it
+read; *geen regelversie geldig op 15-06-2027 (versies: t/m 2025, vanaf 2028)*;
+*faalde: deling door leeg*; or *niet op deze instantie toegepast*. Where **no
+rule writes the attribute at all** it says so plainly, with the note that a
+`Gegeven` is then the only possible source — very often the actual bug, and the
+one case a run alone could never diagnose. The fifth cause, an operand that was
+leeg, leaves a write behind and is answered by the derivation, which shows that
+operand.
+
+A rule that has **no regelversie covering the rekendatum** used to be indis-
+tinguishable from a rule that simply fired nowhere; the run records it now, with
+the periods the rule does have.
+
 **And a decision table now says what it read.** A conclusion cell is usually a
 literal, so a table's write recorded no operands and no arithmetic — the one
 write in a model you could not open, and the derivation stopped there. It now

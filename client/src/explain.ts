@@ -69,6 +69,8 @@ export interface ExplainTarget {
 	attribute: string;
 	kind: 'attribuut' | 'kenmerk';
 	instance?: string;
+	/** Every rule that writes the slot, where `detail` asked (UX-2). */
+	writers?: string[];
 }
 
 /**
@@ -153,7 +155,11 @@ export class Explain implements Disposable {
 				'Zet de cursor op een waarde in een regel of in een testset.');
 			return;
 		}
-		const target = await this.targetAt(site.uri, site.position);
+		// **With detail**, unlike the gate: UX-2's verdict list needs the rules that
+		// *could* have written the slot, which a run cannot supply — it records what
+		// each rule did, so it cannot tell "no rule writes this attribute" from "the
+		// rule that writes it was never reached". The gate asks the cheap question.
+		const target = await this.targetAt(site.uri, site.position, true);
 		if (!target) {
 			void window.showInformationMessage(
 				'Op deze plek staat geen waarde waarvan een uitvoering de afleiding kent.');
@@ -175,7 +181,8 @@ export class Explain implements Disposable {
 		await this.panels.show(Uri.parse(where.uri), run, {
 			kind: 'waarde',
 			attribute: target.attribute,
-			...(target.instance === undefined ? {} : { instance: target.instance })
+			...(target.instance === undefined ? {} : { instance: target.instance }),
+			...(target.writers === undefined ? {} : { writers: target.writers })
 		});
 	}
 
@@ -200,7 +207,11 @@ export class Explain implements Disposable {
 		return chosen ? { uri: chosen.uri, case: chosen.case } : undefined;
 	}
 
-	private async targetAt(uri: Uri, position: Position): Promise<ExplainTarget | undefined> {
+	private async targetAt(
+		uri: Uri,
+		position: Position,
+		detail = false
+	): Promise<ExplainTarget | undefined> {
 		const client = this.client;
 		if (!client) {
 			void window.showWarningMessage('Er draait geen RegelSpraak-taalserver.');
@@ -209,7 +220,8 @@ export class Explain implements Disposable {
 		try {
 			return await client.sendRequest<ExplainTarget | null>(EXPLAIN_TARGET_REQUEST, {
 				textDocument: { uri: uri.toString() },
-				position: { line: position.line, character: position.character }
+				position: { line: position.line, character: position.character },
+				...(detail ? { detail: true } : {})
 			}) ?? undefined;
 		} catch {
 			// A server that is starting, restarting or gone answers nothing.

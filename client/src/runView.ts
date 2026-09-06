@@ -33,7 +33,7 @@ import { RunDetail, RunStep, TestRun } from './testExplorer';
 export type RunRowKind =
 	| 'pass' | 'fail' | 'fault' | 'inconsistency'
 	| 'given' | 'derived' | 'segment'
-	| 'write' | 'operand' | 'step' | 'fired' | 'note';
+	| 'write' | 'operand' | 'step' | 'fired' | 'skipped' | 'note';
 
 export interface RunRow {
 	kind: RunRowKind;
@@ -127,7 +127,23 @@ export interface RunSection {
  */
 export type RunFocus =
 	| { kind: 'regel'; rule: string }
-	| { kind: 'waarde'; attribute: string; instance?: string };
+	| {
+		kind: 'waarde';
+		attribute: string;
+		instance?: string;
+		/**
+		 * Every rule that writes this slot, from `regelspraak/explainTarget`
+		 * (UX-2) — the one half of the emptiness diagnosis a run cannot supply.
+		 *
+		 * On the *focus* rather than as a fourth argument, because it is part of
+		 * what the question is about: the view is about a slot, and which rules
+		 * were entitled to fill it is a fact about that slot and not about the
+		 * run. Absent where nothing asked — an older caller, or a server that did
+		 * not answer — and then the diagnosis names no candidates rather than
+		 * concluding there are none.
+		 */
+		writers?: string[];
+	};
 
 export interface RunView {
 	/** The tab's name: what the view is about, else the testgeval. */
@@ -168,7 +184,7 @@ export function buildView(fileName: string, run: TestRun, focus?: RunFocus): Run
 	if (focus && run.detail) {
 		view.sections.push(...(focus.kind === 'regel'
 			? ruleSections(focus.rule, run.detail)
-			: valueSections(focus, run.detail)));
+			: valueSections(focus, run)));
 	}
 
 	view.sections.push({
@@ -400,9 +416,10 @@ function slotLabel(focus: { attribute: string; instance?: string }): string {
  * absent would read as a run that failed.
  */
 function valueSections(
-	focus: { attribute: string; instance?: string },
-	detail: RunDetail
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
+	run: TestRun
 ): RunSection[] {
+	const detail = run.detail!;
 	const mine = <T extends { instance?: string }>(one: T): boolean =>
 		focus.instance === undefined || one.instance === focus.instance;
 	const writes = detail.trace.filter(one => one.target === focus.attribute && mine(one));
@@ -419,7 +436,9 @@ function valueSections(
 	// once, `eindwaarde` states the obvious and reads as a distinction being drawn.
 	const contested = writes.length > lastPerInstance.size;
 	return [{
-		title: `Afleiding van '${slotLabel(focus)}'`,
+		title: writes.length > 0
+			? `Afleiding van '${slotLabel(focus)}'`
+			: diagnosisTitle(focus, detail),
 		rows: writes.length > 0
 			? writes.map(one => {
 				const row = writeRow(one, true, producers);
@@ -431,52 +450,172 @@ function valueSections(
 				// point of opening at all is that the first answer is on screen.
 				return opened(contested ? { ...row, note: 'eindwaarde' } : row, 2);
 			})
-			: terminal(focus, detail)
+			// **Where no rule wrote it, the question changes** and so does the
+			// section: UX-2's verdict list, which is what "the view hands over to
+			// UX-2 when the value is leeg" means here. The hand-over point is
+			// exactly *there is no write to show* — and that is not a narrower
+			// reading of leeg but a sharper one, since the four causes a run can
+			// distinguish (no writer, skipped, no valid version, faulted) all leave
+			// no write, while the fifth (an operand was leeg and the operator
+			// propagated it) leaves one and is answered by the derivation above.
+			: emptiness(focus, run)
 	}];
 }
 
 /**
- * What the run records about a slot no rule wrote.
+ * UX-2 — *Waarom is deze waarde leeg?*, as a verdict list.
  *
- * Three cases and they are three different bugs: a value the testgeval *gave*
- * (so a rule was expected to overwrite it and none did), a value in the
- * situation that nothing derived, and a slot the run never had at all — which on
- * a `Verwacht` line usually means the expectation names an instance or an
- * attribute the model does not put together.
+ * **Not a tree, because the answer is an enumeration**: leeg has five distinct
+ * causes with five distinct fixes, and what a reader needs is one row per rule
+ * that *could* have filled the slot, each saying what that rule actually did.
+ * Every row renders a fact the run or the model recorded; none is an inference
+ * (IR-4), and a rule the run says nothing about says exactly that rather than
+ * being given a likely reason.
+ *
+ * The four causes that leave no write are all here — no rule writes it at all,
+ * the rule was skipped, no regelversie covered the rekendatum, the rule
+ * faulted. The fifth, an operand that was leeg and an operator that propagated
+ * it, leaves a write behind and is answered by the derivation section instead,
+ * which shows that operand with its value.
+ *
+ * **The candidates come from the model and the verdicts from the run**, and
+ * that split is the whole reason this needed a server change: a run records
+ * what each rule *did*, so it cannot distinguish "no rule writes this
+ * attribute" — very often the actual bug — from "the rule that writes it was
+ * never reached".
  */
-function terminal(
-	focus: { attribute: string; instance?: string },
+function emptiness(
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
+	run: TestRun
+): RunRow[] {
+	const detail = run.detail!;
+	const known = stated(focus, detail);
+	const writers = focus.writers;
+	if (writers === undefined) {
+		// Nothing asked, so nothing is concluded: an empty list here would read as
+		// "no rule writes this", which is a finding and not a missing answer.
+		return known;
+	}
+	if (writers.length === 0) {
+		return [...known, {
+			kind: 'note',
+			label: 'Geen enkele regel schrijft dit attribuut — alleen een Gegeven kan het vullen.'
+		}];
+	}
+	return [...known, ...writers.map(rule => verdict(rule, focus, run))];
+}
+
+/** What the run holds about the slot itself, where it holds anything. */
+function stated(
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
 	detail: RunDetail
 ): RunRow[] {
 	const value = detail.values.find(one =>
 		one.attribute === focus.attribute
 		&& (focus.instance === undefined || one.instance === focus.instance));
+	if (value && !value.derived) {
+		// A given value is not leeg, and a heading that called it leeg would be
+		// false — `diagnosisTitle` asks the same question one level up.
+		return [valueRow(value, false, new Map())];
+	}
 	const kenmerk = detail.kenmerken.find(one =>
 		one.kenmerk === focus.attribute
 		&& (focus.instance === undefined || one.instance === focus.instance));
-	if (value) {
-		return [
-			valueRow(value, value.derived, new Map()),
-			{
-				kind: 'note',
-				label: value.derived
-					? '(geen schrijving vastgelegd voor deze waarde)'
-					: '(gegeven in dit testgeval — geen regel heeft deze waarde geschreven)'
-			}
-		];
+	return kenmerk && !kenmerk.derived
+		? [{ kind: 'given', label: slotLabel(focus), note: 'gegeven in dit testgeval' }]
+		: [];
+}
+
+/** Whether the run holds a value for the slot that nothing derived. */
+function isGiven(
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
+	detail: RunDetail
+): boolean {
+	return stated(focus, detail).length > 0;
+}
+
+function diagnosisTitle(
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
+	detail: RunDetail
+): string {
+	return isGiven(focus, detail)
+		? `Waarom '${slotLabel(focus)}' niet is afgeleid`
+		: `Waarom is '${slotLabel(focus)}' leeg?`;
+}
+
+/**
+ * What one candidate writer did, in the order the run can answer it.
+ *
+ * **A fault first**, because a rule that failed did not merely stay quiet; then
+ * the version, which is a fact about the rule and not about this instance; then
+ * the skip, which is. What is left is a rule the run says nothing about, and it
+ * says so — a reader who is told "not applied to this instance" knows to look at
+ * the rule's subject, where a reader given a guess would look at the wrong
+ * thing.
+ *
+ * The link is the **rule**, which is all the run has: what "writes" a rule is
+ * its declaration, and the finer targets §UX-2 sketches — the criterion's own
+ * line, the version headers — are ranges no run carries.
+ */
+function verdict(
+	rule: string,
+	focus: Extract<RunFocus, { kind: 'waarde' }>,
+	run: TestRun
+): RunRow {
+	const detail = run.detail!;
+	const mine = (one: { instance?: string }): boolean =>
+		focus.instance === undefined || one.instance === undefined
+		|| one.instance === focus.instance;
+	const row = { label: rule, rule, ruleAt: 'label' as const };
+
+	const fault = run.faults.find(one => one.rule === rule && mine(one));
+	if (fault) {
+		return { ...row, kind: 'fault', note: `faalde: ${fault.message}` };
 	}
-	if (kenmerk) {
-		return [{
-			kind: 'note',
-			label: kenmerk.derived
-				? '(geen toekenning vastgelegd voor dit kenmerk)'
-				: '(gegeven in dit testgeval — geen regel heeft dit kenmerk toegekend)'
-		}];
+	const skips = (detail.skipped ?? []).filter(one => one.rule === rule && mine(one));
+	const version = skips.find(one => one.reason === 'geldigheid');
+	if (version) {
+		const have = (version.versions ?? []).join(', ');
+		return {
+			...row,
+			kind: 'skipped',
+			note: `geen regelversie geldig op ${detail.rekendatum}`
+				+ (have ? ` (versies: ${have})` : '')
+		};
 	}
-	return [{
-		kind: 'note',
-		label: '(niets — deze uitvoering kent deze waarde niet)'
-	}];
+	const skipped = skips.find(one => one.reason === undefined);
+	if (skipped) {
+		return {
+			...row,
+			kind: 'skipped',
+			note: `overgeslagen: ${why(skipped)}`,
+			// What it read, so the threshold and the value are both on screen —
+			// which is the next question after *which criterion*.
+			...(skipped.operands?.length
+				? { children: skipped.operands.map(one => operandRow(one, undefined, [])) }
+				: {})
+		};
+	}
+	return {
+		...row,
+		kind: 'skipped',
+		note: 'niet op deze instantie toegepast'
+	};
+}
+
+/**
+ * Which criterion decided a skip.
+ *
+ * **The last one**, because §13.4.8's quantifiers short-circuit and the run
+ * records what it evaluated and no further — so the criterion it stopped at is
+ * the one that decided. A single condition carries none: the rule's own sentence
+ * *is* its criterion, and quoting it back under its own name says nothing, which
+ * is where `Inconsistency.criteria` already draws the line.
+ */
+function why(skipped: NonNullable<RunDetail['skipped']>[number]): string {
+	const criteria = skipped.criteria ?? [];
+	const decided = [...criteria].reverse().find(one => !one.holds);
+	return decided ? `'${decided.text}' was onwaar` : 'de voorwaarde hield niet';
 }
 
 /**

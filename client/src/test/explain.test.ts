@@ -220,8 +220,8 @@ suite('Leg uit (UX-1)', () => {
 		});
 
 		// Elke rij is een vastgelegd feit; wat de run níet weet wordt gezegd en
-		// niet afgeleid (IR-4). De volledige diagnose is UX-2 en staat hier niet.
-		test('zegt van een gegeven waarde dat geen regel haar schreef', () => {
+		// niet afgeleid (IR-4).
+		test('toont van een gegeven waarde wat het testgeval gaf', () => {
 			const text = renderText(buildView('x.test.rgs', ran({
 				values: [{
 					instance: 'Sam', attribute: 'inschrijfdatum', derived: false,
@@ -229,17 +229,16 @@ suite('Leg uit (UX-1)', () => {
 				}]
 			}), onValue('inschrijfdatum', 'Sam')));
 			assert.match(text, /12-03-1985/);
-			assert.match(text,
-				/\(gegeven in dit testgeval — geen regel heeft deze waarde geschreven\)/);
+			// De kop stelt de vraag; hem leeg noemen zou onwaar zijn.
+			assert.match(text, /Waarom 'Sam · inschrijfdatum' niet is afgeleid/);
 		});
 
-		test('zegt van een waarde die de run niet kent dat hij haar niet kent', () => {
+		test('houdt een afdeling waar de run niets over de waarde weet', () => {
 			// Een afdeling die simpelweg ontbreekt leest als een mislukte run, wat
 			// een ander en erger bericht is.
 			const text = renderText(
 				buildView('x.test.rgs', ran({}), onValue('bestaat niet', 'Noor')));
-			assert.match(text, /Afleiding van 'Noor · bestaat niet'/);
-			assert.match(text, /\(niets — deze uitvoering kent deze waarde niet\)/);
+			assert.match(text, /Waarom is 'Noor · bestaat niet' leeg\?/);
 		});
 
 		test('laat de hele run eronder staan, als context', () => {
@@ -247,12 +246,108 @@ suite('Leg uit (UX-1)', () => {
 			// van de run ís hoe het getal erboven tot stand kwam.
 			const titles = buildView('x.test.rgs', ran({
 				values: [{ instance: 'Noor', attribute: 'contributie', derived: true, value: '25,00 EUR' }],
+				trace: [wrote('bepaal contributie', '25,00 EUR')],
 				firedRules: [{ rule: 'bepaal contributie', count: 1 }]
 			}), onValue('contributie', 'Noor')).sections.map(one => one.title);
 			assert.equal(titles[0], "Afleiding van 'Noor · contributie'");
 			for (const heading of ['Verwachtingen', 'Afgeleid', 'Gevuurde regels']) {
 				assert.ok(titles.includes(heading), titles.join(' | '));
 			}
+		});
+	});
+
+	// UX-2 — *Waarom is deze waarde leeg?* Niet een boom maar een oordeelslijst,
+	// want het antwoord is een opsomming: leeg heeft vijf oorzaken met vijf
+	// verschillende oplossingen. Elke rij geeft een vastgelegd feit weer; geen
+	// enkele is een gevolgtrekking (IR-4).
+	suite('waarom leeg (UX-2)', () => {
+		const empty = (
+			detail: Partial<RunDetail>,
+			writers?: string[],
+			faults: TestRun['faults'] = []
+		) => buildView('x.test.rgs', { ...ran(detail), faults },
+			{ kind: 'waarde', attribute: 'contributie', instance: 'Noor', ...(writers ? { writers } : {}) })
+			.sections[0];
+
+		test('vraagt de vraag waar geen enkele regel de waarde schreef', () => {
+			assert.equal(empty({}, []).title, "Waarom is 'Noor · contributie' leeg?");
+		});
+
+		test('noemt het eindoordeel waar geen regel het attribuut schrijft', () => {
+			// Heel vaak precies de fout, en juist het geval waarover de run niets
+			// te zeggen heeft — daarom komt deze helft uit het model.
+			assert.deepEqual(empty({}, []).rows.map(one => [one.kind, one.label]), [
+				['note', 'Geen enkele regel schrijft dit attribuut — alleen een Gegeven kan het vullen.']
+			]);
+		});
+
+		test('concludeert niets waar er niets gevraagd is', () => {
+			// Een lege lijst zou lezen als "geen regel schrijft dit", en dat is een
+			// bevinding en geen ontbrekend antwoord.
+			assert.deepEqual(empty({}, undefined).rows, []);
+		});
+
+		test('noemt per kandidaat wat die regel deed', () => {
+			const section = empty({
+				skipped: [
+					{
+						rule: 'Jeugdkorting', instance: 'Noor',
+						criteria: [
+							{ text: 'zijn lidmaatschapsduur is groter dan 1 jaar', holds: true },
+							{ text: 'zijn dienstjaren zijn groter dan 5', holds: false }
+						],
+						operands: [{ label: 'dienstjaren', instance: 'Noor', value: '3' }]
+					},
+					{ rule: 'Herziene contributie', reason: 'geldigheid', versions: ['t/m 2025', 'vanaf 2028'] }
+				]
+			}, ['Jeugdkorting', 'Herziene contributie', 'Naar rato', 'Niet toegepast'],
+			[{ rule: 'Naar rato', instance: 'Noor', message: 'deling door leeg (§6.5)', kind: 'fout' }]);
+
+			assert.deepEqual(section.rows.map(one => [one.kind, one.label, one.note]), [
+				// **Het beslissende criterium is het laatste**: §13.4.8 kort af, dus
+				// de run legt vast tot waar hij kwam en daar stopte het.
+				['skipped', 'Jeugdkorting', "overgeslagen: 'zijn dienstjaren zijn groter dan 5' was onwaar"],
+				['skipped', 'Herziene contributie',
+					'geen regelversie geldig op 01-01-2027 (versies: t/m 2025, vanaf 2028)'],
+				// Een regel die faalde bleef niet slechts stil, dus die komt eerst.
+				['fault', 'Naar rato', 'faalde: deling door leeg (§6.5)'],
+				// En waar de run niets zegt, zegt de rij dát — wie "niet toegepast"
+				// leest weet naar het onderwerp van de regel te kijken, waar een
+				// gegokte reden hem naar het verkeerde zou sturen.
+				['skipped', 'Niet toegepast', 'niet op deze instantie toegepast']
+			]);
+			// Wat de overgeslagen regel las staat eronder: de volgende vraag na
+			// *welk criterium* is *waaruit*.
+			assert.deepEqual(section.rows[0].children?.map(one => [one.label, one.value]),
+				[['Noor · dienstjaren', '3']]);
+			// Elke rij gaat naar de regel — het enige dat de run heeft.
+			assert.deepEqual(section.rows[1].link,
+				{ on: 'label', kind: 'revealRule', rule: 'Herziene contributie' });
+		});
+
+		test('stelt een gegeven waarde de andere vraag', () => {
+			// Een gegeven waarde is niet leeg, en een kop die haar zo noemde zou
+			// onwaar zijn.
+			const section = empty({
+				values: [{ instance: 'Noor', attribute: 'contributie', derived: false, value: '50 euro' }]
+			}, []);
+			assert.equal(section.title, "Waarom 'Noor · contributie' niet is afgeleid");
+			assert.equal(section.rows[0].kind, 'given');
+			assert.match(renderText(buildView('x.test.rgs', ran({
+				values: [{ instance: 'Noor', attribute: 'contributie', derived: false, value: '50 euro' }]
+			}), { kind: 'waarde', attribute: 'contributie', instance: 'Noor', writers: [] })),
+			/50 euro/);
+		});
+
+		test('laat de afleiding voorgaan waar een regel wél schreef', () => {
+			// De vijfde oorzaak — een lege operand die het operator doorgaf — laat
+			// juist wél een schrijving achter, en die verklaart zichzelf.
+			const section = buildView('x.test.rgs', ran({
+				trace: [wrote('bepaal contributie', 'leeg')]
+			}), { kind: 'waarde', attribute: 'contributie', instance: 'Noor', writers: ['bepaal contributie'] })
+				.sections[0];
+			assert.equal(section.title, "Afleiding van 'Noor · contributie'");
+			assert.equal(section.rows[0].kind, 'write');
 		});
 	});
 

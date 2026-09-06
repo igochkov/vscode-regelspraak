@@ -102,6 +102,34 @@ export interface RunDetail {
 	firedRules: { rule: string; count: number }[];
 	inconsistencies: RunInconsistency[];
 	trace: RunTraceEntry[];
+	/**
+	 * Rule x instance considered and not fired, with why (§X7 stage 1).
+	 *
+	 * On the wire since stage 1 and read by nothing until UX-2 — which is the
+	 * gap that made *why is this leeg* a question a reader had to answer by
+	 * hand, with the answer already in the reply.
+	 */
+	skipped?: RunSkipped[];
+}
+
+/** A rule that was considered and did not fire (§X7 stage 1) — see `protocol.ts`. */
+export interface RunSkipped {
+	rule: string;
+	instance?: string;
+	/** The bullets of a compound condition, in evaluation order; the last decided. */
+	criteria?: { text: string; holds: boolean }[];
+	operands?: RunOperand[];
+	steps?: RunStep[];
+	/**
+	 * Why it did not fire, where it is not the ordinary reason (UX-2).
+	 *
+	 * Absent means the condition did not hold. `geldigheid` means no regelversie
+	 * covered the rekendatum (§4.2), so the rule reached no instance at all and
+	 * carries neither criteria nor operands.
+	 */
+	reason?: 'geldigheid';
+	/** Its validity periods, in the model's words, where `reason` says so. */
+	versions?: string[];
 }
 
 /**

@@ -187,7 +187,12 @@ function glyph(row: RunRow): string {
 	if (row.kind === 'pass') {
 		return '✓ ';
 	}
-	return row.kind === 'fail' ? '✗ ' : '';
+	if (row.kind === 'fail') {
+		return '✗ ';
+	}
+	// A rule that did not fire is neither a pass nor a failure — it is a rule
+	// that was considered, which UX-2's verdict list is a whole column of.
+	return row.kind === 'skipped' ? '⊘ ' : '';
 }
 
 /**

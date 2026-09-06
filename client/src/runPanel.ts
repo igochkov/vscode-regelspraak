@@ -268,6 +268,10 @@ function page(cspSource: string, scriptNonce: string): string {
 	.pass .mark { color: var(--vscode-testing-iconPassed, var(--vscode-charts-green)); }
 	.fail .mark { color: var(--vscode-testing-iconFailed, var(--vscode-charts-red)); }
 	.fault .mark, .inconsistency .mark { color: var(--vscode-editorWarning-foreground); }
+	/* A rule that was considered and did not fire: the testing view's own colour
+	   for a test that is neither passed nor failed, so it reads as neither. */
+	.skipped .mark { color: var(--vscode-testing-iconSkipped, var(--vscode-descriptionForeground)); }
+	.skipped .note { color: var(--vscode-descriptionForeground); }
 	.label { color: var(--vscode-debugTokenExpression-name, var(--vscode-foreground)); }
 	.value {
 		color: var(--vscode-debugTokenExpression-number, var(--vscode-charts-blue));
@@ -372,7 +376,8 @@ function page(cspSource: string, scriptNonce: string): string {
 		mark.className = foldable ? 'mark disclosure' : 'mark';
 		mark.textContent = foldable ? '' : (row.kind === 'pass' ? '\\u2713'
 			: row.kind === 'fail' ? '\\u2717'
-			: row.kind === 'fault' || row.kind === 'inconsistency' ? '\\u26A0' : '');
+			: row.kind === 'fault' || row.kind === 'inconsistency' ? '\\u26A0'
+			: row.kind === 'skipped' ? '\\u2298' : '');
 		line.append(mark);
 
 		const on = where => row.link && row.link.on === where ? row.link : undefined;
