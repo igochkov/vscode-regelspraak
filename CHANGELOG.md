@@ -7,7 +7,60 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased]
+## [0.9.0] — Tables from outside the model, and the way into a run
+
+A model can now declare a table it does not contain. **`Gegevensbron`** is a
+GegevensSpraak declaration for an externally supplied table — its key columns
+marked `(sleutel)`, one value column — and a rule reads from it with
+`<waarde> uit <bron> bij <sleutel>, <sleutel> en <sleutel>`. The model states the
+*shape* and never the content: what the table holds is bound in a testset,
+either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
+or for the whole testset from a delivery on disk (`Gegevensbronnen` /
+`de tarieftabel  uit "externe-tabellen/tarieftabel.json"`), where the path names a
+manifest saying how the file is written. A run says which delivery it read. A
+lookup on a key the content does not carry is a `modelfout`, never `leeg`.
+
+**This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
+The specification declares how instances get their values from the input to be
+outside its scope (§9.3) and leaves it to the execution environment; this
+extension fills exactly that gap, is marked as such in the grammar, is optional,
+and changes nothing for a model that does not use it. `docs/FEATURES.md`
+describes it in full; the decision record is the server repository's [D-58].
+
+Also new: a **parameter with a timeline** (`Parameter … voor elke maand;`, §3.8)
+now takes several period lines in a testset and evaluates as the timeline it
+declares; `RS705` reports a time-dependent value written to an attribute the
+model keeps once; `RS960` reports overlapping periods while you type; and a
+testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
+rather than passed, and its run lens says `scenario uitvoeren`.
+
+**The checks that came with it, by code.** `RS121` — a `Gegevensbron` whose shape
+is wrong (no key marked, no value line, or more than one); `RS122` — a lookup
+naming a value the table does not have; `RS123` — the wrong number of keys;
+`RS124` — a table no rule anywhere reads (a warning, as an unused declaration is
+elsewhere); `RS125` — a key whose datatype or unit does not fit the axis it
+addresses, exact rather than convertible, because a key addresses a cell. In a
+testset, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
+of keys, a key stated twice. A lookup expression is typed as the table's value
+column is declared, so the existing datatype, unit and precision checks reason
+about `het tarief uit de tarieftabel bij …` exactly as about the attribute
+`het tarief`. Completion offers the declared tables after `uit`.
+
+**Smaller things.** A kenmerk may carry a **timeline**, as §13.3.2 admits
+(`is verzekerd voor elke dag;`): the model reads it now, so the Tijdlijn it names
+gets colour, navigation and rename, and `RS117` where it names none — the engine
+still refuses a time-dependent kenmerk with a fault. Formatting indents a
+`Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
+workspace gained `externe-tabellen/` with a tariff table, its manifest, the
+declaration that describes it and a testset that binds it.
+
+**Two things this release does not contain, deliberately.** Bulk evaluation —
+running a model over many thousands of rows and aggregating the results outside
+RegelSpraak — was part of the same request and is **parked**: it is a
+requirement of a future runner and its compiler, not of the editor. And the
+extension owed a comparison against ALEF before shipping; the reviewer found
+that ALEF has no concept resembling a declared external table, a key lookup, or a
+test-side binding, so the clearance is a vacuous one and is recorded as such.
 
 **Leg uit** — one gesture from a value to the derivation that produced it (UX-1).
 The run panel already drew the whole chain: which rule wrote a value, the
@@ -117,61 +170,6 @@ nothing. The write also names the deciding row beside the
 table — `← Contributiestaffel (rij 2)` — so which case answered is readable
 without opening anything. It is part of the run detail a trace already asks for,
 so an ordinary Test Explorer run does no more work than before.
-
-## [0.9.0] — Tables from outside the model
-
-A model can now declare a table it does not contain. **`Gegevensbron`** is a
-GegevensSpraak declaration for an externally supplied table — its key columns
-marked `(sleutel)`, one value column — and a rule reads from it with
-`<waarde> uit <bron> bij <sleutel>, <sleutel> en <sleutel>`. The model states the
-*shape* and never the content: what the table holds is bound in a testset,
-either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
-or for the whole testset from a delivery on disk (`Gegevensbronnen` /
-`de tarieftabel  uit "externe-tabellen/tarieftabel.json"`), where the path names a
-manifest saying how the file is written. A run says which delivery it read. A
-lookup on a key the content does not carry is a `modelfout`, never `leeg`.
-
-**This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
-The specification declares how instances get their values from the input to be
-outside its scope (§9.3) and leaves it to the execution environment; this
-extension fills exactly that gap, is marked as such in the grammar, is optional,
-and changes nothing for a model that does not use it. `docs/FEATURES.md`
-describes it in full; the decision record is the server repository's [D-58].
-
-Also new: a **parameter with a timeline** (`Parameter … voor elke maand;`, §3.8)
-now takes several period lines in a testset and evaluates as the timeline it
-declares; `RS705` reports a time-dependent value written to an attribute the
-model keeps once; `RS960` reports overlapping periods while you type; and a
-testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
-rather than passed, and its run lens says `scenario uitvoeren`.
-
-**The checks that came with it, by code.** `RS121` — a `Gegevensbron` whose shape
-is wrong (no key marked, no value line, or more than one); `RS122` — a lookup
-naming a value the table does not have; `RS123` — the wrong number of keys;
-`RS124` — a table no rule anywhere reads (a warning, as an unused declaration is
-elsewhere); `RS125` — a key whose datatype or unit does not fit the axis it
-addresses, exact rather than convertible, because a key addresses a cell. In a
-testset, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
-of keys, a key stated twice. A lookup expression is typed as the table's value
-column is declared, so the existing datatype, unit and precision checks reason
-about `het tarief uit de tarieftabel bij …` exactly as about the attribute
-`het tarief`. Completion offers the declared tables after `uit`.
-
-**Smaller things.** A kenmerk may carry a **timeline**, as §13.3.2 admits
-(`is verzekerd voor elke dag;`): the model reads it now, so the Tijdlijn it names
-gets colour, navigation and rename, and `RS117` where it names none — the engine
-still refuses a time-dependent kenmerk with a fault. Formatting indents a
-`Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
-workspace gained `externe-tabellen/` with a tariff table, its manifest, the
-declaration that describes it and a testset that binds it.
-
-**Two things this release does not contain, deliberately.** Bulk evaluation —
-running a model over many thousands of rows and aggregating the results outside
-RegelSpraak — was part of the same request and is **parked**: it is a
-requirement of a future runner and its compiler, not of the editor. And the
-extension owed a comparison against ALEF before shipping; the reviewer found
-that ALEF has no concept resembling a declared external table, a key lookup, or a
-test-side binding, so the clearance is a vacuous one and is recorded as such.
 
 ## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
