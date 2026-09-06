@@ -1202,8 +1202,13 @@ function operandRow(
 	// fetch rather than a lookup. The eager reading below is what a complete
 	// trace still gets, unchanged.
 	if (behind.operands === undefined) {
+		// `children: []` beside `needs`, exactly as `writeRow` has it: a row the
+		// renderer folds must carry a children list even when everything in it is
+		// still to be fetched. Returning `needs` alone made this the one foldable
+		// row without one, and the panel's draw loop — which iterates `children`
+		// for anything it folds — threw on it and rendered nothing at all.
 		return behind.more
-			? { ...attributed, needs: needsOf('operand', behind) }
+			? { ...attributed, needs: needsOf('operand', behind), children: [] }
 			: attributed;
 	}
 	return {

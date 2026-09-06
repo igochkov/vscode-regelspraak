@@ -1332,7 +1332,13 @@ function page(cspSource: string, scriptNonce: string): string {
 			// which for a track inside a fold is the moment the fold opens.
 			trackFitter.observe(svg);
 		}
-		for (const child of row.children) {
+		// **A foldable row need not have children** (UX-3), and the type says so:
+		// a row that folds because it has something to *fetch* carries needs, and
+		// where nothing was sent with it, no children at all. Iterating that
+		// unguarded threw "children is not iterable" on the first such row — and
+		// since the section is appended to the body only after this loop, the
+		// whole panel then drew its heading and nothing else.
+		for (const child of row.children ?? []) {
 			nested.append(rowItem(child));
 		}
 		details.append(nested);

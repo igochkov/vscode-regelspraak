@@ -418,6 +418,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(operand.children, undefined);
 		});
 
+
 		test('een traceregel springt op de regelnaam ernaast, met of zonder operanden', () => {
 			const rows = view(ran({
 				trace: [
@@ -826,7 +827,53 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				kind: 'operand', rule: 'bepaal basiscontributie',
 				target: 'basiscontributie', instance: 'Noor'
 			});
-			assert.equal(operand.children, undefined);
+			// Leeg en niet afwezig: wat het paneel openvouwt, loopt het af.
+			assert.deepEqual(operand.children, []);
+		});
+
+		// En dit is de rij waarop het paneel leeg bleef. `rowItem` in runPanel.ts
+		// vouwt een rij open zodra zij kinderen *of* `needs` heeft, en liep daarna
+		// `row.children` ongedekt af — terwijl de rij hierboven precies dat is:
+		// `needs` zonder `children`. Dat wierp `row.children is not iterable`, en
+		// omdat `body.append` pas ná de rijenlus komt, tekende het paneel alleen
+		// zijn kop en verder niets. Een webview is niet vanuit een test te
+		// bedienen, dus wat hier staat is de *voorwaarde* die haar tekenlus stelt,
+		// over dezelfde weergave.
+		test('elke openvouwbare rij is te doorlopen zoals de webview haar doorloopt', () => {
+			const walk = (row: RunRow, path: string): void => {
+				const foldable = Boolean((row.children && row.children.length > 0) || row.needs);
+				if (!foldable) {
+					return;
+				}
+				assert.ok(Array.isArray(row.children),
+					`${path}: een rij die het paneel openvouwt hoort een kinderlijst te hebben`);
+				for (const child of row.children ?? []) {
+					walk(child, `${path} > ${child.label}`);
+				}
+			};
+			const run = withTrace([
+				entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				}),
+				{
+					instance: 'Noor', target: 'basiscontributie', rule: 'bepaal basiscontributie',
+					value: '50 euro', more: true
+				}
+			]);
+			for (const focus of [
+				undefined,
+				{ kind: 'waarde', attribute: 'contributie', instance: 'Noor' } as const
+			]) {
+				const view = buildView('x.test.rgs', run, focus);
+				for (const section of view.sections) {
+					for (const row of section.rows) {
+						walk(row, `${section.title} > ${row.label}`);
+					}
+				}
+			}
 		});
 
 		test('childrenOf leest de opgehaalde schrijving, in beide lezingen', () => {
