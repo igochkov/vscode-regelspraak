@@ -97,6 +97,8 @@ interface TestFault {
  */
 export interface RunDetail {
 	rekendatum: string;
+	/** The same date as a day number, for the cursor a track draws (UX-5). */
+	rekendatumDay?: number;
 	values: RunValue[];
 	kenmerken: RunKenmerk[];
 	firedRules: { rule: string; count: number }[];
@@ -170,8 +172,27 @@ export interface RunValue {
 	attribute: string;
 	coordinates?: string[];
 	value?: string;
-	segments?: { from?: string; to?: string; value: string }[];
+	segments?: RunSegment[];
 	derived: boolean;
+}
+
+/**
+ * One period of a time-dependent value — see the server's `protocol.ts`.
+ *
+ * The bounds come twice: as the language writes them, which is what a reader
+ * sees, and as day numbers, which is what a track lays out by. The second is
+ * **sent and never derived from the first**: arithmetic on dates belongs on the
+ * side the calendar lives on, and re-deriving a number from a literal that side
+ * just rendered is what drifts.
+ */
+export interface RunSegment {
+	from?: string;
+	to?: string;
+	value: string;
+	fromDay?: number;
+	toDay?: number;
+	/** Whether the period holds no value — a track shades it (UX-5). */
+	empty?: boolean;
 }
 
 export interface RunKenmerk {
@@ -186,7 +207,10 @@ export interface RunTraceEntry {
 	target: string;
 	coordinates?: string[];
 	rule: string;
-	value: string;
+	/** What was written — absent where `segments` is present, as on `RunValue`. */
+	value?: string;
+	/** The periods written, where the write was time-dependent ([E-33]). */
+	segments?: RunSegment[];
 	operands: RunOperand[];
 	/** The arithmetic between the operands and the value (§X7 stage 3). */
 	steps?: RunStep[];

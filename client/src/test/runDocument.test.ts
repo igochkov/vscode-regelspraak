@@ -11,7 +11,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
-import { RunPanels, ruleLocation } from '../runPanel';
+import { RunPanels, ruleLocation, trackOf } from '../runPanel';
 import { RunFocus, RunSection, buildView } from '../runView';
 import { RunDetail, TestRun } from '../testExplorer';
 
@@ -456,6 +456,155 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.ok((rows[0].children ?? []).length > 0, 'een tijdlijnwaarde is vouwbaar');
 			// Beside, never on the label: the label is the fold.
 			assert.equal(rows[0].link?.on, 'beside');
+		});
+	});
+
+	// UX-5 — een tijdsafhankelijke waarde als spoor. De lijst met periodes is
+	// getrouw en onleesbaar zodra een knip één dag verkeerd valt; het spoor toont
+	// waar de knippen liggen. Alleen het paneel tekent het: de tekstvorm houdt de
+	// lijst, en de twee mogen verschillend *tekenen* en niet verschillend
+	// *beslissen*.
+	suite('het tijdlijnspoor (UX-5)', () => {
+		/** A period; a bound is a day plus the date a reader sees under its tick. */
+		const period = (from: number | undefined, to: number | undefined, value = '10 euro') => ({
+			kind: 'segment' as const,
+			label: 'van … tot …',
+			value,
+			span: {
+				...(from === undefined ? {} : { from: { day: from, text: `dag ${from}` } }),
+				...(to === undefined ? {} : { to: { day: to, text: `dag ${to}` } })
+			}
+		});
+		const now = (day: number) => ({ day, text: `dag ${day}` });
+
+		test('verdeelt de breedte naar rato van de duur', () => {
+			const track = trackOf([period(100, 200), period(200, 400)])!;
+			// Afgerond vergeleken: de coördinaten zijn percentages voor een SVG en
+			// niet iets waar iemand mee rekent, dus de laatste bit van een derde
+			// deel is geen bewering die deze suite hoort te doen.
+			const round = (n: number): number => Math.round(n * 100) / 100;
+			assert.deepEqual(track.segments.map(one => [round(one.at), round(one.width)]),
+				[[0, 33.33], [33.33, 66.67]]);
+		});
+
+		test('laat een open eind van de rand af lopen', () => {
+			// Een periode zonder grens is geen periode die bij de laatste knip
+			// ophoudt: het domein krijgt er ruimte bij, zodat het blok zichtbaar
+			// het plaatje uit loopt — en een tiende van de spanne, zodat het er op
+			// elke schaal hetzelfde uitziet.
+			const track = trackOf([period(100, 200), period(200, undefined)])!;
+			assert.equal(track.segments[0].at, 0);
+			assert.ok(track.segments[1].openEnd);
+			// Een vijfde van de spanne, zodat de open staart niet alleen zichtbaar
+			// is maar ook breed genoeg om zijn eigen waarde te dragen — en dat is
+			// meestal de huidige, dus degene die de lezer zoekt.
+			assert.ok(track.segments[1].width > 12 && track.segments[1].width < 22,
+				String(track.segments[1].width));
+			// En het loopt tot de rand: de staart is de rest van de tijd.
+			assert.equal(Math.round(track.segments[1].at + track.segments[1].width), 100);
+		});
+
+		test('laat een open begin bij de rand beginnen', () => {
+			const track = trackOf([period(undefined, 200), period(200, 300)])!;
+			assert.equal(track.segments[0].at, 0);
+			assert.ok(track.segments[0].openStart);
+			assert.ok(track.segments[1].at > 5, String(track.segments[1].at));
+		});
+
+		test('tekent niets waar er niets te tekenen valt', () => {
+			// **Eén periode is één blok over de volle breedte**, naar rato van
+			// niets, met als enige inhoud het label dat de rij eronder al draagt.
+			// Dat kost een regel paneel per tijdlijnrij en levert geen feit op.
+			assert.equal(trackOf([period(100, 200)]), undefined);
+			// `altijd`: geen enkele eindige grens en geen cursor om te plaatsen.
+			assert.equal(trackOf([period(undefined, undefined)]), undefined);
+			// Maar mét de rekendatum erin zegt hij waar de run staat, en dat is
+			// waar de meeste tijdlijnfouten op neerkomen.
+			assert.equal(trackOf([period(100, 200)], now(150))?.now?.at, 50);
+			// En twee periodes hebben een knip ertussen, wat de hele functie is.
+			assert.equal(trackOf([period(100, 200), period(200, 300)])?.segments.length, 2);
+		});
+
+		test('deelt niet door een spanne van niets', () => {
+			// Elke grens op één dag: zonder de terugval is elke coördinaat NaN.
+			const track = trackOf([period(100, 100), period(100, 100)])!;
+			assert.equal(track.segments.length, 2);
+			for (const one of track.segments) {
+				assert.ok(Number.isFinite(one.at) && Number.isFinite(one.width),
+					`${one.at} / ${one.width}`);
+			}
+		});
+
+		// **Een as met datums erop**, want een blauwe balk zonder één datum is voor
+		// wie hem niet zelf gebouwd heeft geen tijdlijn maar een balk.
+		test('dateert elke knip op de as', () => {
+			const track = trackOf([period(100, 200), period(200, 400)])!;
+			assert.deepEqual(track.ticks.map(one => [one.label, Math.round(one.at)]),
+				[['dag 100', 0], ['dag 200', 33], ['dag 400', 100]]);
+			// Naar binnen verankerd aan de randen: een datum gecentreerd op een merk
+			// op 0% hangt met de helft buiten het paneel.
+			assert.deepEqual(track.ticks.map(one => one.anchor), ['start', 'middle', 'end']);
+		});
+
+		test('dateert een knip die twee periodes delen één keer', () => {
+			// Anders staat dezelfde datum tweemaal op dezelfde plek.
+			const track = trackOf([period(100, 200), period(200, 300)])!;
+			assert.deepEqual(track.ticks.map(one => one.label),
+				['dag 100', 'dag 200', 'dag 300']);
+		});
+
+		test('tekent de rekendatum waar hij binnen het spoor valt', () => {
+			// *Welk segment staat de run eigenlijk in* is waar de meeste
+			// tijdlijnfouten op neerkomen.
+			const track = trackOf([period(100, 200), period(200, 300)], now(150))!;
+			assert.equal(track.now?.at, 25);
+			// Met zijn eigen datum erbij: een oranje streep zonder label is voor een
+			// lezer zonder voorkennis een raadsel.
+			assert.equal(track.now?.label, 'dag 150');
+			// En niet daarbuiten, want dan zou de cursor op een rand geplakt worden
+			// en een positie suggereren die hij niet heeft. Twee periodes, zodat het
+			// spoor er nog is: bij één zou het hele spoor vervallen, wat dezelfde
+			// conclusie is maar een niveau hoger.
+			assert.equal(trackOf([period(100, 200), period(200, 300)], now(900))!.now, undefined);
+		});
+
+		test('geeft geen spoor waar geen periodes staan', () => {
+			assert.equal(trackOf([{ kind: 'operand', label: 'x', value: '1' }]), undefined);
+			assert.equal(trackOf([]), undefined);
+		});
+
+		test('draagt de lege periode als lege periode over', () => {
+			// Een gat in de dekking moet er als een gat uitzien; het uit de tekst
+			// `leeg` aflezen zou deze kant een literaal laten ontleden.
+			const track = trackOf(
+				[{ ...period(100, 200, 'leeg'), empty: true }, period(200, 300)])!;
+			assert.deepEqual(track.segments.map(one => one.empty), [true, false]);
+		});
+
+		test('geeft een tijdsafhankelijke schrijving haar periodes in de trace', () => {
+			// Die kwam als de scalair `leeg` over de lijn, dus een regel die een
+			// prima tijdlijn afleidde las als een regel die niets afleidde.
+			const rows = buildView('x.test.rgs', {
+				case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+				detail: {
+					rekendatum: '01-01-2027', rekendatumDay: 150, values: [], kenmerken: [],
+					firedRules: [], inconsistencies: [], trace: [{
+						instance: 'Sam', target: 'maandtoeslag', rule: 'bepaal maandtoeslag',
+						segments: [
+							{ from: '01-01-2026', to: '01-04-2026', value: '10 euro', fromDay: 100, toDay: 200 },
+							{ from: '01-04-2026', value: '12 euro', fromDay: 200 }
+						],
+						operands: []
+					}]
+				}
+			}).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			// Geen scalaire waarde op de rij zelf — óf periodes óf een waarde.
+			assert.equal(rows[0].value, undefined);
+			assert.deepEqual(rows[0].children?.map(one => [one.kind, one.value]),
+				[['segment', '10 euro'], ['segment', '12 euro']]);
+			// En de periodes staan vóór de stappen en operanden: ze zijn wat de
+			// regel schreef, de rest is hoe hij eraan kwam.
+			assert.equal(rows[0].children?.[0].kind, 'segment');
 		});
 	});
 

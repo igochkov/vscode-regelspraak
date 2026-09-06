@@ -25,6 +25,21 @@ names; in a rule file it is about every instance the run has. Where no rule wrot
 the value, the panel states which of the recorded facts holds instead of guessing
 why. The editor entry appears only where there is an answer.
 
+**Time-dependent values are drawn as a track.** A period list is faithful and
+unreadable the moment a knip lands one day off, so the panel now draws them above the
+list as a dated timeline: blocks in proportion to their length with their values
+on them, **an axis with the date of every knip beneath it**, an empty stretch
+shaded as the gap it is, an open period running off the edge, and the
+**rekendatum as a labelled cursor** — because *which period is the run actually
+standing in* is what most timeline bugs reduce to. Hovering a block gives the
+whole period and value; a label that will not fit is left out rather than drawn
+over its neighbour, and the list below has all of them. Every colour is a chart variable, so your theme owns it,
+and the text form keeps the period list unchanged.
+
+It also fixes something the trace had been getting wrong: **a rule that derived a
+timeline read as a rule that derived nothing**, because a time-dependent write
+crossed as the single value `leeg` with its periods dropped on the way out.
+
 **Waarom leeg?** — *leeg* is the commonest confusion and has five causes with
 five different fixes, and the run recorded all of them separately. Where no rule
 wrote the value you asked about, **Leg uit** now answers with a verdict list

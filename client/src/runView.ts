@@ -20,7 +20,7 @@
 //     which is a different fact and a worse one to be told by accident.
 
 import { WireRange } from './model';
-import { RunDetail, RunStep, TestRun } from './testExplorer';
+import { RunDetail, RunSegment, RunStep, TestRun } from './testExplorer';
 
 /**
  * What a row is, which is the whole of how a renderer styles it.
@@ -34,6 +34,19 @@ export type RunRowKind =
 	| 'pass' | 'fail' | 'fault' | 'inconsistency'
 	| 'given' | 'derived' | 'segment'
 	| 'write' | 'operand' | 'step' | 'fired' | 'skipped' | 'note';
+
+/**
+ * One end of a period: the day a track lays it out by, and the date a reader
+ * sees under the tick.
+ *
+ * Both, because they answer different questions and neither is derivable from
+ * the other on this side — the day is arithmetic the server did, and the text is
+ * the language's own spelling of it (§13.2 #19).
+ */
+export interface RunBound {
+	day: number;
+	text: string;
+}
 
 export interface RunRow {
 	kind: RunRowKind;
@@ -72,6 +85,27 @@ export interface RunRow {
 	ruleDetail?: string;
 	/** Where this row is written in the testset, for the rows that are. */
 	range?: WireRange;
+	/**
+	 * The period this row states, where it states one (UX-5).
+	 *
+	 * Day numbers, so a renderer that draws a track lays it out without doing
+	 * arithmetic on the label beside it — the label is for reading and this is
+	 * for drawing, and neither is derived from the other. An absent bound is an
+	 * open period, which a track runs off its own edge for.
+	 *
+	 * Content, not presentation: it is the period the run recorded. The text
+	 * renderer ignores it, which is what "the two renderers may draw differently
+	 * and may not decide differently" permits.
+	 */
+	span?: { from?: RunBound; to?: RunBound };
+	/**
+	 * Whether this row states a period that holds no value (UX-5).
+	 *
+	 * The fact and not the word: a track shades an empty stretch, and reading
+	 * that off the rendered `value` would be this side parsing a literal the
+	 * server spelled.
+	 */
+	empty?: boolean;
 	/** Operands under a write, periods under a timeline value. */
 	children?: RunRow[];
 	/**
@@ -148,6 +182,17 @@ export type RunFocus =
 export interface RunView {
 	/** The tab's name: what the view is about, else the testgeval. */
 	name: string;
+	/**
+	 * The rekendatum as a day number, where the run states one (UX-5).
+	 *
+	 * A track draws it as a cursor, because *which segment is the run actually
+	 * standing in* is what most timeline bugs reduce to. On the view rather than
+	 * on each row: it is one fact about the run and every track on the page
+	 * answers to it.
+	 */
+	rekendatumDay?: number;
+	/** The same date as the language writes it, for the cursor's own label. */
+	rekendatum?: string;
 	/** One line saying what this is, and one saying which run it was. */
 	heading: string;
 	meta: string;
@@ -170,6 +215,9 @@ export function buildView(fileName: string, run: TestRun, focus?: RunFocus): Run
 		name: focus ? focusName(focus) : run.case,
 		heading: headingFor(run, focus),
 		meta: `${fileName}${run.detail ? ` · rekendatum ${run.detail.rekendatum}` : ''}`,
+		...(run.detail?.rekendatumDay === undefined
+			? {}
+			: { rekendatumDay: run.detail.rekendatumDay, rekendatum: run.detail.rekendatum }),
 		sections: []
 	};
 
@@ -695,7 +743,7 @@ function writeRow(
 	return {
 		kind: 'write',
 		label: withInstance(target(one.target, one.coordinates), one.instance, true),
-		value: one.value,
+		...(one.value === undefined ? {} : { value: one.value }),
 		...(attributed ? { rule: one.rule, ruleAt: 'beside' as const } : {}),
 		// **Even where the rule is not attributed.** A rule-focused view already
 		// names the rule in its heading and so draws no `← <regel>`, but *which
@@ -708,7 +756,11 @@ function writeRow(
 		// then where the numbers it did it to came from. A group header of their
 		// own was the alternative and puts a second click between a reader and the
 		// arithmetic — which is the thing they opened the write for.
+		// **The periods first, where the write was time-dependent**: they are what
+		// the rule wrote, and the steps and operands below them are how it got
+		// there. A scalar write states its value on the row itself and has none.
 		children: [
+			...segmentRows(one.segments ?? []),
 			...stepRows(one.steps),
 			...one.operands.map(operand => operandRow(operand, produced, seen))
 		]
@@ -839,16 +891,37 @@ function valueRow(
 	if (!one.segments) {
 		return { kind, label, note: one.value ?? 'leeg', ...wrote };
 	}
-	return {
-		kind,
-		label,
-		...wrote,
-		children: one.segments.map((segment): RunRow => ({
-			kind: 'segment',
-			label: period(segment.from, segment.to),
-			value: segment.value
-		}))
-	};
+	return { kind, label, ...wrote, children: segmentRows(one.segments) };
+}
+
+/**
+ * A time-dependent value's periods, as rows — the one implementation.
+ *
+ * Both a stored value and a trace write carry periods, and until UX-5 only the
+ * first had rows for them: a timeline write crossed the wire as the scalar
+ * `leeg` the engine leaves beside its segments, so the trace read as a rule that
+ * derived nothing. With both shapes drawn from here they cannot come to say the
+ * same timeline two ways.
+ */
+function segmentRows(segments: RunSegment[]): RunRow[] {
+	return segments.map((segment): RunRow => ({
+		kind: 'segment',
+		label: period(segment.from, segment.to),
+		value: segment.value,
+		...(segment.empty ? { empty: true } : {}),
+		...(segment.fromDay === undefined && segment.toDay === undefined
+			? {}
+			: {
+				span: {
+					...(segment.fromDay === undefined || segment.from === undefined
+						? {}
+						: { from: { day: segment.fromDay, text: segment.from } }),
+					...(segment.toDay === undefined || segment.to === undefined
+						? {}
+						: { to: { day: segment.toDay, text: segment.to } })
+				}
+			})
+	}));
 }
 
 function target(name: string, coordinates?: string[]): string {
