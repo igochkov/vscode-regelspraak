@@ -34,6 +34,17 @@ model keeps once; `RS960` reports overlapping periods while you type; and a
 testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
 rather than passed, and its run lens says `scenario uitvoeren`.
 
+**Rules that derive their values from each other are now reported while you
+type.** `RS616` names a loop that runs through two or more rules — a `korting`
+computed from a `grondslag` that is itself computed from that `korting`. Until
+now only a rule that read *its own* target was reported (`RS606`); a loop through
+two rules was refused when the model was run and mentioned nowhere in the editor.
+Every rule of the loop is marked, since each is a place to break it, and the
+message names the value that closes the loop, that being the thing to change.
+RegelSpraak allows a circular derivation only inside a rule group marked
+recursive (§9.10), which this version of the language cannot yet write, so a loop
+is an error and a run refuses to start on one.
+
 **The checks that came with it, by code.** `RS121` — a `Gegevensbron` whose shape
 is wrong (no key marked, no value line, or more than one); `RS122` — a lookup
 naming a value the table does not have; `RS123` — the wrong number of keys;
