@@ -13,17 +13,83 @@
 			// `regelspraak.server.path` setting, so the host comes up inert.
 			"args": [
 				"--extensionDevelopmentPath=${workspaceRoot}",
+				// BISECT — TEMPORARY. `--enable-logging` pipes the extension
+				// host's own stderr into the window's main.log, which is where a
+				// native abort (FATAL ERROR / Check failed) prints its reason —
+				// the one thing missing so far, since a host that aborts this
+				// early writes no exthost log at all. The crash directory
+				// collects a minidump beside it; both are gitignored.
+				"--enable-logging",
+				"--crash-reporter-directory=${workspaceRoot}/.crash",
 				"${workspaceRoot}/samples"
 			],
+			// BISECT — TEMPORARY. "1" stops activation just after the file
+			// watcher is created, so the language server is never forked; see
+			// the marked block in client/src/extension.ts. Set to "0" to run
+			// normally, without recompiling. Currently off: the experiment in
+			// front of it is `autoAttachChildProcesses` below.
+			"env": {
+				"REGELSPRAAK_SKIP_SERVER": "0"
+			},
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js",
 				"${workspaceRoot}/server/out/**/*.js"
 			],
-			"autoAttachChildProcesses": true,
+			// BISECT — TEMPORARY, was `true`. Measured 6 September 2026: with no
+			// debugger attached at all, the same build activates, forks the
+			// server and indexes all 35 sample files, three runs out of three,
+			// with no crash — so the abort needs the *debug session*, and this
+			// is the only thing it does to the forked server. js-debug attaches
+			// to a child by injecting a bootloader through NODE_OPTIONS in the
+			// environment the fork inherits, which is why removing `--inspect`
+			// from the child changed nothing. Turn back to `true` once the host
+			// stops aborting, to see whether it comes back.
+			"autoAttachChildProcesses": false,
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "watch"
 			}
+		},
+		{
+			// BISECT — TEMPORARY, REMOVE WHEN THE HOST CRASH IS FOUND.
+			//
+			// Identical to "Launch Client" except that it runs **no
+			// preLaunchTask**, so no `npm: watch` terminal exists while the
+			// development host starts.
+			//
+			// It exists because the two variables were confounded. The runs that
+			// did not crash were made by launching Code.exe directly, which has
+			// no debugger *and* no watch task — so "it needs the debugger" was
+			// never separated from "it needs the watch task", and the watch task
+			// is what the observation actually points at (two good runs, then
+			// repeated crashes until the terminal was deleted).
+			//
+			// Compile once by hand before using this, and do not leave a watch
+			// running elsewhere: `tsc -b -w` rewrites client/out/extension.js
+			// under a host that is loading it.
+			//
+			// Crash here  -> the watch task is innocent; the debugger is the
+			//                remaining difference.
+			// Clean here  -> the watch task (or anything else writing
+			//                client/out during startup) is the cause.
+			"type": "extensionHost",
+			"request": "launch",
+			"name": "Launch Client (geen watch)",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"--enable-logging",
+				"--crash-reporter-directory=${workspaceRoot}/.crash",
+				"${workspaceRoot}/samples"
+			],
+			"env": {
+				"REGELSPRAAK_SKIP_SERVER": "0"
+			},
+			"outFiles": [
+				"${workspaceRoot}/client/out/**/*.js",
+				"${workspaceRoot}/server/out/**/*.js"
+			],
+			"autoAttachChildProcesses": false
 		},
 		{
 			// "Launch Client" auto-attaches to the server it spawns. Use this

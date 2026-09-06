@@ -17,3 +17,6 @@ samples/.vscode/
 
 # The on-disk cache of externally supplied tables ([R-15]); rebuilt on demand.
 .regelspraak/
+
+# BISECT — TEMPORARY: minidumps from the development host (--crash-reporter-directory).
+.crash/
