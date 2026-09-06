@@ -127,7 +127,7 @@ marked `(sleutel)`, one value column — and a rule reads from it with
 *shape* and never the content: what the table holds is bound in a testset,
 either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
 or for the whole testset from a delivery on disk (`Gegevensbronnen` /
-`de tarieftabel  uit "extern-tabellen/tarieftabel.json"`), where the path names a
+`de tarieftabel  uit "externe-tabellen/tarieftabel.json"`), where the path names a
 manifest saying how the file is written. A run says which delivery it read. A
 lookup on a key the content does not carry is a `modelfout`, never `leeg`.
 
@@ -162,7 +162,7 @@ about `het tarief uit de tarieftabel bij …` exactly as about the attribute
 gets colour, navigation and rename, and `RS117` where it names none — the engine
 still refuses a time-dependent kenmerk with a fault. Formatting indents a
 `Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
-workspace gained `extern-tabellen/` with a tariff table, its manifest, the
+workspace gained `externe-tabellen/` with a tariff table, its manifest, the
 declaration that describes it and a testset that binds it.
 
 **Two things this release does not contain, deliberately.** Bulk evaluation —

@@ -15,11 +15,11 @@ reach for a folder to disambiguate two names, because it will not.
 ## The tree
 
 ```
-bron/         the document the model renders
-gegevens/     GegevensSpraak — what the model is made of
-regels/       RegelSpraak — what it derives, checks and creates
-tests/        TestSpraak — what it is supposed to produce
-extern-tabellen/      deliveries — the content of a Gegevensbron, and its manifest
+bron/              the document the model renders
+gegevens/          GegevensSpraak — what the model is made of
+regels/            RegelSpraak — what it derives, checks and creates
+tests/             TestSpraak — what it is supposed to produce
+externe-tabellen/  deliveries — the content of a Gegevensbron, and its manifest
 ```
 
 Three of those are the language's three jobs, and a file only ever does one of
@@ -206,14 +206,14 @@ for the whole testset from a delivery on disk:
 
 ```
 Gegevensbronnen
-	de tarieftabel  uit "extern-tabellen/tarieftabel.json"
+	de tarieftabel  uit "externe-tabellen/tarieftabel.json"
 ```
 
 The path names a **manifest** beside the data file, resolved from the test
 file's folder upward exactly as a `// Bron:` citation is. The manifest says how
 the file is written — separator, decimal mark, header, the range of each key,
 the number of decimals — and nothing about any industry; see
-`extern-tabellen/tarieftabel.json`. A miniature in a testgeval replaces the testset's
+`externe-tabellen/tarieftabel.json`. A miniature in a testgeval replaces the testset's
 binding for that case, whole. The run says which delivery it read (name,
 manifest, sha256) in its output, and a lookup on a key the content does not
 carry is a `modelfout`, never `leeg`.
