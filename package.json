@@ -212,6 +212,11 @@
 				"command": "regelspraak.showUitkomst",
 				"key": "alt+r",
 				"when": "editorLangId == regelspraak && editorTextFocus"
+			},
+			{
+				"command": "regelspraak.legUit",
+				"key": "alt+e",
+				"when": "editorLangId == regelspraak && editorTextFocus && regelspraak.uitlegbaar"
 			}
 		],
 		"languages": [
