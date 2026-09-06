@@ -221,7 +221,10 @@ carry is a `modelfout`, never `leeg`.
 A delivery is parsed once and kept in **`.regelspraak/cache/`** under the model
 root, keyed by the file's hash; the folder is rebuilt on demand and is
 ignored by this repository's `.gitignore`. Nothing in it is authored, and
-deleting it costs one parse.
+deleting it costs one parse. A file for a delivery the manifest no longer names
+is removed the next time that source is read, and
+`regelspraak.execution.cacheExternalData` switches the whole of it off — the run
+then answers the same, only slower.
 
 **Every `Verwacht` value is a value somebody ran.** Write the expectation, run
 it, and correct whichever of the two is wrong — usually the expectation, but not

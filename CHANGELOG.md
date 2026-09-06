@@ -63,7 +63,11 @@ gets colour, navigation and rename, and `RS117` where it names none — the engi
 still refuses a time-dependent kenmerk with a fault. Formatting indents a
 `Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
 workspace gained `externe-tabellen/` with a tariff table, its manifest, the
-declaration that describes it and a testset that binds it.
+declaration that describes it and a testset that binds it. A delivery a testset
+binds is kept parsed under `.regelspraak/cache/` so a later run need not read it
+again; **`regelspraak.execution.cacheExternalData`** switches that off for anyone
+who would rather nothing were written into the workspace, and a cache file for a
+delivery the manifest no longer names is now removed instead of left behind.
 
 **Two things this release does not contain, deliberately.** Bulk evaluation —
 running a model over many thousands of rows and aggregating the results outside

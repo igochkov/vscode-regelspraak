@@ -362,6 +362,12 @@
 					"default": true,
 					"markdownDescription": "Weiger **Testgeval uitvoeren**, **Regel uitvoeren** en **Foutopsporing** zolang het model een fout bevat (venster **Problemen**). Een model met een fout kan niet betekenen wat er staat, en een uitvoering erover leidt dan een verkeerd getal af in plaats van geen enkel. De controle geldt voor het hele model: een fout in een ander bestand blokkeert de uitvoering ook, want een uitvoering leest alle regels. Zet uit om toch uit te voeren."
 				},
+				"regelspraak.execution.cacheExternalData": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Bewaar de ingelezen leveringen van een `Gegevensbron` in `.regelspraak/cache` onder de modelmap, zodat een volgende uitvoering ze niet opnieuw hoeft te ontleden. Een cachebestand is genoemd naar de inhoud van de levering; bestanden van een levering die niet meer in het manifest staat worden opgeruimd. Zet uit als er niets naar de werkmap geschreven mag worden — de uitvoering geeft dan hetzelfde antwoord, alleen langzamer."
+				},
 				"regelspraak.execution.defaultScenario": {
 					"scope": "window",
 					"type": "string",

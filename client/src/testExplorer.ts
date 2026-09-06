@@ -32,6 +32,17 @@ const RUN_DETAIL_REQUEST = 'regelspraak/runDetail';
 export const EXPLAINABLE_MESSAGE = 'regelspraakVerwachting';
 
 /**
+ * How many testgevallen keep a run history (UX-6).
+ *
+ * Two whole runs each, and a run holds every derived value and every skipped
+ * rule x instance — so this is the bound on what a long session remembers. Big
+ * enough that going back and forth between the cases of one testset compares
+ * every time, small enough that it is a handful of runs and not a session's
+ * worth.
+ */
+const MAX_HISTORY = 12;
+
+/**
  * One expectation that failed in the last run (UX-1's lens).
  *
  * Kept because **the failure has to be visible where the reader is**, and the
@@ -340,11 +351,21 @@ export class TestExplorer {
 	 */
 	private readonly failures = new Map<string, FailedExpectation[]>();
 	/**
-	 * The last two detailed runs per testgeval (UX-6).
+	 * The last two detailed runs per testgeval (UX-6), for the most recently run
+	 * `MAX_HISTORY` of them.
 	 *
 	 * Held here because this is where every detailed run passes, and a second
 	 * place that watched for runs would be free to remember a different pair —
 	 * "the previous uitvoering" is a fact with one answer.
+	 *
+	 * **Bounded, as the server's own `RunHistory` is.** UX-3 made the traces
+	 * lean, but `values`, `kenmerken` and `skipped` are not lean and `skipped` is
+	 * rules x instances — so two whole runs per testgeval ever run in the session
+	 * is a session that grows for as long as it is used. Bounded in testgevallen
+	 * rather than in bytes, because that is the unit the answer is about: what a
+	 * diff claims is *the previous uitvoering of this testgeval*, and forgetting
+	 * one simply means the next run of it has nothing to compare against, which
+	 * is the state every first run is in.
 	 */
 	private readonly history = new Map<string, { latest: TestRun; previous?: TestRun }>();
 	private readonly failuresChanged = new vscode.EventEmitter<void>();
@@ -579,6 +600,10 @@ export class TestExplorer {
 	private remember(uri: string, caseName: string, run: TestRun): void {
 		const key = runKey(uri, caseName);
 		const held = this.history.get(key);
+		// Deleted before it is set, so a `Map`'s insertion order is the order the
+		// testgevallen were last run and the eviction below drops the one nobody
+		// has looked at for longest.
+		this.history.delete(key);
 		this.history.set(key, {
 			// A refusal is not a run to compare against: it derived nothing, so a
 			// diff over it would report the whole model as having appeared.
@@ -587,6 +612,12 @@ export class TestExplorer {
 				: (held?.previous ? { previous: held.previous } : {})),
 			latest: run
 		});
+		for (const oldest of this.history.keys()) {
+			if (this.history.size <= MAX_HISTORY) {
+				break;
+			}
+			this.history.delete(oldest);
+		}
 	}
 
 	/**

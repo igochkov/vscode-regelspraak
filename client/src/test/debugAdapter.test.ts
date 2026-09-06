@@ -285,6 +285,40 @@ suite('Debug-adapter: een verzameling in Watch (UX-4)', () => {
 		adapter.dispose();
 	});
 
+	// **Bevinding 13.** Dezelfde fout die het paneel op 6 september vond, nog
+	// staand in de helft die een Watch-vak tekent. Een verzameling wordt op twee
+	// manieren gebouwd: `de premies van alle deelnemers` wil de instantie, en
+	// `zijn X, zijn Y en zijn Z` wil het label — daar noemt de instantie elke rij
+	// hetzelfde en onderscheidt de kolom niets. `elementColumn` is die ene
+	// beslissing, en dit is de tweede tekenaar die haar stelt in plaats van zelf
+	// te kiezen.
+	test('noemt de labels waar de instantie de elementen niet uit elkaar houdt', async () => {
+		const { adapter, sent } = drive(request =>
+			request.kind === 'evaluate'
+				? {
+					session: true,
+					answer: '3 waarden',
+					answerElements: [
+						{ label: 'aanvraagdatum', instance: 'Noor', value: '01-01-2026' },
+						{ label: 'betaaldatum', instance: 'Noor', value: '01-02-2026' },
+						{ label: 'eerste kalenderdag', value: '01-01-2026' }
+					]
+				}
+				: { session: true });
+		send(adapter, 1, 'evaluate',
+			{ expression: 'zijn aanvraagdatum, zijn betaaldatum en de eerste kalenderdag' });
+		await settle();
+		const reference = (sent.find(one => one.command === 'evaluate')!.body as
+			{ variablesReference: number }).variablesReference;
+		send(adapter, 2, 'variables', { variablesReference: reference });
+		await settle();
+		const opened = (sent.find(one => one.command === 'variables')!.body as
+			{ variables: { name: string }[] }).variables;
+		assert.deepStrictEqual(opened.map(one => one.name),
+			['aanvraagdatum', 'betaaldatum', 'eerste kalenderdag']);
+		adapter.dispose();
+	});
+
 	// Eén rij heeft één pijltje, en waar het antwoord een verzameling is zijn
 	// haar elementen waarvoor de lezer hem opende — de rekenkunde die een lijst
 	// oplevert *is* meestal de lijst.

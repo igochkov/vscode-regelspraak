@@ -17,6 +17,8 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
+import { elementColumn } from './runPanel';
+
 /** Server-side shapes — see the server's `protocol.ts`, which defines them. */
 interface DebugStop {
 	rule: string;
@@ -451,14 +453,15 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 					variables: reference === SCOPE_SITUATION
 						? this.situation()
 						// UX-4: a collection opens into its elements, each named by the
-						// instance it belongs to — which is what makes a list of five
-						// hundred numbers an answer rather than a wall.
+						// column that tells them apart — which is what makes a list of
+						// five hundred numbers an answer rather than a wall. `de premies
+						// van alle deelnemers` wants the instance and `zijn X, zijn Y en
+						// zijn Z` wants the label, so the choice is `elementColumn`'s and
+						// not this pane's: the panel decided it once, and a Watch box
+						// answering differently about one collection is the divergence
+						// the one-decision rule exists to prevent.
 						: opened
-							? opened.map(one => ({
-								name: one.instance ?? one.label,
-								value: one.value,
-								variablesReference: 0
-							}))
+							? namedElements(opened)
 							: this.stepVariables(this.expanded.get(reference) ?? [])
 				});
 				return;
@@ -738,6 +741,25 @@ function period(from?: string, to?: string): string {
 		return `vanaf ${from}`;
 	}
 	return to ? `tot ${to}` : 'altijd';
+}
+
+/**
+ * An opened collection's elements as Variables rows (UX-4).
+ *
+ * The name is `elementColumn`'s answer and never this pane's, which is the
+ * whole of the fix: naming every row by its instance gave `zijn X, zijn Y en
+ * zijn Z` three rows all called `Noor` — the bug the panel found and fixed on
+ * the same day, still standing in the half a Watch box draws.
+ */
+function namedElements(
+	opened: readonly { label: string; instance?: string; value: string }[]
+): { name: string; value: string; variablesReference: number }[] {
+	const column = elementColumn(opened);
+	return opened.map(one => ({
+		name: (column === 'instantie' ? one.instance : one.label) ?? one.label,
+		value: one.value,
+		variablesReference: 0
+	}));
 }
 
 /** One comparable form of a file path, case-folded where the platform is. */
