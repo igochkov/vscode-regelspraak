@@ -219,10 +219,12 @@ manifest, sha256) in its output, and a lookup on a key the content does not
 carry is a `modelfout`, never `leeg`.
 
 A delivery is parsed once and kept in **`.regelspraak/cache/`** under the model
-root, keyed by the file's hash; the folder is rebuilt on demand and is
-ignored by this repository's `.gitignore`. Nothing in it is authored, and
-deleting it costs one parse. A file for a delivery the manifest no longer names
-is removed the next time that source is read, and
+root, keyed by the file's hash *and* the manifest's, so editing the manifest
+re-reads the delivery rather than answering from the old reading of it. The
+folder is rebuilt on demand and holds a `.gitignore` of its own, so it stays out
+of your repository without anything having to be added to yours. Nothing in it is
+authored, and deleting it costs one parse. A file for a delivery the manifest no
+longer names is removed the next time that source is read, and
 `regelspraak.execution.cacheExternalData` switches the whole of it off — the run
 then answers the same, only slower.
 

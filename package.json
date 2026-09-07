@@ -366,7 +366,7 @@
 					"scope": "resource",
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Bewaar de ingelezen leveringen van een `Gegevensbron` in `.regelspraak/cache` onder de modelmap, zodat een volgende uitvoering ze niet opnieuw hoeft te ontleden. Een cachebestand is genoemd naar de inhoud van de levering; bestanden van een levering die niet meer in het manifest staat worden opgeruimd. Zet uit als er niets naar de werkmap geschreven mag worden — de uitvoering geeft dan hetzelfde antwoord, alleen langzamer."
+					"markdownDescription": "Bewaar de ingelezen leveringen van een `Gegevensbron` in `.regelspraak/cache` onder de modelmap, zodat een volgende uitvoering ze niet opnieuw hoeft te ontleden. Een cachebestand is genoemd naar de inhoud van de levering en geldt alleen zolang ook het manifest dat haar las onveranderd is; een wijziging in een van beide leest de levering opnieuw. Bestanden van een levering die niet meer in het manifest staat worden opgeruimd, en de map bevat een eigen `.gitignore`. Zet uit als er niets naar de werkmap geschreven mag worden — de uitvoering geeft dan hetzelfde antwoord, alleen langzamer."
 				},
 				"regelspraak.execution.defaultScenario": {
 					"scope": "window",

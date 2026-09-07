@@ -190,6 +190,38 @@ table — `← Contributiestaffel (rij 2)` — so which case answered is readabl
 without opening anything. It is part of the run detail a trace already asks for,
 so an ordinary Test Explorer run does no more work than before.
 
+### Fixed
+
+**The editor keeps up with a half-written line.** Three sentences somebody is in
+the middle of typing stopped the language server reading the file at all: a `»`
+whose `«` has just been deleted, a date begun as `dd. ` and not finished, and
+`de tijdsduur van … tot … in ` waiting for its unit. What each cost was worse
+than an error message, because there was none — the file kept the squiggles it
+had *before* the edit, describing text no longer in it, said nothing about the
+line being typed, and answered nothing for as long as the line stood. Running the
+model failed too, with a message naming no file. Found by driving the editor over
+thousands of deliberately damaged documents; each is now the ordinary syntax
+error it should always have been, and the sentence keeps its place in the file.
+
+**A table read from disk is re-read when its manifest changes.** Editing a
+manifest — the value column, an axis, the field separator, `volledig` — left the
+previously cached reading in place, so rules went on getting the numbers from the
+*old* reading of the same file, on a run that came out green, and the cached file
+outlived the editor so restarting did not help. A cached table is now used only
+where the delivery and the manifest that read it are both unchanged.
+
+**Running a testgeval while the debugger is paused says so.** The engine runs one
+thing at a time, and a debug session holds it for as long as you are stopped at a
+breakpoint — so **Testgeval uitvoeren**, **Regel uitvoeren**, **Leg uit** and
+opening a collection queued behind it and looked frozen, with the stop button
+unable to end the wait either. They report that a session is running, and
+cancelling a run that is waiting its turn now takes effect at once.
+
+**And the cache folder keeps itself out of your repository.** `.regelspraak/
+cache/` is written under your model root and carries a `.gitignore` of its own,
+so a delivery no longer leaves an untracked binary for you to find in
+`git status`.
+
 ## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
 A model that already exists in **ALEF** — the Belastingdienst's MPS-based
