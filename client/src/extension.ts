@@ -727,27 +727,6 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	// variable because the client hooks it but never owns it — see stopClient.
 	watcher = workspace.createFileSystemWatcher('**/*.rgs');
 
-	// ---------------------------------------------------------------------
-	// BISECT — TEMPORARY, REMOVE WHEN THE HOST CRASH IS FOUND.
-	//
-	// With REGELSPRAAK_SKIP_SERVER=1 in the environment (set by "Launch
-	// Client" in .vscode/launch.json), everything below is skipped: the
-	// LanguageClient is never constructed and the server is never forked.
-	// The watcher above *is* created.
-	//
-	//   still crashes          -> the watcher, or something earlier
-	//   several clean launches -> the fork below
-	//
-	// A crash is the informative outcome; a quiet run is not, so give the
-	// quiet case five or six launches before believing it. The language
-	// server does not start while this is on — that is expected.
-	// ---------------------------------------------------------------------
-	if (process.env.REGELSPRAAK_SKIP_SERVER === '1') {
-		output?.appendLine('BISECT: server niet gestart (REGELSPRAAK_SKIP_SERVER=1).');
-		serverStatus?.set('stopped');
-		return;
-	}
-
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 		// Register the server for RegelSpraak documents
