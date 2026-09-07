@@ -12,6 +12,9 @@ Objecttype de Zending (mv: Zendingen)
 	het gewicht               Numeriek (getal met 3 decimalen) met eenheid kg;
 	het weegverschil          Numeriek (getal met 2 decimalen) met eenheid kg;
 	de bezorgtermijn          Numeriek (geheel getal) met eenheid dagen;
+	de zone                   Numeriek (geheel getal);
+	de gewichtsklasse         Numeriek (geheel getal);
+	het verzendtarief         Geldbedrag met eenheid €;
 	de beoordeling            Tekst;
 	de vroege zending         kenmerk;
 	de stipte zending         kenmerk;

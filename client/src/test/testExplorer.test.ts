@@ -77,7 +77,7 @@ suite('Testverkenner (W7)', () => {
 		const found = (await testsets()).find(one => one.uri?.fsPath === testsUri.fsPath)!;
 		const runOnly = childrenOf(found).find(one => one.label.includes('Alleen uitvoeren'));
 		assert.ok(runOnly, 'het alleen-uitvoeren-geval ontbreekt');
-		assert.equal(runOnly.description, 'alleen uitvoeren');
+		assert.equal(runOnly.description, 'scenario');
 	});
 
 	test('kent een uitvoerprofiel, en geen debugprofiel (FR-W7.3)', async () => {

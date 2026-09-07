@@ -16,10 +16,10 @@
 
 import {
 	Disposable, Event, EventEmitter, Position, TextDocumentContentProvider,
-	Uri, ViewColumn, window, workspace
+	Uri, ViewColumn, commands, window, workspace
 } from 'vscode';
 
-import { RunRow, RunSection, RunView, buildView } from './runView';
+import { RunFocus, RunRow, RunSection, RunView, buildView } from './runView';
 import { TestRun } from './testExplorer';
 
 export const RUN_SCHEME = 'regelspraak-uitkomst';
@@ -40,11 +40,16 @@ export const SHOW_RUN_AS_TEXT_COMMAND = 'regelspraak.showUitkomstAlsTekst';
  * the document it came from is in the query — W5's split, for W5's reason: a
  * percent-encoded absolute path is unreadable on a tab.
  */
-function runUri(source: Uri, view: RunView): Uri {
+function runUri(source: Uri, view: RunView, when: 'nu' | 'vorige' = 'nu'): Uri {
+	const label = when === 'nu' ? 'uitkomst' : 'vorige uitkomst';
 	return Uri.from({
 		scheme: RUN_SCHEME,
-		path: `${view.name} (uitkomst)`,
-		query: `${source.toString()}#${encodeURIComponent(view.name)}`
+		path: `${view.name} (${label})`,
+		// **`when` in the query too.** The two sides of a diff are two documents,
+		// so they need two URIs — and a path alone would make the older one look
+		// like the current one to anything that keys on the query, which is what
+		// the provider's own cache does.
+		query: `${source.toString()}#${encodeURIComponent(view.name)}#${when}`
 	});
 }
 
@@ -77,7 +82,7 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 	 * `testset` and not the document the gesture was made in — see `RunPanels.show`
 	 * for why that distinction is load-bearing.
 	 */
-	async show(testset: Uri, run: TestRun, focus?: string): Promise<void> {
+	async show(testset: Uri, run: TestRun, focus?: RunFocus): Promise<void> {
 		const view = buildView(testset.path.split('/').pop() ?? '', run, focus);
 		const uri = runUri(testset, view);
 		this.rendered.set(uri.toString(), renderText(view));
@@ -88,6 +93,37 @@ export class RunDocuments implements TextDocumentContentProvider, Disposable {
 			preview: true,
 			preserveFocus: true
 		});
+	}
+
+	/**
+	 * UX-6's cheap half — two runs side by side in VS Code's own diff editor.
+	 *
+	 * **The native layer first, and it costs nothing to build.** The text form is
+	 * already a rendered artifact with a stable order — sections are never sorted
+	 * and the trace is in write order — so two of them differ line by line
+	 * exactly where the runs differ, and the editor everyone already knows how to
+	 * read does the rendering. Every changed value, every rule that started or
+	 * stopped firing and every fault that came or went shows up as an ordinary
+	 * red or green line, with no diffing code on this side at all.
+	 *
+	 * It is deliberately *not* the same thing as the panel's **Veranderd**
+	 * section: that one selects and names the differences, and this one shows the
+	 * whole of both runs with the differences marked. A reader wants one or the
+	 * other depending on whether they already know what they are looking for.
+	 */
+	async showDiff(testset: Uri, previous: TestRun, run: TestRun, focus?: RunFocus): Promise<void> {
+		const fileName = testset.path.split('/').pop() ?? '';
+		const before = buildView(fileName, previous, focus);
+		const after = buildView(fileName, run, focus);
+		const left = runUri(testset, before, 'vorige');
+		const right = runUri(testset, after, 'nu');
+		this.rendered.set(left.toString(), renderText(before));
+		this.rendered.set(right.toString(), renderText(after));
+		this.changed.fire(left);
+		this.changed.fire(right);
+		await commands.executeCommand('vscode.diff', left, right,
+			`${after.name}: vorige uitvoering ↔ nu`,
+			{ viewColumn: ViewColumn.Beside, preview: true });
 	}
 
 	dispose(): void {
@@ -159,7 +195,13 @@ function rowLines(row: RunRow, depth: number): string[] {
  * "door" would read as part of the sentence the value is in.
  */
 function beside(row: RunRow): string {
-	return row.ruleAt === 'beside' && row.rule ? `   ← ${row.rule}` : '';
+	const detail = row.ruleDetail ? ` (${row.ruleDetail})` : '';
+	if (row.ruleAt === 'beside' && row.rule) {
+		return `   ← ${row.rule}${detail}`;
+	}
+	// A qualifier with no name beside it still says something — which case of the
+	// rule this heading already names acted — so it is not dropped with it.
+	return detail ? `  ${detail.trim()}` : '';
 }
 
 /**
@@ -181,7 +223,23 @@ function glyph(row: RunRow): string {
 	if (row.kind === 'pass') {
 		return '✓ ';
 	}
-	return row.kind === 'fail' ? '✗ ' : '';
+	if (row.kind === 'fail') {
+		return '✗ ';
+	}
+	// A rule that did not fire is neither a pass nor a failure — it is a rule
+	// that was considered, which UX-2's verdict list is a whole column of.
+	if (row.kind === 'skipped') {
+		return '⊘ ';
+	}
+	// UX-6: what happened to this fact between two runs. The same three marks a
+	// reader knows from a diff, so the text form of a comparison reads as one.
+	if (row.kind === 'appeared') {
+		return '+ ';
+	}
+	if (row.kind === 'vanished') {
+		return '− ';
+	}
+	return row.kind === 'changed' ? '→ ' : '';
 }
 
 /**

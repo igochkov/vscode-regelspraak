@@ -252,6 +252,99 @@ suite('Debug-adapter: een mislukt verzoek (X5 deel C)', () => {
 	});
 });
 
+// UX-4 — een verzameling in het Watch-vakje.
+//
+// Een verzameling schrijft zich als één regel, en die regel is een aantal. De
+// elementen zijn wat het uitklappijltje van de Variabelen-lade opent — de
+// plek die DAP hier al voor heeft, zonder iets te verzinnen.
+suite('Debug-adapter: een verzameling in Watch (UX-4)', () => {
+	const ELEMENTS = [
+		{ label: 'boete', instance: 'U2', value: '30 euro' },
+		{ label: 'boete', instance: 'U1', value: '5 euro' }
+	];
+
+	test('geeft een verzameling een uitklappijltje en noemt elke instantie', async () => {
+		const { adapter, sent } = drive(request =>
+			request.kind === 'evaluate'
+				? { session: true, answer: '2 waarden', answerElements: ELEMENTS }
+				: { session: true });
+		send(adapter, 1, 'evaluate', { expression: 'de boetes van zijn gedane uitleningen' });
+		await settle();
+		const answer = sent.find(one => one.command === 'evaluate');
+		const body = answer!.body as { result: string; variablesReference: number };
+		assert.strictEqual(body.result, '2 waarden');
+		assert.ok(body.variablesReference > 0, 'een verzameling hoort open te kunnen');
+
+		send(adapter, 2, 'variables', { variablesReference: body.variablesReference });
+		await settle();
+		const opened = sent.find(one => one.command === 'variables');
+		assert.deepStrictEqual(
+			(opened!.body as { variables: { name: string; value: string }[] }).variables,
+			[{ name: 'U2', value: '30 euro', variablesReference: 0 },
+				{ name: 'U1', value: '5 euro', variablesReference: 0 }]);
+		adapter.dispose();
+	});
+
+	// **Bevinding 13.** Dezelfde fout die het paneel op 6 september vond, nog
+	// staand in de helft die een Watch-vak tekent. Een verzameling wordt op twee
+	// manieren gebouwd: `de premies van alle deelnemers` wil de instantie, en
+	// `zijn X, zijn Y en zijn Z` wil het label — daar noemt de instantie elke rij
+	// hetzelfde en onderscheidt de kolom niets. `elementColumn` is die ene
+	// beslissing, en dit is de tweede tekenaar die haar stelt in plaats van zelf
+	// te kiezen.
+	test('noemt de labels waar de instantie de elementen niet uit elkaar houdt', async () => {
+		const { adapter, sent } = drive(request =>
+			request.kind === 'evaluate'
+				? {
+					session: true,
+					answer: '3 waarden',
+					answerElements: [
+						{ label: 'aanvraagdatum', instance: 'Noor', value: '01-01-2026' },
+						{ label: 'betaaldatum', instance: 'Noor', value: '01-02-2026' },
+						{ label: 'eerste kalenderdag', value: '01-01-2026' }
+					]
+				}
+				: { session: true });
+		send(adapter, 1, 'evaluate',
+			{ expression: 'zijn aanvraagdatum, zijn betaaldatum en de eerste kalenderdag' });
+		await settle();
+		const reference = (sent.find(one => one.command === 'evaluate')!.body as
+			{ variablesReference: number }).variablesReference;
+		send(adapter, 2, 'variables', { variablesReference: reference });
+		await settle();
+		const opened = (sent.find(one => one.command === 'variables')!.body as
+			{ variables: { name: string }[] }).variables;
+		assert.deepStrictEqual(opened.map(one => one.name),
+			['aanvraagdatum', 'betaaldatum', 'eerste kalenderdag']);
+		adapter.dispose();
+	});
+
+	// Eén rij heeft één pijltje, en waar het antwoord een verzameling is zijn
+	// haar elementen waarvoor de lezer hem opende — de rekenkunde die een lijst
+	// oplevert *is* meestal de lijst.
+	test('laat de elementen voorgaan op de rekenboom', async () => {
+		const { adapter, sent } = drive(request =>
+			request.kind === 'evaluate'
+				? {
+					session: true,
+					answer: '2 waarden',
+					answerElements: ELEMENTS,
+					answerSteps: [{ text: 'iets', value: 'anders' }]
+				}
+				: { session: true });
+		send(adapter, 1, 'evaluate', { expression: 'de boetes' });
+		await settle();
+		const reference = (sent.find(one => one.command === 'evaluate')!.body as
+			{ variablesReference: number }).variablesReference;
+		send(adapter, 2, 'variables', { variablesReference: reference });
+		await settle();
+		const opened = (sent.find(one => one.command === 'variables')!.body as
+			{ variables: { name: string }[] }).variables;
+		assert.deepStrictEqual(opened.map(one => one.name), ['U2', 'U1']);
+		adapter.dispose();
+	});
+});
+
 // §X5 deel G — de Call Stack, die binnen één expressie wél een referent heeft.
 //
 // Tussen regels blijft het één frame: de vuurvolgorde volgt afhankelijkheden

@@ -142,6 +142,9 @@
     is meer dan 10 kg, of de bezorging viel niet op een sluitingsdag.
 11. Van een lid wordt bijgehouden hoeveel van de aan hem bezorgde zendingen
     zwaarder waren dan 10 kg.
+12. De verzendtarieven worden van buiten aangeleverd in een tarieftabel,
+    gesleuteld op zone en gewichtsklasse; het verzendtarief van een zending
+    wordt daarin opgezocht bij haar zone en gewichtsklasse.
 
 ## Hoofdstuk 6. Collectie
 
@@ -165,8 +168,8 @@
 3. De schuldpositie is het negatief van de absolute waarde van het inlegtegoed.
 4. Van het dag-, week- en kwartaaltegoed wordt het laagste tegoed bepaald, en
    van het dag- en weektegoed het hoogste.
-5. Het inlegtegoed wordt verhoogd met 15% van het leestegoed, rekenkundig
-   afgerond op hele punten.
+5. De spaarbonus bedraagt 15% van het leestegoed, rekenkundig afgerond op hele
+   punten.
 6. Het puntentotaal wordt geteld over alle spaarperiodes, over de spaarperiodes
    vanaf twee periodes geleden tot en met de vorige periode, en over de
    spaarperiodes die het lid zelf aanwijst.

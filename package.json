@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -96,6 +96,16 @@
 				"category": "RegelSpraak"
 			},
 			{
+				"command": "regelspraak.legUit",
+				"title": "Leg uit",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.vergelijkUitvoering",
+				"title": "Vergelijk met vorige uitvoering",
+				"category": "RegelSpraak"
+			},
+			{
 				"command": "regelspraak.kiesTestgeval",
 				"title": "Actief testgeval kiezen",
 				"category": "RegelSpraak"
@@ -143,6 +153,14 @@
 				{
 					"command": "regelspraak.showUitkomst",
 					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak"
+				},
+				{
+					"command": "regelspraak.vergelijkUitvoering",
+					"when": "editorLangId == regelspraak"
 				}
 			],
 			"editor/context": [
@@ -150,6 +168,21 @@
 					"command": "regelspraak.formatDocument",
 					"when": "editorLangId == regelspraak",
 					"group": "1_modification"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak && regelspraak.uitlegbaar",
+					"group": "navigation@9"
+				}
+			],
+			"testing/message/context": [
+				{
+					"command": "regelspraak.legUit",
+					"when": "testMessage == regelspraakVerwachting"
+				},
+				{
+					"command": "regelspraak.vergelijkUitvoering",
+					"when": "testMessage == regelspraakVerwachting"
 				}
 			],
 			"editor/title": [
@@ -179,6 +212,11 @@
 				"command": "regelspraak.showUitkomst",
 				"key": "alt+r",
 				"when": "editorLangId == regelspraak && editorTextFocus"
+			},
+			{
+				"command": "regelspraak.legUit",
+				"key": "alt+e",
+				"when": "editorLangId == regelspraak && editorTextFocus && regelspraak.uitlegbaar"
 			}
 		],
 		"languages": [
@@ -323,6 +361,12 @@
 					"type": "boolean",
 					"default": true,
 					"markdownDescription": "Weiger **Testgeval uitvoeren**, **Regel uitvoeren** en **Foutopsporing** zolang het model een fout bevat (venster **Problemen**). Een model met een fout kan niet betekenen wat er staat, en een uitvoering erover leidt dan een verkeerd getal af in plaats van geen enkel. De controle geldt voor het hele model: een fout in een ander bestand blokkeert de uitvoering ook, want een uitvoering leest alle regels. Zet uit om toch uit te voeren."
+				},
+				"regelspraak.execution.cacheExternalData": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Bewaar de ingelezen leveringen van een `Gegevensbron` in `.regelspraak/cache` onder de modelmap, zodat een volgende uitvoering ze niet opnieuw hoeft te ontleden. Een cachebestand is genoemd naar de inhoud van de levering en geldt alleen zolang ook het manifest dat haar las onveranderd is; een wijziging in een van beide leest de levering opnieuw. Bestanden van een levering die niet meer in het manifest staat worden opgeruimd, en de map bevat een eigen `.gitignore`. Zet uit als er niets naar de werkmap geschreven mag worden — de uitvoering geeft dan hetzelfde antwoord, alleen langzamer."
 				},
 				"regelspraak.execution.defaultScenario": {
 					"scope": "window",

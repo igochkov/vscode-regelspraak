@@ -36,13 +36,14 @@ Objecttype het Lid (mv: Leden) (bezield)
 	--- puntenprogramma
 	het leestegoed                                         Numeriek (geheel getal) met eenheid pt voor elke maand;
 	het inlegtegoed                                        Numeriek (geheel getal) met eenheid pt;
+	de spaarbonus                                          Numeriek (geheel getal) met eenheid pt voor elke maand;
 	het dagtegoed                                          Numeriek (geheel getal) met eenheid pt voor elke dag;
 	het weektegoed                                         Numeriek (geheel getal) met eenheid pt voor elke week startend op 04-01-2027;
 	het kwartaaltegoed                                     Numeriek (geheel getal) met eenheid pt voor elk kwartaal;
 	het halfjaartegoed                                     Numeriek (geheel getal) met eenheid pt voor elke 6 maanden startend op 01-01-2027;
 	het termijntegoed                                      Numeriek (geheel getal) met eenheid pt voor elke spaartermijn;
-	het laagste tegoed                                     Numeriek (geheel getal) met eenheid pt;
-	het hoogste tegoed                                     Numeriek (geheel getal) met eenheid pt;
+	het laagste tegoed                                     Numeriek (geheel getal) met eenheid pt voor elke dag;
+	het hoogste tegoed                                     Numeriek (geheel getal) met eenheid pt voor elke dag;
 	het bonusaandeel (mv: bonusaandelen)                   Numeriek (geheel getal) met eenheid pt;
 	het maximale bonusaandeel                              Numeriek (geheel getal) met eenheid pt;
 	de gespaarde punten in periode                         Numeriek (geheel getal), gedimensioneerd met spaarperiode;

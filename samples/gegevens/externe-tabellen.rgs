@@ -1,0 +1,31 @@
+// Gegevensbronnen — tabellen die van buiten het model worden aangeleverd.
+//
+// EXTENSIE — geen v2.3.0. §9.3 verklaart uitdrukkelijk buiten de scope van de
+// specificatie hoe instanties hun waarden uit de invoer krijgen, en laat dat aan
+// de uitvoeringsomgeving. Deze extensie vult precies dat gat: het model legt de
+// *vorm* van een aangeleverde tabel vast, de omgeving levert de inhoud. Zie
+// [D-58] en §5a bis van de clean-roombrief.
+//
+// Waarom hiervoor geen bestaand construct volstaat: een dimensie (§3.6) sleutelt
+// op labels die het model zelf opsomt, een parameter (§3.10) is één waarde, en
+// een beslistabel (H12) is een schrijfwijze voor regels. Wat ontbreekt is de
+// tabel *van buiten*: veel rijen, gesleuteld op meerdere assen, met een inhoud
+// die per levering verschilt en dus niet in een `.rgs`-bestand thuishoort.
+//
+// Een ledenregel is een gewone attribuutdeclaratie, dus datatype, domein en
+// eenheid werken hier precies zoals overal elders. `(sleutel)` merkt een
+// sleutelkolom; de regel zonder die aanduiding is de waarde. De volgorde van de
+// sleutels is de volgorde waarin een opzoeking haar argumenten meegeeft.
+
+// De regel die een tarief uit deze tabel haalt staat in
+// `regels/h5-bezorging/art-09-bezorging.rgs`; welke *inhoud* achter de tabel
+// hangt, staat niet hier maar in de testset — `Gegeven de tarieftabel met de
+// rijen …` in `tests/waardevormen.test.rgs` geeft een miniatuur mee, zoals
+// `Parameters` een parameter een waarde geeft. Een opzoeking op een sleutel
+// die de inhoud niet heeft is een modelfout, nooit `leeg`.
+
+// Bron: [art. 9 lid 12](bron/reglement.md#artikel-9-bezorging-van-reserveringen)
+Gegevensbron de tarieftabel
+	de tariefzone      Numeriek (geheel getal) (sleutel);
+	de gewichtsklasse  Numeriek (geheel getal) (sleutel);
+	het tarief         Geldbedrag met eenheid €;

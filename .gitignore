@@ -14,3 +14,10 @@ client/server
 # "regelspraak.server.path" belongs there (see the README). It names a path on
 # one machine, to a build this repository does not own.
 samples/.vscode/
+
+# The on-disk cache of externally supplied tables ([R-15]); rebuilt on demand.
+.regelspraak/
+
+# Minidumps, where a development host is launched with
+# --crash-reporter-directory to diagnose a native abort.
+.crash/

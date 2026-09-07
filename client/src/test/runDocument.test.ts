@@ -11,9 +11,11 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import { renderText } from '../runDocument';
-import { RunPanels, ruleLocation } from '../runPanel';
-import { RunSection, buildView } from '../runView';
-import { RunDetail, TestRun } from '../testExplorer';
+import { RunPanels, elementColumn, ruleLocation, trackOf } from '../runPanel';
+import { RunFocus, RunRow, RunSection, buildView, childrenOf } from '../runView';
+import {
+	CollectionElements, RunDetail, RunDetailAnswer, RunDetailSelector, TestRun
+} from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
 
@@ -24,6 +26,17 @@ const AS_TEXT_COMMAND = 'regelspraak.showUitkomstAlsTekst';
 interface Api {
 	testExplorer: {
 		runForDetail(uri: string, caseName: string): Promise<TestRun | undefined>;
+		/** UX-4 — the ninth custom method, exercised across the repository boundary. */
+		expandCollection(
+			uri: string,
+			caseName: string,
+			what: { rule: string; instance?: string; expression: string }
+		): Promise<CollectionElements | undefined>;
+		/** UX-3 — the tenth, likewise. */
+		runDetail(
+			runId: string,
+			want: RunDetailSelector
+		): Promise<RunDetailAnswer | undefined>;
 	};
 }
 
@@ -40,15 +53,41 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			.activate() as Api;
 	});
 
-	/** A real run of a real testgeval, which is what the view is built from. */
+	/**
+	 * A real run of a real testgeval, which is what the view is built from.
+	 *
+	 * **Filled in** (UX-3): the trace crosses lean, and everything this suite
+	 * asserts about what is *inside* a write is what a reader gets after opening
+	 * one. Doing it here rather than per test also makes this the suite's own
+	 * check that the tenth method works across the repository boundary — the
+	 * assertions below fail the moment it stops answering.
+	 */
 	async function run(caseName: string): Promise<TestRun> {
 		const outcome = await api.testExplorer.runForDetail(testsUri.toString(), caseName);
 		assert.ok(outcome, `${caseName} leverde geen uitkomst op`);
+		await fill(outcome);
 		return outcome;
 	}
 
-	const textOf = async (caseName: string, focus?: string): Promise<string> =>
+	/** Every lean write of a run, fetched and merged — what the text form does. */
+	async function fill(outcome: TestRun): Promise<void> {
+		const detail = outcome.detail;
+		if (!detail?.runId) {
+			return;
+		}
+		const answer = await api.testExplorer.runDetail(detail.runId, { kind: 'alles' });
+		assert.ok(answer && !answer.gone, 'de bewaarde run hoort op te halen te zijn');
+		const key = (one: RunDetail['trace'][number]): string =>
+			`${one.instance ?? ''}|${one.rule}|${one.target}`;
+		const fetched = new Map(answer.entries.map(one => [key(one), one]));
+		detail.trace = detail.trace.map(one => fetched.get(key(one)) ?? one);
+	}
+
+	const textOf = async (caseName: string, focus?: RunFocus): Promise<string> =>
 		renderText(buildView('lidmaatschap.test.rgs', await run(caseName), focus));
+
+	/** X2b's focus, which is the commonest one in this suite. */
+	const onRule = (rule: string): RunFocus => ({ kind: 'regel', rule });
 
 	test('noemt het testgeval, de rekendatum en elke afdeling', async function () {
 		this.timeout(60000);
@@ -76,7 +115,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 
 	test('leidt een regelweergave met wat die regel schreef', async function () {
 		this.timeout(60000);
-		const text = await textOf(PASSING, 'bepaal lidmaatschapsduur');
+		const text = await textOf(PASSING, onRule('bepaal lidmaatschapsduur'));
 		assert.ok(text.startsWith("// Wat 'bepaal lidmaatschapsduur' deed, in testgeval"),
 			text.slice(0, 120));
 		assert.match(text, /Geschreven door 'bepaal lidmaatschapsduur'/);
@@ -167,7 +206,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 				inconsistencies: [], trace: []
 			}
 		};
-		const text = renderText(buildView('x.test.rgs', ran, 'deze regel'));
+		const text = renderText(buildView('x.test.rgs', ran, onRule('deze regel')));
 		// Both halves say so, and neither is redundant: the first is that it wrote
 		// nothing, the second that it was not applied to a single instance. An
 		// absent section would read as a run that failed, which is a worse lie.
@@ -379,6 +418,7 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(operand.children, undefined);
 		});
 
+
 		test('een traceregel springt op de regelnaam ernaast, met of zonder operanden', () => {
 			const rows = view(ran({
 				trace: [
@@ -456,6 +496,155 @@ suite('Uitkomst van een run (X4, W3)', () => {
 		});
 	});
 
+	// UX-5 — een tijdsafhankelijke waarde als spoor. De lijst met periodes is
+	// getrouw en onleesbaar zodra een knip één dag verkeerd valt; het spoor toont
+	// waar de knippen liggen. Alleen het paneel tekent het: de tekstvorm houdt de
+	// lijst, en de twee mogen verschillend *tekenen* en niet verschillend
+	// *beslissen*.
+	suite('het tijdlijnspoor (UX-5)', () => {
+		/** A period; a bound is a day plus the date a reader sees under its tick. */
+		const period = (from: number | undefined, to: number | undefined, value = '10 euro') => ({
+			kind: 'segment' as const,
+			label: 'van … tot …',
+			value,
+			span: {
+				...(from === undefined ? {} : { from: { day: from, text: `dag ${from}` } }),
+				...(to === undefined ? {} : { to: { day: to, text: `dag ${to}` } })
+			}
+		});
+		const now = (day: number) => ({ day, text: `dag ${day}` });
+
+		test('verdeelt de breedte naar rato van de duur', () => {
+			const track = trackOf([period(100, 200), period(200, 400)])!;
+			// Afgerond vergeleken: de coördinaten zijn percentages voor een SVG en
+			// niet iets waar iemand mee rekent, dus de laatste bit van een derde
+			// deel is geen bewering die deze suite hoort te doen.
+			const round = (n: number): number => Math.round(n * 100) / 100;
+			assert.deepEqual(track.segments.map(one => [round(one.at), round(one.width)]),
+				[[0, 33.33], [33.33, 66.67]]);
+		});
+
+		test('laat een open eind van de rand af lopen', () => {
+			// Een periode zonder grens is geen periode die bij de laatste knip
+			// ophoudt: het domein krijgt er ruimte bij, zodat het blok zichtbaar
+			// het plaatje uit loopt — en een tiende van de spanne, zodat het er op
+			// elke schaal hetzelfde uitziet.
+			const track = trackOf([period(100, 200), period(200, undefined)])!;
+			assert.equal(track.segments[0].at, 0);
+			assert.ok(track.segments[1].openEnd);
+			// Een vijfde van de spanne, zodat de open staart niet alleen zichtbaar
+			// is maar ook breed genoeg om zijn eigen waarde te dragen — en dat is
+			// meestal de huidige, dus degene die de lezer zoekt.
+			assert.ok(track.segments[1].width > 12 && track.segments[1].width < 22,
+				String(track.segments[1].width));
+			// En het loopt tot de rand: de staart is de rest van de tijd.
+			assert.equal(Math.round(track.segments[1].at + track.segments[1].width), 100);
+		});
+
+		test('laat een open begin bij de rand beginnen', () => {
+			const track = trackOf([period(undefined, 200), period(200, 300)])!;
+			assert.equal(track.segments[0].at, 0);
+			assert.ok(track.segments[0].openStart);
+			assert.ok(track.segments[1].at > 5, String(track.segments[1].at));
+		});
+
+		test('tekent niets waar er niets te tekenen valt', () => {
+			// **Eén periode is één blok over de volle breedte**, naar rato van
+			// niets, met als enige inhoud het label dat de rij eronder al draagt.
+			// Dat kost een regel paneel per tijdlijnrij en levert geen feit op.
+			assert.equal(trackOf([period(100, 200)]), undefined);
+			// `altijd`: geen enkele eindige grens en geen cursor om te plaatsen.
+			assert.equal(trackOf([period(undefined, undefined)]), undefined);
+			// Maar mét de rekendatum erin zegt hij waar de run staat, en dat is
+			// waar de meeste tijdlijnfouten op neerkomen.
+			assert.equal(trackOf([period(100, 200)], now(150))?.now?.at, 50);
+			// En twee periodes hebben een knip ertussen, wat de hele functie is.
+			assert.equal(trackOf([period(100, 200), period(200, 300)])?.segments.length, 2);
+		});
+
+		test('deelt niet door een spanne van niets', () => {
+			// Elke grens op één dag: zonder de terugval is elke coördinaat NaN.
+			const track = trackOf([period(100, 100), period(100, 100)])!;
+			assert.equal(track.segments.length, 2);
+			for (const one of track.segments) {
+				assert.ok(Number.isFinite(one.at) && Number.isFinite(one.width),
+					`${one.at} / ${one.width}`);
+			}
+		});
+
+		// **Een as met datums erop**, want een blauwe balk zonder één datum is voor
+		// wie hem niet zelf gebouwd heeft geen tijdlijn maar een balk.
+		test('dateert elke knip op de as', () => {
+			const track = trackOf([period(100, 200), period(200, 400)])!;
+			assert.deepEqual(track.ticks.map(one => [one.label, Math.round(one.at)]),
+				[['dag 100', 0], ['dag 200', 33], ['dag 400', 100]]);
+			// Naar binnen verankerd aan de randen: een datum gecentreerd op een merk
+			// op 0% hangt met de helft buiten het paneel.
+			assert.deepEqual(track.ticks.map(one => one.anchor), ['start', 'middle', 'end']);
+		});
+
+		test('dateert een knip die twee periodes delen één keer', () => {
+			// Anders staat dezelfde datum tweemaal op dezelfde plek.
+			const track = trackOf([period(100, 200), period(200, 300)])!;
+			assert.deepEqual(track.ticks.map(one => one.label),
+				['dag 100', 'dag 200', 'dag 300']);
+		});
+
+		test('tekent de rekendatum waar hij binnen het spoor valt', () => {
+			// *Welk segment staat de run eigenlijk in* is waar de meeste
+			// tijdlijnfouten op neerkomen.
+			const track = trackOf([period(100, 200), period(200, 300)], now(150))!;
+			assert.equal(track.now?.at, 25);
+			// Met zijn eigen datum erbij: een oranje streep zonder label is voor een
+			// lezer zonder voorkennis een raadsel.
+			assert.equal(track.now?.label, 'dag 150');
+			// En niet daarbuiten, want dan zou de cursor op een rand geplakt worden
+			// en een positie suggereren die hij niet heeft. Twee periodes, zodat het
+			// spoor er nog is: bij één zou het hele spoor vervallen, wat dezelfde
+			// conclusie is maar een niveau hoger.
+			assert.equal(trackOf([period(100, 200), period(200, 300)], now(900))!.now, undefined);
+		});
+
+		test('geeft geen spoor waar geen periodes staan', () => {
+			assert.equal(trackOf([{ kind: 'operand', label: 'x', value: '1' }]), undefined);
+			assert.equal(trackOf([]), undefined);
+		});
+
+		test('draagt de lege periode als lege periode over', () => {
+			// Een gat in de dekking moet er als een gat uitzien; het uit de tekst
+			// `leeg` aflezen zou deze kant een literaal laten ontleden.
+			const track = trackOf(
+				[{ ...period(100, 200, 'leeg'), empty: true }, period(200, 300)])!;
+			assert.deepEqual(track.segments.map(one => one.empty), [true, false]);
+		});
+
+		test('geeft een tijdsafhankelijke schrijving haar periodes in de trace', () => {
+			// Die kwam als de scalair `leeg` over de lijn, dus een regel die een
+			// prima tijdlijn afleidde las als een regel die niets afleidde.
+			const rows = buildView('x.test.rgs', {
+				case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+				detail: {
+					rekendatum: '01-01-2027', rekendatumDay: 150, values: [], kenmerken: [],
+					firedRules: [], inconsistencies: [], trace: [{
+						instance: 'Sam', target: 'maandtoeslag', rule: 'bepaal maandtoeslag',
+						segments: [
+							{ from: '01-01-2026', to: '01-04-2026', value: '10 euro', fromDay: 100, toDay: 200 },
+							{ from: '01-04-2026', value: '12 euro', fromDay: 200 }
+						],
+						operands: []
+					}]
+				}
+			}).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			// Geen scalaire waarde op de rij zelf — óf periodes óf een waarde.
+			assert.equal(rows[0].value, undefined);
+			assert.deepEqual(rows[0].children?.map(one => [one.kind, one.value]),
+				[['segment', '10 euro'], ['segment', '12 euro']]);
+			// En de periodes staan vóór de stappen en operanden: ze zijn wat de
+			// regel schreef, de rest is hoe hij eraan kwam.
+			assert.equal(rows[0].children?.[0].kind, 'segment');
+		});
+	});
+
 	suite('de sprong van het paneel naar de regel', () => {
 		const symbol = (name: string, kind: vscode.SymbolKind): vscode.SymbolInformation =>
 			new vscode.SymbolInformation(name, kind, '',
@@ -485,6 +674,423 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(
 				ruleLocation([symbol('boete', vscode.SymbolKind.Field)], 'boete'),
 				undefined);
+		});
+	});
+
+	// UX-4 — welke rij aanbiedt om uitgeklapt te worden, en waarmee.
+	//
+	// De server zegt *of* een knoop een verzameling is en levert de zin terug;
+	// wat deze kant beslist is dat een rij die zin alleen aanbiedt als er ook een
+	// regel is om hem in te lezen. Zonder die tweede helft is er nergens om te
+	// evalueren, en dan biedt de rij het gebaar simpelweg niet aan.
+	suite('een verzameling die uitgeklapt kan worden (UX-4)', () => {
+		const withStep = (step: {
+			text: string; value: string; expand?: string
+		}): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+			detail: {
+				rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace: [{
+					instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+					value: '45 euro', operands: [], steps: [step]
+				}]
+			}
+		});
+
+		test('draagt de zin, de regel en de instantie mee', () => {
+			const rows = buildView('x.test.rgs', withStep({
+				text: 'de som van de boetes van zijn gedane uitleningen',
+				value: '45 euro',
+				expand: 'de boetes van zijn gedane uitleningen'
+			})).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			const step = rows[0].children?.find(one => one.kind === 'step');
+			// Alles wat nodig is om het opnieuw te vragen, en niets wat een antwoord
+			// is: de elementen komen later en zijn van de tekenaar.
+			assert.deepEqual(step?.expand, {
+				expression: 'de boetes van zijn gedane uitleningen',
+				rule: 'bepaal contributie',
+				instance: 'Noor'
+			});
+		});
+
+		// Een verzameling wordt op twee manieren gebouwd en die willen tegengestelde
+		// kolommen. De verkeerde noemen levert een kolom op die niets onderscheidt
+		// en er kapot uitziet: *Noor, Noor, eerste kalenderdag*.
+		test('noemt de kolom die de elementen uit elkaar houdt', () => {
+			// Eén attribuut over veel instanties: het label is overal 'premie'.
+			assert.equal(elementColumn([
+				{ label: 'premie', instance: 'Lid 1' },
+				{ label: 'premie', instance: 'Lid 2' },
+				{ label: 'premie', instance: 'Lid 3' }
+			]), 'instantie');
+			// Veel attributen van één instantie — en de parameter ertussen, die
+			// helemaal geen instantie heeft, is precies waarom tellen beter werkt
+			// dan "zijn ze allemaal gelijk".
+			assert.equal(elementColumn([
+				{ label: 'aanvraagdatum', instance: 'Noor' },
+				{ label: 'betaaldatum', instance: 'Noor' },
+				{ label: 'eerste kalenderdag' }
+			]), 'naam');
+		});
+
+		test('biedt niets aan waar de server geen zin meestuurt', () => {
+			const rows = buildView('x.test.rgs', withStep({
+				text: '2 maal 3', value: '6'
+			})).sections.find(one => one.title.startsWith('Trace'))!.rows;
+			assert.equal(rows[0].children?.find(one => one.kind === 'step')?.expand, undefined);
+		});
+
+		test('een inconsistentie biedt het niet aan, want er is geen schrijving', () => {
+			// De stappen van een controle zitten onder een bevinding en niet onder
+			// een schrijving, dus er is geen regel-en-instantie om de zin in te
+			// lezen — en dan is geen gebaar het eerlijke antwoord.
+			const rows = buildView('x.test.rgs', {
+				case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+				detail: {
+					rekendatum: '01-01-2027', values: [], kenmerken: [],
+					firedRules: [], trace: [], inconsistencies: [{
+						rule: 'Controleer poteisen',
+						steps: [{ text: 'de som van de tegoeden', value: '4', expand: 'de tegoeden' }]
+					}]
+				}
+			}).sections.find(one => one.title === 'Inconsistent bevonden')!.rows;
+			assert.equal(rows[0].children?.find(one => one.kind === 'step')?.expand, undefined);
+		});
+	});
+
+	// UX-3 — de trace komt mager mee en wordt aangevuld op de klik die haar
+	// opent. Er is geen *modus*: welke van de twee vormen een rij krijgt volgt
+	// uit de data, zodat `buildView` één pad houdt en een test het verschil kan
+	// lezen.
+	suite('de trace op afroep (UX-3)', () => {
+		const entry = (extra: Partial<RunDetail['trace'][number]> = {}) => ({
+			instance: 'Noor', target: 'contributie', rule: 'bepaal contributie',
+			value: '45 euro', ...extra
+		});
+
+		const withTrace = (trace: RunDetail['trace']): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults: [],
+			detail: {
+				runId: 'run-1', rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace
+			}
+		});
+
+		const traceRows = (run: TestRun): RunRow[] =>
+			buildView('x.test.rgs', run).sections.find(one => one.title.startsWith('Trace'))!.rows;
+
+		test('een magere schrijving zegt welke schrijving zij is', () => {
+			const rows = traceRows(withTrace([entry({ more: true })]));
+			assert.deepEqual(rows[0].needs, {
+				kind: 'schrijving', rule: 'bepaal contributie',
+				target: 'contributie', instance: 'Noor'
+			});
+			assert.deepEqual(rows[0].children, []);
+		});
+
+		test('een schrijving die niets las vraagt niets op', () => {
+			// `more` is het woord van de server voor "hier zat iets": zonder dat zou
+			// een schrijving die werkelijk niets las een pijltje krijgen dat op
+			// niets opengaat.
+			const rows = traceRows(withTrace([entry({ operands: [] })]));
+			assert.equal(rows[0].needs, undefined);
+			const lean = traceRows(withTrace([entry()]));
+			assert.equal(lean[0].needs, undefined);
+		});
+
+		test('een complete schrijving houdt haar kinderen, zoals altijd', () => {
+			const rows = traceRows(withTrace([entry({
+				operands: [{ label: 'basiscontributie', instance: 'Noor', value: '50 euro' }],
+				steps: [{ text: '50 min 5', value: '45 euro' }]
+			})]));
+			assert.equal(rows[0].needs, undefined);
+			assert.deepEqual(rows[0].children?.map(one => one.kind), ['step', 'operand']);
+		});
+
+		test('een operand met een magere schrijving erachter vraagt die op', () => {
+			// De ketting één stap verder volgen is een ophaalslag in plaats van een
+			// opzoeking, en de rij zegt welke schrijving zij nodig heeft.
+			const rows = traceRows(withTrace([
+				entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				}),
+				{
+					instance: 'Noor', target: 'basiscontributie', rule: 'bepaal basiscontributie',
+					value: '50 euro', more: true
+				}
+			]));
+			const operand = rows[0].children!.find(one => one.kind === 'operand')!;
+			assert.deepEqual(operand.needs, {
+				kind: 'operand', rule: 'bepaal basiscontributie',
+				target: 'basiscontributie', instance: 'Noor'
+			});
+			// Leeg en niet afwezig: wat het paneel openvouwt, loopt het af.
+			assert.deepEqual(operand.children, []);
+		});
+
+		// En dit is de rij waarop het paneel leeg bleef. `rowItem` in runPanel.ts
+		// vouwt een rij open zodra zij kinderen *of* `needs` heeft, en liep daarna
+		// `row.children` ongedekt af — terwijl de rij hierboven precies dat is:
+		// `needs` zonder `children`. Dat wierp `row.children is not iterable`, en
+		// omdat `body.append` pas ná de rijenlus komt, tekende het paneel alleen
+		// zijn kop en verder niets. Een webview is niet vanuit een test te
+		// bedienen, dus wat hier staat is de *voorwaarde* die haar tekenlus stelt,
+		// over dezelfde weergave.
+		test('elke openvouwbare rij is te doorlopen zoals de webview haar doorloopt', () => {
+			const walk = (row: RunRow, path: string): void => {
+				const foldable = Boolean((row.children && row.children.length > 0) || row.needs);
+				if (!foldable) {
+					return;
+				}
+				assert.ok(Array.isArray(row.children),
+					`${path}: een rij die het paneel openvouwt hoort een kinderlijst te hebben`);
+				for (const child of row.children ?? []) {
+					walk(child, `${path} > ${child.label}`);
+				}
+			};
+			const run = withTrace([
+				entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				}),
+				{
+					instance: 'Noor', target: 'basiscontributie', rule: 'bepaal basiscontributie',
+					value: '50 euro', more: true
+				}
+			]);
+			for (const focus of [
+				undefined,
+				{ kind: 'waarde', attribute: 'contributie', instance: 'Noor' } as const
+			]) {
+				const view = buildView('x.test.rgs', run, focus);
+				for (const section of view.sections) {
+					for (const row of section.rows) {
+						walk(row, `${section.title} > ${row.label}`);
+					}
+				}
+			}
+		});
+
+		test('childrenOf leest de opgehaalde schrijving, in beide lezingen', () => {
+			const fetched: RunDetail['trace'] = [entry({
+				operands: [{ label: 'basiscontributie', instance: 'Noor', value: '50 euro' }],
+				steps: [{ text: '50 min 5', value: '45 euro' }]
+			})];
+			// Een schrijvingsrij toont wat de regel deed én waaruit; een
+			// operandrij toont alleen de operanden van de regel erachter, wat
+			// precies is wat de gretige ketting deed.
+			assert.deepEqual(
+				childrenOf({ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' }, fetched)
+					.map(one => one.kind),
+				['step', 'operand']);
+			assert.deepEqual(
+				childrenOf({ kind: 'operand', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' }, fetched)
+					.map(one => one.kind),
+				['operand']);
+		});
+
+		test('een opgehaalde rij krijgt dezelfde doorklik als een gewone', () => {
+			// Een rij die op een klik binnenkomt is een rij als alle andere, en een
+			// waarvan de regel niet opengaat is het soort verschil dat niemand
+			// opmerkt tot hij het nodig heeft.
+			const rows = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' },
+				[entry({
+					operands: [{
+						label: 'basiscontributie', instance: 'Noor', value: '50 euro',
+						source: { kind: 'regel', rule: 'bepaal basiscontributie' }
+					}]
+				})]);
+			const operand = rows.find(one => one.kind === 'operand')!;
+			assert.deepEqual(operand.link,
+				{ on: 'beside', kind: 'revealRule', rule: 'bepaal basiscontributie' });
+		});
+
+		test('een run die weg is zegt dat, in plaats van niets', () => {
+			// Alleen het ophalen kan ontdekken dat een bewaarde run niet meer
+			// bewaard wordt; een lege lijst zou lezen als een schrijving die niets
+			// berekende.
+			const gone = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie' }, [], true);
+			assert.equal(gone.length, 1);
+			assert.match(gone[0].label, /niet meer beschikbaar/);
+			// En hij biedt de weg terug aan: een lezer die hier belandt heeft geen
+			// voor de hand liggende manier om opnieuw uit te voeren.
+			assert.deepEqual(gone[0].link, { on: 'label', kind: 'opnieuw' });
+			// En een schrijving die er wél is maar nog steeds mager zegt het ook.
+			const stale = childrenOf(
+				{ kind: 'schrijving', rule: 'bepaal contributie', target: 'contributie', instance: 'Noor' },
+				[entry({ more: true })]);
+			assert.equal(stale.length, 1);
+			assert.equal(stale[0].kind, 'note');
+		});
+	});
+
+	// UX-6 — wat er veranderd is tussen twee uitvoeringen van één testgeval.
+	//
+	// Alles wat vergeleken wordt staat al op de draad, dus dit stelt samen en
+	// rekent niet: elke waarde is door dezelfde `showValue` op de server
+	// geschreven, en dat is precies wat vergelijken op de letterlijke notatie
+	// hier exact maakt in plaats van slordig.
+	suite('wat er veranderd is (UX-6)', () => {
+		const ranWith = (detail: Partial<RunDetail>, faults: TestRun['faults'] = []): TestRun => ({
+			case: 'Iets', outcome: 'uitgevoerd', assertions: [], faults,
+			detail: {
+				rekendatum: '01-01-2027', values: [], kenmerken: [],
+				firedRules: [], inconsistencies: [], trace: [], ...detail
+			}
+		});
+
+		const value = (instance: string, attribute: string, shown: string) =>
+			({ instance, attribute, value: shown, derived: true });
+
+		const changed = (now: TestRun, before: TestRun): RunSection =>
+			buildView('x.test.rgs', now, undefined, before).sections[0];
+
+		test('noemt een waarde die verschoven is, met beide kanten', () => {
+			const section = changed(
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.match(section.title, /^Veranderd \(1\)$/);
+			assert.equal(section.rows[0].kind, 'changed');
+			assert.equal(section.rows[0].label, 'Noor · contributie');
+			assert.equal(section.rows[0].note, '25 euro → 30 euro');
+		});
+
+		test('leidt een verschoven waarde naar haar eigen afleiding', () => {
+			// De volgende vraag na "deze is veranderd" is altijd "hoe kwam hij tot
+			// stand", en dat is de afdeling die **Leg uit** al tekent — over de run
+			// die deze kant al vasthoudt, dus zonder tweede uitvoering.
+			const section = changed(
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.deepEqual(section.rows[0].link, {
+				on: 'label', kind: 'explain', attribute: 'contributie', instance: 'Noor'
+			});
+		});
+
+		test('scheidt verschenen van verdwenen', () => {
+			const section = changed(
+				ranWith({ values: [value('Sam', 'korting', '5 euro')] }),
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.deepEqual(section.rows.map(one => [one.kind, one.label]), [
+				['appeared', 'Sam · korting'],
+				['vanished', 'Noor · contributie']
+			]);
+		});
+
+		test('zegt welke regel nu wel en welke niet meer vuurt', () => {
+			const section = changed(
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 2 }] }),
+				ranWith({ firedRules: [{ rule: 'bepaal boete', count: 1 }] }));
+			assert.deepEqual(section.rows.map(one => [one.kind, one.label, one.note]), [
+				['appeared', 'Jeugdlid', 'vuurt nu wel'],
+				['vanished', 'bepaal boete', 'vuurt niet meer']
+			]);
+			// En een regel die *anders vaak* vuurde is verschoven, niet verschenen.
+			const more = changed(
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 3 }] }),
+				ranWith({ firedRules: [{ rule: 'Jeugdlid', count: 2 }] }));
+			assert.deepEqual([more.rows[0].kind, more.rows[0].note], ['changed', '2× → 3×']);
+		});
+
+		test('meldt een fout die erbij kwam en een die wegging', () => {
+			const section = changed(
+				ranWith({}, [{ rule: 'bepaal boete', message: 'deling door leeg', kind: 'fout' }]),
+				ranWith({}, [{ rule: 'Jeugdlid', message: 'onbekende verwijzing', kind: 'modelfout' }]));
+			assert.deepEqual(section.rows.map(one => one.kind), ['fault', 'vanished']);
+		});
+
+		test('zegt het ook wanneer er niets veranderd is', () => {
+			// Een afwezige afdeling leest als een vergelijking die mislukt is, en
+			// "er is niets verschoven" is het antwoord waar iemand op drukte.
+			const same = ranWith({ values: [value('Noor', 'contributie', '25 euro')] });
+			const section = changed(same, same);
+			assert.match(section.title, /^Veranderd — niets$/);
+			assert.equal(section.rows[0].kind, 'note');
+		});
+
+		test('staat vóór de afleiding, want de vraag ging over de hele run', () => {
+			const view = buildView('x.test.rgs',
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }),
+				{ kind: 'waarde', attribute: 'contributie', instance: 'Noor' },
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] }));
+			assert.match(view.sections[0].title, /^Veranderd/);
+			assert.match(view.meta, /vergeleken met de vorige uitvoering/);
+		});
+
+		test('tekent niets waar er geen vorige uitvoering is', () => {
+			const view = buildView('x.test.rgs',
+				ranWith({ values: [value('Noor', 'contributie', '30 euro')] }));
+			assert.ok(!view.sections.some(one => one.title.startsWith('Veranderd')));
+			assert.ok(!view.meta.includes('vergeleken'));
+		});
+
+		test('de tekstvorm markeert elke verandering met haar eigen teken', () => {
+			const text = renderText(buildView('x.test.rgs',
+				ranWith({ values: [value('Sam', 'korting', '5 euro')] }),
+				undefined,
+				ranWith({ values: [value('Noor', 'contributie', '25 euro')] })));
+			assert.match(text, /\+ Sam · korting/);
+			assert.match(text, /− Noor · contributie/);
+		});
+	});
+
+	// UX-4 — de negende eigen methode, over de repogrens heen.
+	//
+	// Dit is het enige wat de twee helften tegen elkaar houdt: de server merkt
+	// een knoop als verzameling en levert de zin terug, deze kant stuurt hem
+	// onveranderd op en krijgt de elementen. Er wordt niets vastgelegd tijdens
+	// de run — het werk per element is precies wat §X7 fase 3 met opzet niet
+	// bijhoudt — dus dit is een uitvoering plus één vraag over de winkel die zij
+	// achterliet.
+	suite('een verzameling uitklappen tegen een echte server (UX-4)', () => {
+		const vestigingen = getDocUri('tests/kenmerken.test.rgs');
+		const CASE = 'Twee leden bij één vestiging';
+
+		test('klapt een aantal uit naar de instanties die het telde', async function () {
+			this.timeout(60000);
+			const outcome = await api.testExplorer.runForDetail(vestigingen.toString(), CASE);
+			assert.ok(outcome?.detail, 'het testgeval hoort te draaien');
+			// UX-3: de trace komt mager mee, en de stappen zijn wat een lezer krijgt
+			// als hij de schrijving opent.
+			await fill(outcome);
+			const write = outcome.detail.trace.find(one => one.target === 'ledenaantal');
+			assert.ok(write, 'de vestigingsregel hoort te vuren');
+			const counted = (write.steps ?? []).find(one => one.expand);
+			// De zin is die van het *argument*, niet die van de telling zelf:
+			// `het aantal …` opnieuw rekenen levert weer één getal op.
+			assert.ok(counted?.expand, JSON.stringify(write.steps));
+			assert.ok(!counted.expand.startsWith('het aantal'), counted.expand);
+
+			const opened = await api.testExplorer.expandCollection(
+				vestigingen.toString(), CASE, {
+					rule: write.rule,
+					instance: write.instance,
+					expression: counted.expand
+				});
+			assert.ok(opened, 'er hoort een antwoord te komen');
+			assert.equal(opened.refusal, undefined, opened.refusal);
+			// Twee leden bij één vestiging, elk bij naam — wat een lijst getallen
+			// pas een antwoord maakt.
+			assert.equal(opened.size, 2);
+			assert.deepEqual(opened.elements.map(one => one.instance).sort(), ['Noor', 'Sam']);
+		});
+
+		test('weigert met een zin, in plaats van met een lege lijst', async function () {
+			this.timeout(60000);
+			const opened = await api.testExplorer.expandCollection(
+				vestigingen.toString(), CASE, {
+					rule: 'een regel die niet bestaat',
+					expression: 'ingeschreven leden van de Boekerijvestiging'
+				});
+			assert.ok(opened?.refusal, 'een onbekende regel hoort een reden op te leveren');
+			assert.deepEqual(opened.elements, []);
 		});
 	});
 

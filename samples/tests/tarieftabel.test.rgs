@@ -1,0 +1,47 @@
+// Voorbeeldtestset (TestSpraak) — een Gegevensbron gebonden aan een levering.
+//
+// EXTENSIE ([D-58], [T-44]). Het model declareert alleen de *vorm* van de
+// tarieftabel (`gegevens/externe-tabellen.rgs`); welke inhoud erachter hangt is
+// omgeving, en wordt hier gebonden, naast de parameters. Het pad wijst naar een
+// manifest (`externe-tabellen/tarieftabel.json`) dat zegt hoe het gegevensbestand ernaast
+// is geschreven — scheidingsteken, decimaalteken, kopregel, de bereiken van de
+// sleutels, het aantal decimalen — en wordt gezocht vanaf de map van dit bestand
+// naar boven, zoals een `// Bron:`-verwijzing.
+//
+// De levering wordt één keer per uitvoering geladen en daarna vastgehouden; de
+// uitvoer van een testgeval noemt welke levering is gelezen (naam, manifest,
+// sha256). Een testgeval dat zelf `Gegeven de tarieftabel met de rijen …`
+// meegeeft, vervangt deze binding voor dát geval helemaal — zie
+// `waardevormen.test.rgs`.
+
+Testset Tarieftabel
+Rekendatum 01-07-2027
+
+Gegevensbronnen
+	de tarieftabel  uit "externe-tabellen/tarieftabel.json"
+
+Testgeval Een zending in de verste zone
+	Gegeven een Zending (Ver) met
+		bezorgdatum        14-02-2027
+		bezorgtijdstip     dd. 14-02-2027 09:30:00.000
+		beloofde tijdstip  dd. 14-02-2027 10:00:00.000
+		bezorgtermijn      2 dagen
+		gewicht            3,000 kg
+		beoordeling        "op tijd"
+		zone               3
+		gewichtsklasse     2
+	Verwacht Ver met
+		verzendtarief  8,25 EUR
+
+Testgeval Een zending in de middelste zone
+	Gegeven een Zending (Midden) met
+		bezorgdatum        14-02-2027
+		bezorgtijdstip     dd. 14-02-2027 09:30:00.000
+		beloofde tijdstip  dd. 14-02-2027 10:00:00.000
+		bezorgtermijn      2 dagen
+		gewicht            2,000 kg
+		beoordeling        "op tijd"
+		zone               2
+		gewichtsklasse     2
+	Verwacht Midden met
+		verzendtarief  7,50 EUR

@@ -7,6 +7,221 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [0.9.0] — Tables from outside the model, and the way into a run
+
+A model can now declare a table it does not contain. **`Gegevensbron`** is a
+GegevensSpraak declaration for an externally supplied table — its key columns
+marked `(sleutel)`, one value column — and a rule reads from it with
+`<waarde> uit <bron> bij <sleutel>, <sleutel> en <sleutel>`. The model states the
+*shape* and never the content: what the table holds is bound in a testset,
+either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
+or for the whole testset from a delivery on disk (`Gegevensbronnen` /
+`de tarieftabel  uit "externe-tabellen/tarieftabel.json"`), where the path names a
+manifest saying how the file is written. A run says which delivery it read. A
+lookup on a key the content does not carry is a `modelfout`, never `leeg`.
+
+**This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
+The specification declares how instances get their values from the input to be
+outside its scope (§9.3) and leaves it to the execution environment; this
+extension fills exactly that gap, is marked as such in the grammar, is optional,
+and changes nothing for a model that does not use it. `docs/FEATURES.md`
+describes it in full; the decision record is the server repository's [D-58].
+
+Also new: a **parameter with a timeline** (`Parameter … voor elke maand;`, §3.8)
+now takes several period lines in a testset and evaluates as the timeline it
+declares; `RS705` reports a time-dependent value written to an attribute the
+model keeps once; `RS960` reports overlapping periods while you type; and a
+testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
+rather than passed, and its run lens says `scenario uitvoeren`.
+
+**Rules that derive their values from each other are now reported while you
+type.** `RS616` names a loop that runs through two or more rules — a `korting`
+computed from a `grondslag` that is itself computed from that `korting`. Until
+now only a rule that read *its own* target was reported (`RS606`); a loop through
+two rules was refused when the model was run and mentioned nowhere in the editor.
+Every rule of the loop is marked, since each is a place to break it, and the
+message names the value that closes the loop, that being the thing to change.
+RegelSpraak allows a circular derivation only inside a rule group marked
+recursive (§9.10), which this version of the language cannot yet write, so a loop
+is an error and a run refuses to start on one.
+
+**The checks that came with it, by code.** `RS121` — a `Gegevensbron` whose shape
+is wrong (no key marked, no value line, or more than one); `RS122` — a lookup
+naming a value the table does not have; `RS123` — the wrong number of keys;
+`RS124` — a table no rule anywhere reads (a warning, as an unused declaration is
+elsewhere); `RS125` — a key whose datatype or unit does not fit the axis it
+addresses, exact rather than convertible, because a key addresses a cell. In a
+testset, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
+of keys, a key stated twice. A lookup expression is typed as the table's value
+column is declared, so the existing datatype, unit and precision checks reason
+about `het tarief uit de tarieftabel bij …` exactly as about the attribute
+`het tarief`. Completion offers the declared tables after `uit`.
+
+**Smaller things.** A kenmerk may carry a **timeline**, as §13.3.2 admits
+(`is verzekerd voor elke dag;`): the model reads it now, so the Tijdlijn it names
+gets colour, navigation and rename, and `RS117` where it names none — the engine
+still refuses a time-dependent kenmerk with a fault. Formatting indents a
+`Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
+workspace gained `externe-tabellen/` with a tariff table, its manifest, the
+declaration that describes it and a testset that binds it. A delivery a testset
+binds is kept parsed under `.regelspraak/cache/` so a later run need not read it
+again; **`regelspraak.execution.cacheExternalData`** switches that off for anyone
+who would rather nothing were written into the workspace, and a cache file for a
+delivery the manifest no longer names is now removed instead of left behind.
+
+**Two things this release does not contain, deliberately.** Bulk evaluation —
+running a model over many thousands of rows and aggregating the results outside
+RegelSpraak — was part of the same request and is **parked**: it is a
+requirement of a future runner and its compiler, not of the editor. And the
+extension owed a comparison against ALEF before shipping; the reviewer found
+that ALEF has no concept resembling a declared external table, a key lookup, or a
+test-side binding, so the clearance is a vacuous one and is recorded as such.
+
+**Leg uit** — one gesture from a value to the derivation that produced it (UX-1).
+The run panel already drew the whole chain: which rule wrote a value, the
+arithmetic it did on the way, and where each operand came from, as far back as
+the run can say. What was missing was the way in — a rules writer starts from a
+red `Verwacht` line or a number they did not expect, not from a wish to step
+through rules. Three entry points now open the panel with that value's own
+derivation at the top, expanded: a **leg uit** link on the `Verwacht` line that
+just failed, beside the run links you already have; the editor's context menu on
+a value; and **RegelSpraak: Leg uit** in the palette. The link appears when a run
+leaves a failure and is gone again the moment the expectation passes or you edit
+the line. In a
+testset the explanation is about the instance the `Verwacht`/`Gegeven` block
+names; in a rule file it is about every instance the run has. Where no rule wrote
+the value, the panel states which of the recorded facts holds instead of guessing
+why. The editor entry appears only where there is an answer.
+
+**De trace komt op afroep.** Een uitgebreide uitvoering noemt nu elke schrijving
+maar draagt de binnenkant van geen enkele mee — de rekenstappen en de operanden
+zijn het grootste deel van een trace en tellen voor de ene schrijving die je aan
+het najagen bent. Ze komen op de klik die de rij opent, uit de uitvoering die het
+paneel al tekende. Je merkt er weinig van: een rij vouwt open zoals altijd en
+zegt heel even *ophalen…*. Wat het wél verandert is dat een klik in het paneel
+over **die** uitvoering gaat en niet over een verse — tot nu toe voerde elk
+gebaar het model opnieuw uit, dus een klik antwoordde over het model zoals je het
+intussen had getypt. Op de modellen die hier draaien scheelt het 33 tot 52% aan
+overdracht per uitvoering; op een model met duizenden instanties is het het
+verschil tussen megabytes en niet. **Als tekst openen** haalt eerst alles op, want
+een tekstdocument kan niet nahalen terwijl je leest — de tekstvorm blijft dus
+compleet, en blijft wat je in een ticket plakt. Is een uitvoering niet meer
+beschikbaar, dan zegt de rij dat en biedt aan het testgeval opnieuw uit te voeren.
+
+**Een verzameling uitklappen.** `de som van de premies van alle deelnemers`
+over vijfhonderd instanties, een klein beetje verkeerd, is de bug waar je een
+middag mee kwijt bent: de som staat in de trace en het element dat de
+uitschieter is staat nergens. Een aggregatie in de trace draagt nu een
+**uitklappen**-knop, en die opent de elementen erachter — één rij per element,
+met de instantie waar het bij hoort en zijn waarde, **grootste eerst**, omdat je
+op een uitschieter jaagt. De kop *instantie* geeft je de eigen volgorde van het
+model terug en *waarde* de gesorteerde; een lange lijst toont er twintig met
+**toon alle …** eronder. Waar de waarden niet met elkaar te vergelijken zijn —
+tekst, of twee eenheden — blijft de volgorde van het model staan in plaats van
+dat er een verzonnen wordt. Er wordt niets extra's vastgelegd tijdens een
+uitvoering, dus een gewone run wordt er geen byte zwaarder van: uitklappen voert
+het testgeval opnieuw uit en rekent de zin daar uit. Dat is het ene gebaar in het
+paneel dat nog over een verse uitvoering gaat en niet over de uitvoering die het
+paneel tekende — de elementen komen uit de situatie van een run, en die bestaat
+alleen zolang die run loopt. Klap je iets uit nadat je het model hebt getypt, dan
+zie je de elementen van het model zoals het er nu staat. In de **debugger** doet
+hetzelfde zich voor waar het al hoorde: een Watch-antwoord dat een verzameling is krijgt
+het uitklappijltje van de Variabelen-lade, en een verzameling schrijft zich daar
+nu als *512 waarden* in plaats van als een regel van vijfhonderd getallen.
+
+**Vergelijk met vorige uitvoering.** De tweede vraag na *waarom* is *wat is er
+veranderd*, en tot nu toe moest je daarvoor twee panelen naast elkaar houden.
+**RegelSpraak: Vergelijk met vorige uitvoering** — in het palet, in het
+Test Results-menu op een mislukte verwachting, en als knop in het uitkomstpaneel
+— voert het testgeval uit en zet er een afdeling **Veranderd (n)** boven: één rij
+per waarde die verschoven is (`25 euro → 30 euro`), per kenmerk dat erbij kwam of
+wegging, per regel die nu wel of niet meer vuurt of vaker vuurde, en per fout die
+verscheen of verdween. Klik een verschoven waarde en je krijgt de afleiding
+ervan, over dezelfde uitvoering — dus zonder opnieuw te draaien. Is er niets
+verschoven, dan zegt het dat ook. En **Als tekst openen** geeft je in een
+vergelijking de twee uitvoeringen naast elkaar in VS Code's eigen diff-venster,
+compleet, met elk verschil rood en groen gemarkeerd. De vorige uitvoering is de
+vorige *volledige* uitvoering van dat testgeval — die uit de Testing-weergave
+telt niet mee, want daar wordt geen detail opgehaald.
+
+**Time-dependent values are drawn as a track.** A period list is faithful and
+unreadable the moment a knip lands one day off, so the panel now draws them above the
+list as a dated timeline: blocks in proportion to their length with their values
+on them, **an axis with the date of every knip beneath it**, an empty stretch
+shaded as the gap it is, an open period running off the edge, and the
+**rekendatum as a labelled cursor** — because *which period is the run actually
+standing in* is what most timeline bugs reduce to. Hovering a block gives the
+whole period and value; a label that will not fit is left out rather than drawn
+over its neighbour, and the list below has all of them. Every colour is a chart variable, so your theme owns it,
+and the text form keeps the period list unchanged.
+
+It also fixes something the trace had been getting wrong: **a rule that derived a
+timeline read as a rule that derived nothing**, because a time-dependent write
+crossed as the single value `leeg` with its periods dropped on the way out.
+
+**Waarom leeg?** — *leeg* is the commonest confusion and has five causes with
+five different fixes, and the run recorded all of them separately. Where no rule
+wrote the value you asked about, **Leg uit** now answers with a verdict list
+instead of a derivation: one row per rule that could have filled it, saying what
+that rule did — *overgeslagen*, with the criterion that decided and the values it
+read; *geen regelversie geldig op 15-06-2027 (versies: t/m 2025, vanaf 2028)*;
+*faalde: deling door leeg*; or *niet op deze instantie toegepast*. Where **no
+rule writes the attribute at all** it says so plainly, with the note that a
+`Gegeven` is then the only possible source — very often the actual bug, and the
+one case a run alone could never diagnose. The fifth cause, an operand that was
+leeg, leaves a write behind and is answered by the derivation, which shows that
+operand.
+
+A rule that has **no regelversie covering the rekendatum** used to be indis-
+tinguishable from a rule that simply fired nowhere; the run records it now, with
+the periods the rule does have.
+
+**And a decision table now says what it read.** A conclusion cell is usually a
+literal, so a table's write recorded no operands and no arithmetic — the one
+write in a model you could not open, and the derivation stopped there. It now
+carries the rows it tried, each with the conditions that decided it and their
+values, so *why 40 and not 25* reads as `rij 1 = onwaar` over
+`indien zijn lidmaatschapsduur kleiner is dan 3 jaar`, with
+`lidmaatschapsduur = 8 jaar` beside it and the rule that derived it one click
+further. The rows **tried** rather than the row that won, because the winning row
+is routinely the `n.v.t.` catch-all, which states no condition and so explains
+nothing. The write also names the deciding row beside the
+table — `← Contributiestaffel (rij 2)` — so which case answered is readable
+without opening anything. It is part of the run detail a trace already asks for,
+so an ordinary Test Explorer run does no more work than before.
+
+### Fixed
+
+**The editor keeps up with a half-written line.** Three sentences somebody is in
+the middle of typing stopped the language server reading the file at all: a `»`
+whose `«` has just been deleted, a date begun as `dd. ` and not finished, and
+`de tijdsduur van … tot … in ` waiting for its unit. What each cost was worse
+than an error message, because there was none — the file kept the squiggles it
+had *before* the edit, describing text no longer in it, said nothing about the
+line being typed, and answered nothing for as long as the line stood. Running the
+model failed too, with a message naming no file. Found by driving the editor over
+thousands of deliberately damaged documents; each is now the ordinary syntax
+error it should always have been, and the sentence keeps its place in the file.
+
+**A table read from disk is re-read when its manifest changes.** Editing a
+manifest — the value column, an axis, the field separator, `volledig` — left the
+previously cached reading in place, so rules went on getting the numbers from the
+*old* reading of the same file, on a run that came out green, and the cached file
+outlived the editor so restarting did not help. A cached table is now used only
+where the delivery and the manifest that read it are both unchanged.
+
+**Running a testgeval while the debugger is paused says so.** The engine runs one
+thing at a time, and a debug session holds it for as long as you are stopped at a
+breakpoint — so **Testgeval uitvoeren**, **Regel uitvoeren**, **Leg uit** and
+opening a collection queued behind it and looked frozen, with the stop button
+unable to end the wait either. They report that a session is running, and
+cancelling a run that is waiting its turn now takes effect at once.
+
+**And the cache folder keeps itself out of your repository.** `.regelspraak/
+cache/` is written under your model root and carries a `.gitignore` of its own,
+so a delivery no longer leaves an untracked binary for you to find in
+`git status`.
+
 ## [0.8.0] — Importing from ALEF, and the arithmetic behind a value
 
 A model that already exists in **ALEF** — the Belastingdienst's MPS-based
