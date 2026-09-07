@@ -119,9 +119,13 @@ model terug en *waarde* de gesorteerde; een lange lijst toont er twintig met
 **toon alle …** eronder. Waar de waarden niet met elkaar te vergelijken zijn —
 tekst, of twee eenheden — blijft de volgorde van het model staan in plaats van
 dat er een verzonnen wordt. Er wordt niets extra's vastgelegd tijdens een
-uitvoering: klikken rekent de zin opnieuw uit tegen dezelfde situatie, dus een
-gewone run wordt er geen byte zwaarder van. In de **debugger** doet hetzelfde
-zich voor waar het al hoorde: een Watch-antwoord dat een verzameling is krijgt
+uitvoering, dus een gewone run wordt er geen byte zwaarder van: uitklappen voert
+het testgeval opnieuw uit en rekent de zin daar uit. Dat is het ene gebaar in het
+paneel dat nog over een verse uitvoering gaat en niet over de uitvoering die het
+paneel tekende — de elementen komen uit de situatie van een run, en die bestaat
+alleen zolang die run loopt. Klap je iets uit nadat je het model hebt getypt, dan
+zie je de elementen van het model zoals het er nu staat. In de **debugger** doet
+hetzelfde zich voor waar het al hoorde: een Watch-antwoord dat een verzameling is krijgt
 het uitklappijltje van de Variabelen-lade, en een verzameling schrijft zich daar
 nu als *512 waarden* in plaats van als een regel van vijfhonderd getallen.
 
