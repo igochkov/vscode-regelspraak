@@ -51,6 +51,48 @@ Numbers of four digits with no decimals stay silent: that is the shape of a year
 and `2026` grouped as `2.026` is no spelling anybody writes. `1000,00` answers,
 which is the currency case this is for.
 
+**A `// Bron:` line can cite a provision in Dutch law, by the Juriconnect
+standard.** Until now a citation had to be a Markdown link to a document in the
+workspace, which is right for a reglement or a contract and has nothing to offer
+a model derived from a *regeling*: the provision lives at `wetten.overheid.nl`
+and there is no file to point at. So the other form the Dutch legal world already
+uses is read as a citation too —
+
+```
+// Bron: jci1.3:c:BWBR0035878&hoofdstuk=2&artikel=13
+```
+
+— and it is clickable in both the places a citation is, the hover over the
+declaration and the comment itself, both leading to the resolver. The **Permanente
+link** entry beside any article on `wetten.overheid.nl` is where one comes from;
+pasting the browser's address bar gives the same citation, and so does putting the
+reference in a Markdown link where you would rather name the article yourself.
+
+**The editor reads it back to you**, because ninety characters of `&key=value` is
+not something anybody parses: the hover states the provision in words —
+*Hoofdstuk 2, artikel 13 — BWBR0035878* — and the same words are the tooltip of
+the link in the text. A `&g=`/`&z=` date pair comes out as *(geldig op
+24-04-2026)*, in the date order a model writes, and the zichtdatum is named only
+where it differs from the geldigheidsdatum. Nothing is written back; the document
+keeps its own characters, exactly as with the grouped number above.
+
+**And a mistyped reference now says so — `RS120`**, a warning under the parameter
+it is about, from the standard's own §3: a version it does not define, a type that
+is not `c` or `v`, a BWB number of the wrong shape, an unknown structure element,
+a date that is not `jjjj-mm-dd`, a `z` without a `g` or before it, a `lid` without
+an `artikel`, `nummer` anywhere but last, `taal` outside a verdrag. A warning and
+never an error, so a mistyped comment cannot stop a run. Two rules of the standard
+are deliberately not checked and the reasons are written down: whether the
+structure elements run general to specific, since which of `afdeling` and
+`hoofdstuk` is the outer one differs per regulation, and whether a zichtdatum is
+in the future, which is a fact about today rather than about the citation. Whether
+the provision exists is the resolver's answer — the editor never asks the
+register.
+
+`npm run source:coverage` passes such a citation over: its two questions are about
+a document beside the model, and neither has an answer for a provision at
+`wetten.overheid.nl`. `docs/AUTHORING.md` has both forms and when each applies.
+
 ## [0.9.0] — Tables from outside the model, and the way into a run
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a

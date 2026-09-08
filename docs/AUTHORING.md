@@ -181,6 +181,70 @@ elsewhere.** A transcription or a summary with the same article numbering is
 enough for all three checks, and a citation that can be checked is worth more
 than a faithful PDF that cannot be.
 
+### Citing a provision in Dutch law
+
+**Where the source is legislation there is no file to point at, and something
+better than one: the Juriconnect standard.** A tax model, a pension model or any
+model derived from a regeling renders provisions that live at
+`wetten.overheid.nl`, and every Dutch legal publisher identifies those the same
+way. Write the reference instead of a path:
+
+```
+// Bron: jci1.3:c:BWBR0035878&hoofdstuk=2&artikel=13
+Regel bepaal contributievrijstelling
+```
+
+The quickest way to one is the **Permanente link** entry in the menu beside any
+article on `wetten.overheid.nl`. Pasting the browser's address bar works too —
+`https://wetten.overheid.nl/jci1.3:c:…` is read as the same citation — and so
+does putting the reference in a Markdown link where you would rather write the
+article's name yourself:
+
+```
+// Bron: [art. 13 Wsob](jci1.3:c:BWBR0035878&hoofdstuk=2&artikel=13)
+```
+
+Four things this buys, and one it does not:
+
+- **It is clickable in both places a citation is**, exactly as a path is — in the
+  hover over the declaration, and in the comment itself — and both go to the
+  resolver, which is the authority on what the provision says.
+- **The editor reads it back to you.** A reference is ninety characters of
+  `&key=value` and nobody parses that, so the hover states the provision in
+  words — *Hoofdstuk 2, artikel 13 — BWBR0035878* — and the same words are the
+  tooltip of the link in the text. The document keeps its own characters; nothing
+  is rewritten.
+- **`&g=` and `&z=` are worth writing.** They pin the citation to the
+  consolidation of the law you actually read, which is the whole of what makes it
+  answerable a year later, when the article has been amended twice. Both dates
+  travel into the link, so the reader sees what you saw.
+- **A mistyped reference says so** — `RS120`, a warning under the parameter it is
+  about, from the standard's own §3: an unknown structure element, a date that is
+  not `jjjj-mm-dd`, a `z` without a `g`, a `lid` without an `artikel`. It is a
+  warning and not an error, so a mistyped comment never stops a run.
+- **`npm run source:coverage` says nothing about it**, which is the one it does
+  not buy. That check answers two questions about a document beside the model —
+  does the citation still resolve, and is every provision rendered — and neither
+  has an answer for a provision at `wetten.overheid.nl`. So a Juriconnect
+  citation is passed over there and checked in the editor instead. Coverage of a
+  *statute* is not something this tooling can audit for you.
+
+**Which form to use is decided by where the source is, not by preference.** A
+regeling gets a Juriconnect reference; a reglement, a contract or a policy
+document that lives in the workspace gets a path and an anchor, and keeps the
+coverage check. A model may use both, one per provision — `De Boekerij`'s
+examples use paths throughout, its reglement being a private document of its own
+rather than law.
+
+**What the check cannot decide, it does not.** Two rules of the standard are
+deliberately unenforced, and both are stated where they are skipped: whether the
+structure elements run from general to specific, because which of `afdeling` and
+`hoofdstuk` is the outer one differs per regulation; and whether a zichtdatum is
+in the future, because that is a fact about today and not about the citation.
+Whether the regulation, the article or the lid exists is the resolver's answer —
+the editor never asks the register, so a reference that is well formed and points
+at nothing is a click away from telling you so.
+
 ## Testsets
 
 **A testset lives in `tests/` and takes the basename of what it exercises.**
