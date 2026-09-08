@@ -7,6 +7,50 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased]
+
+**A number written with a thousands separator now says so.** `RS005` reports
+`11.395,00` and offers to write `11395,00`. A RegelSpraak number is digits with an
+optional minus and an optional decimal comma and nothing else (§13.2), so the
+separator a product specification prints on every page is not something the
+language has — and the asymmetry is real rather than a nicety: a **delivery file**
+behind a `Gegevensbron` may use one, because its manifest says how *that file* is
+written. The separator belongs to somebody else's table and never to a `.rgs`
+document.
+
+Until now nothing said that. In a rule, a `Gegeven` line or a `Parameters` block
+the figure produced a general parse error naming a place rather than a cause
+(*Overbodige invoer: '395,00'*). **In a decision-table cell it produced nothing at
+all** — the cell parses as free text and is only read per column afterwards, so
+the condition column quietly contributed no condition, every row's conditions
+then held for every case, and the top row fired regardless of the value: on a
+two-row staffel, no diagnostic, no fault, and 500 where the model says 0. That
+is the one this release is really about.
+
+It reports the Dutch grouping and nothing wider — a leading group of one to three
+digits, then groups of exactly three, decimals only on the last, all of it written
+without spaces — so a sentence that ends in a number (`… op 500.`) and a date
+written with dots (`01.01.2027`, which is a different mistake) are left alone, as
+are numbers inside comments, text values, enumeration values and file paths. It
+is offered in a `*.test.rgs` testset as readily as in a model, since a worked
+example is copied into a testgeval as readily as into a rule. A model carrying one
+does not run: the run refuses with the file and the line named, which is what
+makes the decision-table case safe.
+
+**Hover a long number and it shows its grouping.** Hover `400000,00` and the
+popup reads `400.000,00`, and nothing else — no heading and no label, because
+the number is the whole answer. The document keeps the digits the language
+admits — RegelSpraak has no thousands separator and `RS005` reports one written
+into a model — and the grouping is a display, exactly as ALEF shows a grouped
+number over a value it stores ungrouped. That is what a projectional editor
+does, and there was no reason this one could not answer the same question when
+asked. It works in a testset as readily as in a rule, and in a decision table's
+cells, where a staffel of amounts actually lives.
+
+Numbers of four digits with no decimals stay silent: that is the shape of a year,
+and `2026` grouped as `2.026` is no spelling anybody writes. `1000,00` answers,
+which is the currency case this is for.
+
 ## [0.9.0] — Tables from outside the model, and the way into a run
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a
