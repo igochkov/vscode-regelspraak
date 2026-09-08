@@ -9,6 +9,32 @@ ahead of execution, and each version since is named for what it delivers.
 
 ## [Unreleased]
 
+**`tot de macht` computes a fractional exponent.** A rate raised to a part of a
+period — the composed year rendement, a steering factor over a fraction of a
+year — is ordinary financial arithmetic and was the one sentence the engine
+would not answer: it validated clean, ran, and faulted with *een gebroken
+exponent wordt nog niet geëvalueerd*. It now produces a number.
+
+**And it produces the right digits.** RegelSpraak computes in exact fractions,
+and `1,05 tot de macht 0,832877` is irrational — there is no exact fraction to
+want. So the answer is *computed* to the rounding the sentence already states,
+the way a square root already was, rather than approximated: the arithmetic
+underneath is whole-number arithmetic throughout, every step carries a low and a
+high bound, and the digit at the rounding position is only given once both bounds
+agree on it. Where the answer *is* exact — `4 tot de macht 0,5` — it is stated
+exactly rather than one step beside it. All five rounding modes of §6.1.3 apply,
+a negative exponent inverts, and a fractional power of a negative number is
+refused for the reason a square root of one is.
+
+**A whole number written with decimals is a whole number.** This is what made
+the above visible on a testgeval where the year fraction is exactly one: a
+`Gegeven` line writes `1,000000` and the value is stored as it was written, so
+the check for a whole exponent — which looked at the written form rather than at
+the value — called a plain 1 a fraction. Two more places asked the same question
+the same way and are fixed with it: `de eerste paasdag van` refused a year
+written `2026,00`, and `de datum met jaar …` refused a whole day or month written
+with decimals.
+
 **A number written with a thousands separator now says so.** `RS005` reports
 `11.395,00` and offers to write `11395,00`. A RegelSpraak number is digits with an
 optional minus and an optional decimal comma and nothing else (§13.2), so the
