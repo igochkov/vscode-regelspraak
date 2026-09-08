@@ -93,6 +93,29 @@ register.
 a document beside the model, and neither has an answer for a provision at
 `wetten.overheid.nl`. `docs/AUTHORING.md` has both forms and when each applies.
 
+**A block of `//` comment lines folds.** Every declaration and rule in an
+authored model carries a doc comment — a description and its `// Bron:` line —
+and a long one was the only block in a `.rgs` file that could not be collapsed.
+Two or more `//` lines in a row now fold under the first of them, and
+<kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>Ctrl</kbd>+<kbd>/</kbd> (**Fold All Block
+Comments**) folds every one in the file at once, so a fully documented model
+collapses to its declarations in a keystroke.
+
+RegelSpraak has no `/* … */`, and this is why it does not need one: a run of line
+comments is already a block, and only the editor had to learn to see it. The
+`//` comment is itself an extension this project adds to the file format — the
+language definition has no comment at all — so a block form was possible; it was
+not worth it. Every part of the tooling that reads a comment takes one to be
+bounded by its line: the hover's doc comment, the links inside comments, the
+formatter, the region markers. A form that spanned lines would change all four
+questions, for a fold that was available without it.
+
+A comment sitting after code on the same line belongs to no block — the code on
+that line is not what would be collapsed — and a `//#region` heading a block of
+prose stays the region it is, with the prose under it folding separately. A blank
+`//` holds a block together, which is what a comment with paragraphs looks like;
+a genuinely blank line splits it in two.
+
 ## [0.9.0] — Tables from outside the model, and the way into a run
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a
