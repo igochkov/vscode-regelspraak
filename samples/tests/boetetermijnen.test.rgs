@@ -10,14 +10,7 @@
 Testset Aflossing van een boete in termijnen
 Rekendatum 15-06-2027
 
-Parameters
-	de standaardcontributie    50,00 EUR
-	de leenlimiet              10
-	het boetetarief            0,25 EUR/dag
-	het verhoogde boetetarief  0,40 EUR/dag
-	de aanlooptermijn          3 dagen
-	de startdrempel            100 pt
-	de bonusdrempel            500 pt
+Parameterset Tarieven 2027
 
 // 100 euro in termijnen van 30 lost af in 100 → 70 → 40 → 10 → 0, dus vier
 // termijnen, en de laatste betaalt de tien die er nog stond.

@@ -9,6 +9,55 @@ ahead of execution, and each version since is named for what it delivers.
 
 ## [Unreleased]
 
+**Parameter values that several testsets share can be declared once, as a
+`Parameterset`.** A testset states one rekendatum and one set of parameter
+values; where the values are about the *model* rather than about that testset — a
+tariff table, the thresholds of a scheme — writing them out per testset is as
+many places for one table to drift. Declare it once instead, in a `*.test.rgs`
+file that holds no testset:
+
+```
+Parameterset Tarieven 2027
+geldig vanaf 2027 t/m 2027
+
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+```
+
+and name it beside the rekendatum of every testset that runs on it:
+
+```
+Testset Aflossing van een boete in termijnen
+Rekendatum 15-06-2027
+Parameterset Tarieven 2027
+```
+
+The set is the **bottom of three layers**: a testset's own `Parameters` block
+overrides it by name, and a testgeval's overrides both, each replacing only the
+lines it states. So one case can take another tariff in one line and keep the
+rest of the set.
+
+**The `geldig` line is required, and it is what the construct is for.** It does
+not choose the set — the testset names the one it wants — it is the check that
+the set you named is the set your rekendatum belongs to. Naming the 2027 tariffs
+in a testset that reckons on 2028 is the one mistake nothing else here can see:
+every value is type-correct, every name resolves, the run is green, and the
+numbers are a year out. That is **RS965** now, on the line that states the date —
+the testgeval's own where it overrides the testset's, so a testset of forty cases
+inheriting one date says it once. Where the values genuinely do not depend on a
+period, `geldig altijd` says so in the language's own word.
+
+Everything else follows from it being an ordinary declaration: F12 from the
+`Parameterset` line to the set, **rename** across both files, the outline and
+folding over a library file, completion offering the sets the workspace declares,
+the formatter indenting the values under the header, and — where two files
+declare one name — RS607 on each of them with the other named. A name nothing
+declares is RS964, and the run refuses on the same finding the editor shows, as
+every RS95x already does.
+
+`samples/tests/parameterwaarden.test.rgs` is the example, and it is where five of
+the six sample testsets used to repeat the same seven lines.
+
 **A rule group can recurse, which is §9.10 and the last thing in the language the
 engine refused outright.** Write `(recursief)` after the group's name and a rule
 may derive a property of one instance from the same property of **another**

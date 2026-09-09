@@ -18,7 +18,8 @@ reach for a folder to disambiguate two names, because it will not.
 bron/              the document the model renders
 gegevens/          GegevensSpraak — what the model is made of
 regels/            RegelSpraak — what it derives, checks and creates
-tests/             TestSpraak — what it is supposed to produce
+tests/             TestSpraak — what it is supposed to produce, and the
+                   parametersets its testsets share
 externe-tabellen/  deliveries — the content of a Gegevensbron, and its manifest
 ```
 
@@ -291,6 +292,47 @@ authored, and deleting it costs one parse. A file for a delivery the manifest no
 longer names is removed the next time that source is read, and
 `regelspraak.execution.cacheExternalData` switches the whole of it off — the run
 then answers the same, only slower.
+
+**Parameter values that several testsets share go in a parameterset.** A
+testset may write its own `Parameters` block, and should where the values are
+about that testset. Where they are about the *model* — a tariff table, the
+thresholds of a scheme — five testsets writing the same block is five places for
+one table to drift, so declare it once:
+
+```
+// tests/parameterwaarden.test.rgs — a library file, and so no testset in it
+Parameterset Tarieven 2027
+geldig vanaf 2027 t/m 2027
+
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+```
+
+and name it beside the rekendatum of every testset that runs on it:
+
+```
+Testset Aflossing van een boete in termijnen
+Rekendatum 15-06-2027
+Parameterset Tarieven 2027
+```
+
+A `*.test.rgs` file is a testset **or** a library of parametersets, never both, so
+a library gets a file of its own; one file may hold as many sets as you like.
+
+**The `geldig` line is required, and it is the point.** It is not decoration and
+it does not choose the set — the testset names the set it wants — it is the check
+that the set you named is the set your rekendatum belongs to. Name
+`Tarieven 2027` in a testset that reckons on 2028 and you get **RS965** rather
+than a green run over the wrong year's numbers, which is a mistake nothing else
+in the editor can see: every value is type-correct and every name resolves. Where
+the values genuinely do not depend on a period, say so in the language's own
+word — `geldig altijd` — which is what `Parameterset Standaardwaarden` does for
+`tests/uitkomsten.test.rgs`, whose testgevallen span three years.
+
+Values layer in three, innermost last: **the parameterset, then the testset's own
+`Parameters` block, then a testgeval's.** A layer replaces every line for a name
+it states and leaves the rest of the set standing, so overriding one tariff for
+one case is one line and costs nothing else.
 
 **Every `Verwacht` value is a value somebody ran.** Write the expectation, run
 it, and correct whichever of the two is wrong — usually the expectation, but not

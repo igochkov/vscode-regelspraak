@@ -9,14 +9,7 @@
 Testset Uitkomsten en overschrijvingen
 Rekendatum 15-06-2027
 
-Parameters
-	de standaardcontributie    50,00 EUR
-	de leenlimiet              10
-	het boetetarief            0,25 EUR/dag
-	het verhoogde boetetarief  0,40 EUR/dag
-	de aanlooptermijn          3 dagen
-	de startdrempel            100 pt
-	de bonusdrempel            500 pt
+Parameterset Standaardwaarden
 
 Testgeval Op de testsetdatum geldt de eerste versie van de boeteregel
 	Gegeven een Uitlening (Lening) met

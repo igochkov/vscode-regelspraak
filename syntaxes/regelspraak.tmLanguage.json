@@ -343,7 +343,7 @@
 			"name": "keyword.control.regelspraak"
 		},
 		{
-			"match": "(?<![\\p{L}\\p{N}'-])(?:Gegevensbron)(?![\\p{L}\\p{N}'-])",
+			"match": "(?<![\\p{L}\\p{N}'-])(?:Gegevensbron|Parameterset)(?![\\p{L}\\p{N}'-])",
 			"name": "keyword.declaration.regelspraak"
 		},
 		{
