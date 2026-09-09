@@ -9,6 +9,56 @@ ahead of execution, and each version since is named for what it delivers.
 
 ## [Unreleased]
 
+**A rule group can recurse, which is §9.10 and the last thing in the language the
+engine refused outright.** Write `(recursief)` after the group's name and a rule
+may derive a property of one instance from the same property of **another**
+instance of the same object type — the chain of instalments that pays off a debt,
+a household chain, a schedule where each step starts from where the last one
+ended. Until now every such loop was refused, and rightly: the specification asks
+for the mark precisely because a machine cannot tell an intended chain from the
+mistake it resembles, a value defined in terms of itself.
+
+```
+Regelgroep aflossing in termijnen (recursief)
+```
+
+**Nothing is recomputed, and that is the whole design rather than an
+optimisation.** §9.10's recursion is iteration by *creating instances*: each
+round brings a new one into the world and the group's rules run over it as over
+any other, reading from the previous instance a value that was written once and
+is final. So a value still has exactly one derivation — **Leg uit** walks back
+through the previous instance as it walks back through anything else, the
+derivation tree stays a tree, and a breakpoint stops per instance as it always
+did. What stops the repetition is the condition the author writes on the creation
+rule, which is exactly where §9.10 puts it.
+
+**Five checks say when a group does not carry its own weight.** `RS616` reports a
+loop the mark does not permit and now names *why* in the same sentence — the
+group is not marked, the rules are in two groups, the loop creates nothing, one
+of its rules is about a type the loop does not create, two of them derive one
+instance's values from each other — because that is the next thing to do about
+it. Where the mark is the only thing missing there is a one-keystroke fix.
+`RS617`, `RS618` and `RS619` are §9.10's three conditions on a marked group: it
+has to create something, the creation needs a condition, and that condition has
+to bound something. `RS620` is the reverse and the one worth knowing about: a
+mark under which nothing actually recurses is a licence lying about for a loop
+somebody adds by accident later.
+
+**The Boekerij example shows it.** Article 8 of the reglement gained the
+instalment scheme, `gegevens/boeteschuld.rgs` the two object types and the
+self-relating fact type that is the chain, and
+`regels/h4-uitlening/art-08-boete-in-termijnen.rgs` the recursive group — its own
+file beside `art-08-boete.rgs`, because the group *is* the file and the mark
+covers everything in it, so keeping the licence as narrow as the chain that needs
+it is worth one extra file. `tests/boetetermijnen.test.rgs` runs both bounds.
+
+**A run says which round a value came from.** The panel writes `herhaling 3`
+beside the rule, on a write, on a skipped rule and on a fault; the debugger's
+Variables pane states it beside the rekendatum, which is what tells sixty stops
+on one rule apart. And a group whose bound does not work is not a hang: after a
+thousand rounds the run reports a *modelfout* naming the group and the creation
+rule, and then carries on deriving everything else.
+
 **`tot de macht` computes a fractional exponent.** A rate raised to a part of a
 period — the composed year rendement, a steering factor over a fraction of a
 year — is ordinary financial arithmetic and was the one sentence the engine

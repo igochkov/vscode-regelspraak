@@ -50,6 +50,15 @@ interface DebugStop {
 	kenmerken: { instance: string; kenmerk: string; present: boolean }[];
 	parameters: { name: string; value: string }[];
 	rekendatum: string;
+	/**
+	 * Which pass of a recursive rule group this stop is in, 1-based ([RG-10]).
+	 *
+	 * Absent outside a §9.10 loop. It leads the Variables pane beside the
+	 * rekendatum, for the same reason: inside a loop a rule is stopped at once
+	 * per instance per repetition, and which repetition this is is the one fact
+	 * about the situation neither the rule text nor the instance name shows.
+	 */
+	pass?: number;
 	variables: string[];
 	/**
 	 * The sub-expression the run has just finished, where it stands inside one
@@ -681,6 +690,11 @@ export class RegelSpraakDebugAdapter implements vscode.DebugAdapter {
 		// sorting them into a wall of instance rows is where they would be lost.
 		const context = [
 			{ name: 'rekendatum', value: at.rekendatum, variablesReference: 0 },
+			...(at.pass === undefined ? [] : [{
+				name: 'herhaling',
+				value: String(at.pass),
+				variablesReference: 0
+			}]),
 			...at.parameters
 				.slice()
 				.sort((a, b) => a.name.localeCompare(b.name, 'nl'))

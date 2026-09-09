@@ -329,10 +329,47 @@ and is reported as such. The name is free text, like a rule's, so it may be
 prose. It is optional: a file without one is a file of rules belonging to no
 group, which is what every model was before the construct existed.
 
-Naming a group is all it does today. It has no bearing on what is computed or in
-what order — but it is the boundary a future recursive group would be drawn on,
+A group that recurses says so, and it is the only thing the header changes about
+what is computed:
+
+```
+Regelgroep aflossing in termijnen (recursief)
+```
+
+§9.10 allows a rule to derive a property of one instance from the same property
+of **another** instance of the same object type — a chain of instalments, a
+household chain, a schedule where each step starts from the one before — and it
+allows it only inside a group marked this way. The mark is required because a
+machine cannot reliably tell that from the mistake it resembles: a value defined
+in terms of itself. Without it, such a loop is an error (`RS616`), with a
+one-keystroke fix that writes the mark where it is the only thing missing.
+
+A recursive group has to contain an **objectcreatie** rule, and that rule's
+condition is what stops the repetition — §9.10 asks it to bound both the value
+being derived and the number of rounds. `RS617`, `RS618` and `RS619` say so when
+one of those is missing, and `RS620` says the reverse: a mark under which nothing
+actually recurses, which is a licence left lying about for a loop somebody adds
+by accident later.
+
+Every round brings a *new* instance into the world and runs the group's rules
+over it; nothing is ever recomputed. So a value still has exactly one derivation,
+and **Leg uit** walks back through the previous instance as it walks back through
+anything else. The run panel and the debugger say which round a write belongs to
+(`herhaling 3`).
+
+**A recursive group is worth giving a file of its own**, even where the article
+it renders already has one. The group *is* the file, so the mark covers
+everything in it — and it goes on covering whatever is added later, which is
+exactly what `RS620` warns about. Keeping the licence as narrow as the chain that
+needs it is the reason `regels/h4-uitlening/` holds both
+`art-08-boete.rgs` and `art-08-boete-in-termijnen.rgs`: one article, two groups,
+because only one of them recurses. That is the one place this layout departs from
+one file per article, and it departs for a reason a reader can check.
+
+Beyond that, naming a group is all the header does: it has no bearing on what is
+computed or in what order. But it is the boundary a recursive group is drawn on,
 which is why a split made to shorten a file rather than to separate subjects is
-worth avoiding now. **Where the model renders a document, the article is that
+worth avoiding. **Where the model renders a document, the article is that
 boundary already**, and it is a better one than anything you would invent: it is
 where the source itself decided one thing ends and the next begins.
 

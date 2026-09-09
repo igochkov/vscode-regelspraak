@@ -117,6 +117,17 @@
    naar beneden afgerond op hele euro's. Met ingang van 1 januari 2028 geldt het
    verhoogde boetetarief, met een maximum van € 40 en afronding naar boven.
    _Inwerkingtreding: 01-01-2027_
+2. Een boeteschuld wordt afgelost in termijnen. De eerste termijn heeft
+   termijnnummer 1 en als beginsaldo het boetebedrag van de boeteschuld.
+3. Elke volgende termijn hoort bij dezelfde boeteschuld als zijn voorganger.
+4. Per termijn wordt afgelost het laagste van het beginsaldo en het
+   termijnbedrag van de boeteschuld; de restschuld is het beginsaldo min de
+   aflossing.
+5. Is de restschuld groter dan € 0 en is het termijnnummer kleiner dan zestig,
+   dan volgt op de termijn een volgende termijn, met een termijnnummer dat één
+   hoger is en als beginsaldo de restschuld.
+6. Het totaal afgeloste bedrag van een boeteschuld is de som van de aflossingen
+   van haar termijnen, en het aantal betaalde termijnen is het aantal termijnen.
 
 ## Hoofdstuk 5. Bezorging
 

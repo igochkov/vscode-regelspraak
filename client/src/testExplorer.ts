@@ -98,6 +98,15 @@ interface TestFault {
 	message: string;
 	/** `modelfout`: the model said something the engine could not resolve. */
 	kind: 'fout' | 'modelfout';
+	/**
+	 * Which pass of a recursive rule group this belongs to, 1-based ([RG-9]).
+	 *
+	 * Present only inside a §9.10 loop, where one rule is evaluated once per
+	 * instance per repetition; absent everywhere else, which is what says there
+	 * is no repetition to be in. Drawn beside the rule's name and never inside
+	 * its link, `Volgende termijn (herhaling 3)` naming no declaration.
+	 */
+	pass?: number;
 }
 
 /**
@@ -145,6 +154,15 @@ export interface RunSkipped {
 	 * carries neither criteria nor operands.
 	 */
 	reason?: 'geldigheid';
+	/**
+	 * Which pass of a recursive rule group this belongs to, 1-based ([RG-9]).
+	 *
+	 * Present only inside a §9.10 loop, where one rule is evaluated once per
+	 * instance per repetition; absent everywhere else, which is what says there
+	 * is no repetition to be in. Drawn beside the rule's name and never inside
+	 * its link, `Volgende termijn (herhaling 3)` naming no declaration.
+	 */
+	pass?: number;
 	/** Its validity periods, in the model's words, where `reason` says so. */
 	versions?: string[];
 }
@@ -246,6 +264,13 @@ export interface RunTraceEntry {
 	row?: string;
 	/** Whether there is something behind this write that was not sent (UX-3). */
 	more?: boolean;
+	/**
+	 * Which pass of a recursive rule group this write belongs to ([RG-9]).
+	 *
+	 * Present only inside a §9.10 loop; drawn beside the rule's name, where the
+	 * deciding table row is drawn, and never inside its link.
+	 */
+	pass?: number;
 }
 
 /** UX-3 — which write to fetch, in the four fields that identify one. */
