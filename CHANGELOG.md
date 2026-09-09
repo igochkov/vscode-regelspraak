@@ -7,7 +7,7 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased]
+## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a
 `Parameterset`.** A testset states one rekendatum and one set of parameter
