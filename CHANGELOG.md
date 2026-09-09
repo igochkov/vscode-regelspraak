@@ -58,6 +58,45 @@ every RS95x already does.
 `samples/tests/parameterwaarden.test.rgs` is the example, and it is where five of
 the six sample testsets used to repeat the same seven lines.
 
+**A kenmerk check is about the subject the sentence names.** `indien zijn reis
+een onbelaste reis is` is about the reis — and RS116 judged it against the rule's
+subject, so a kenmerk the model plainly declares was reported as one the subject
+had not got. Three declarations are enough to see it and no example model wrote
+the sentence, which is why it stood this long; a converted model wrote it twelve
+times. The rule reads and runs as it always did — what changes is that the editor
+stops objecting to it.
+
+**And the import got five readings right that it had been getting wrong**, each
+found by converting a real project and reading the result. A percentage kept its
+`%` sign, which it had been losing on every parameter value. A message with a
+value in the middle of it — *"Vanaf «de luchthaven van vertrek van de vlucht»
+zijn geen klimaatneutrale vluchten mogelijk."* — converts now: it had been
+declining as something the language cannot say, and the language says it. An
+input ALEF leaves empty is left empty rather than costing the whole testgeval. A
+rule outcome beside an expectation the language cannot write survives instead of
+going with it. And ALEF's **flow layer is not converted at all**, that
+functionality being deprecated: the flows and the flow tests are skipped and the
+report says so once, rather than reading as thirty gaps you have to fill in.
+
+**And an imported project keeps its own folders.** The conversion used to write
+three — `gegevens/`, `regels/`, `tests/` — which for a real project meant fifteen
+rule files in one flat list where ALEF had them in four groups. It now mirrors
+what the MPS explorer shows: the solution, the model, and the folders the
+modeller made inside it, so the file you are looking for is where you left it.
+Where two models would land on the same name the second is numbered and the
+report says so, instead of quietly replacing the first.
+
+**And importing from ALEF writes them.** ALEF holds a parameterset as a model of
+its own and stores no reference from a testset to one — which set applies is
+worked out from the validities — so the import writes each set as its own library
+file and names, in every testset, the set whose period covers that testset's
+rekendatum. Where two sets cover it the second one's values are written into the
+testset, and where none does, no set is named: the conversion report says which
+happened, because a set named against the wrong year is exactly the mistake
+RS965 exists to catch. It also fixes a period ALEF states as a bare year, which
+was being converted to 1 January at both ends — at the `t/m` end that ended the
+period eleven months early, in a rule version as much as in a set.
+
 **A rule group can recurse, which is §9.10 and the last thing in the language the
 engine refused outright.** Write `(recursief)` after the group's name and a rule
 may derive a property of one instance from the same property of **another**

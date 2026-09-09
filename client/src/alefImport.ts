@@ -318,10 +318,10 @@ export async function importFromAlef(client: LanguageClient | undefined): Promis
 
 	try {
 		for (const document of result.documents) {
-			// The folders of `docs/AUTHORING.md`, made where they are missing. A
-			// model root that already has them is the ordinary case and this
-			// changes nothing there; one that has not is a model being started,
-			// and the layout is the thing it should be started in.
+			// ALEF's own folders — solution, model, virtual package — made where
+			// they are missing, which for a converted project is all of them. The
+			// server decides the whole path, this side only joins and creates: a
+			// reader migrating off ALEF looks for the file where MPS showed it.
 			const file = path.join(target.fsPath, document.path);
 			fs.mkdirSync(path.dirname(file), { recursive: true });
 			fs.writeFileSync(file, document.text, 'utf8');
