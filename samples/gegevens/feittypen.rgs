@@ -27,6 +27,21 @@ Feittype bezorging van reserveringen
 	de aanvrager                                  Lid
 	Eén aanvrager ontvangt meerdere bezorgde zendingen
 
+// Bron: [art. 8 lid 2](bron/reglement.md#artikel-8-boete)
+Feittype aflossing van de boeteschuld
+	de afgeloste schuld         Boeteschuld
+	de termijn (mv: termijnen)  Aflossingstermijn
+	Eén afgeloste schuld wordt afgelost in meerdere termijnen
+
+// §9.10's ketting: twee rollen, allebei gevuld door hetzelfde objecttype. Een
+// feittype mag een objecttype aan zichzelf relateren, en dit is het enige
+// voorbeeld ervan in dit model — `zijn vorige termijn` leest hierlangs terug.
+// Bron: [art. 8 lid 5](bron/reglement.md#artikel-8-boete)
+Feittype opvolging van termijnen
+	de vorige termijn (mv: vorige termijnen)          Aflossingstermijn
+	de opvolgende termijn (mv: opvolgende termijnen)  Aflossingstermijn
+	Eén vorige termijn gaat vooraf aan één opvolgende termijn
+
 // §13.3.9 — één rol, want beide kanten van de relatie zijn hetzelfde soort.
 Wederkerig feittype leesduo
 	de leespartner (mv: leespartners)  Lid

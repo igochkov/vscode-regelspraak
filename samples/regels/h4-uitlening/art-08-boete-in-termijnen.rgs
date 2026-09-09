@@ -1,0 +1,69 @@
+// Aflossing in termijnen — §9.10's recursie, in de vorm die de specificatie
+// eraan geeft: iteratie door het aanmaken van instanties. Elke termijn brengt
+// de volgende voort, en wat de herhaling stopt is de voorwaarde op de
+// objectcreatieregel.
+//
+// EXTENSIE — `(recursief)` is geen v2.3.0-vorm. §9.10 beschrijft de recursieve
+// regelgroep en zegt niet hoe je er een opschrijft; deze extensie geeft haar er
+// een. Zonder de markering zijn de vier middelste regels hieronder een
+// geweigerde cyclus (RS616), en dat is met opzet: het verschil tussen een
+// bedoelde ketting en een waarde die uit zichzelf is afgeleid, valt niet
+// betrouwbaar machinaal vast te stellen, dus zegt de auteur welke van de twee
+// hij bedoelt.
+//
+// **Een eigen bestand, en niet bij `art-08-boete.rgs`.** De regelgroep *is* het
+// bestand, dus een markering geldt voor alles wat erin staat — en zij staat elke
+// cyclus toe die er later bij komt. Zo smal mogelijk houden is de reden om de
+// ketting apart te zetten, ook al gaat zij over hetzelfde artikel.
+
+// Bron: [art. 8 lid 2](bron/reglement.md#artikel-8-boete)
+Regelgroep aflossing in termijnen (recursief)
+
+// Buiten de ketting: deze regel schrijft wat zij leest en leest niets wat zij
+// schrijft, dus zij loopt één keer, vóór de herhalingen.
+// Bron: [art. 8 lid 2](bron/reglement.md#artikel-8-boete)
+Regel Eerste termijn
+	geldig altijd
+		Een Boeteschuld heeft een termijn met het termijnnummer gelijk aan 1 en het beginsaldo gelijk aan het boetebedrag van de Boeteschuld.
+
+// Elke termijn hoort bij dezelfde schuld als zijn voorganger. Geschreven vanaf
+// de termijn zelf, zodat de regel over de termijn gaat en niet over de schuld —
+// en zodat zij binnen één herhaling vóór de doorrekening loopt, wat de graaf
+// afdwingt en geen volgorde in het bestand.
+// Bron: [art. 8 lid 3](bron/reglement.md#artikel-8-boete)
+Regel Termijn hoort bij de schuld
+	geldig altijd
+		Een afgeloste schuld van een Aflossingstermijn is de afgeloste schuld van zijn vorige termijn.
+
+// Bron: [art. 8 lid 4](bron/reglement.md#artikel-8-boete)
+Regel Aflossing van een termijn
+	geldig altijd
+		De aflossing van een Aflossingstermijn moet berekend worden als de minimale waarde van het beginsaldo van de Aflossingstermijn en het termijnbedrag van de afgeloste schuld van de Aflossingstermijn.
+
+// Bron: [art. 8 lid 4](bron/reglement.md#artikel-8-boete)
+Regel Restschuld van een termijn
+	geldig altijd
+		De restschuld van een Aflossingstermijn moet berekend worden als het beginsaldo van de Aflossingstermijn min de aflossing van de Aflossingstermijn.
+
+// De objectcreatie die §9.10 van een recursieve groep vereist, met de twee
+// grenzen die §9.10 van haar voorwaarde vereist: één op de afgeleide waarde en
+// één op het aantal herhalingen. Ontbreekt de voorwaarde, dan is dat RS618;
+// begrenst zij niets, RS619.
+// Bron: [art. 8 lid 5](bron/reglement.md#artikel-8-boete)
+Regel Volgende termijn
+	geldig altijd
+		Een Aflossingstermijn heeft een opvolgende termijn met het termijnnummer gelijk aan het termijnnummer van de Aflossingstermijn plus 1 en het beginsaldo gelijk aan de restschuld van de Aflossingstermijn
+		indien hij aan alle volgende voorwaarden voldoet:
+			• de restschuld van de Aflossingstermijn is groter dan 0 €
+			• het termijnnummer van de Aflossingstermijn is kleiner dan 60.
+
+// Na de ketting: lezers van wat zij opleverde, geordend erna zoals elke lezer.
+// Bron: [art. 8 lid 6](bron/reglement.md#artikel-8-boete)
+Regel Totaal afgelost
+	geldig altijd
+		Het totaal afgelost van een Boeteschuld moet berekend worden als de som van de aflossingen van alle termijnen van de Boeteschuld.
+
+// Bron: [art. 8 lid 6](bron/reglement.md#artikel-8-boete)
+Regel Aantal betaalde termijnen
+	geldig altijd
+		Het aantal betaalde termijnen van een Boeteschuld moet berekend worden als het aantal termijnen van de Boeteschuld.

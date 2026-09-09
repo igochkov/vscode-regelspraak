@@ -19,8 +19,9 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep, posix } from 'node:path';
 import { argv, exit, stdout } from 'node:process';
 
-// One rule for what a heading's anchor is; `client/src/sourceLinks.ts` holds the
-// other copy of it and a test holds the two together.
+// One rule for what a heading's anchor is; the language server holds the other
+// copy (`model/sourceCitations.ts`) and the two are gated end to end — see the
+// comment in `anchor.mjs`.
 import { slug } from './anchor.mjs';
 
 const options = parse(argv.slice(2));
@@ -116,6 +117,25 @@ function readSource(path) {
 // ----------------------------------------------------------------- the model
 
 const CITATION = /^\s*\/\/\s*Bron:\s*\[([^\]]+)\]\(([^)]+)\)\s*$/;
+/**
+ * A citation of a provision in Dutch law, by the Juriconnect standard — bare or
+ * behind its resolver, and as a bare reference or as the href of a link.
+ *
+ * **Recognised so that it is not reported, and checked by nothing here.** This
+ * script's two questions are both about a document beside the model: does the
+ * citation still resolve, and is every provision rendered by something. Neither
+ * has an answer for a provision that lives at `wetten.overheid.nl` — it is not a
+ * file to open and not an article this script can enumerate — so such a citation
+ * contributes no coverage and is passed over.
+ *
+ * What *can* be said about one is said by **RS120** in the editor, off the same
+ * reading the hover and P14 use (`model/juriconnect.ts` in the language-server
+ * repository). Restating any of that here would be a second implementation of a
+ * question that already has one, which is the failure this pair of repositories
+ * keeps having to unpick — and it would drift, since only one of the two copies
+ * is ever in front of whoever changes the rule.
+ */
+const JURICONNECT = /^\s*\/\/\s*Bron:\s*(\[[^\]]*\]\()?(https?:\/\/(www\.)?wetten\.overheid\.nl\/)?jci\d/;
 const REFERENCE = /^art\.\s*(\d+)(?:\s+lid\s+(\d+))?/;
 /** `geldig vanaf <datum>`, the only half of a validity this check compares. */
 const VALID_FROM = /\bgeldig\s+vanaf\s+(\d{2}-\d{2}-\d{4})/g;
@@ -137,10 +157,16 @@ function readCitations(file) {
 	for (const [index, line] of lines.entries()) {
 		const cited = CITATION.exec(line);
 		if (!cited) {
-			if (/^\s*\/\/\s*Bron\b/.test(line)) {
+			// A Juriconnect citation is well formed and simply not this script's
+			// business; anything else that opens with `Bron` is a citation somebody
+			// meant to write and did not.
+			if (/^\s*\/\/\s*Bron\b/.test(line) && !JURICONNECT.test(line)) {
 				found.push({ file, line: index + 1, malformed: line.trim() });
 			}
 			continue;
+		}
+		if (JURICONNECT.test(line)) {
+			continue; // a link whose href is a reference, not a path beside the model
 		}
 		found.push({
 			file,

@@ -1,0 +1,36 @@
+// Voorbeeldtestset (TestSpraak) — §9.10's recursieve regelgroep, uitgevoerd.
+//
+// Twee testgevallen, één per grens die §9.10 van de objectcreatie vraagt: het
+// eerste stopt op de afgeleide waarde (de restschuld is nul), het tweede op het
+// aantal (het zestigste termijnnummer). Verder is er niets bijzonders aan een
+// recursief model om te testen — de uitkomst staat op de Boeteschuld, zoals bij
+// elke andere regel, en de termijnen die de uitvoering onderweg aanmaakt staan
+// in het uitvoerpaneel.
+
+Testset Aflossing van een boete in termijnen
+Rekendatum 15-06-2027
+
+Parameterset Tarieven 2027
+
+// 100 euro in termijnen van 30 lost af in 100 → 70 → 40 → 10 → 0, dus vier
+// termijnen, en de laatste betaalt de tien die er nog stond.
+Testgeval Vier termijnen van dertig euro
+	Gegeven een Boeteschuld (Schuld) met
+		boetebedrag    100,00 EUR
+		termijnbedrag  30,00 EUR
+
+	Verwacht Schuld met
+		totaal afgelost            100,00 EUR
+		aantal betaalde termijnen  4
+	Verwacht regelversie Volgende termijn is gevuurd
+
+// Een termijnbedrag van nul lost niets af, dus de restschuld blijft staan en de
+// eerste grens wordt nooit bereikt. Wat de ketting dan stopt is de tweede.
+Testgeval Zestig termijnen zonder aflossing
+	Gegeven een Boeteschuld (Schuld) met
+		boetebedrag    100,00 EUR
+		termijnbedrag  0,00 EUR
+
+	Verwacht Schuld met
+		totaal afgelost            0,00 EUR
+		aantal betaalde termijnen  60

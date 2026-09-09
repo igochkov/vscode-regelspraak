@@ -12,3 +12,11 @@ syntaxes/*.json text eol=lf
 # failure the script exists to prevent. Pinning removes the guesswork, and stops
 # the file showing as modified whenever a tool rewrites it with LF.
 *.sh text eol=lf
+
+# A delivery behind a Gegevensbron, whose manifest states its sha256 ([R-16] in
+# the server repository). The hash is over the bytes, so with core.autocrlf on a
+# Windows checkout it no longer matches its own manifest and every testgeval that
+# binds the table is *refused* — which is what the E2E suite reports, and what CI
+# never sees, being Linux. Unlike the two rules above this one is not about a
+# file showing as modified: the content is the contract.
+samples/externe-tabellen/*.csv text eol=lf

@@ -7,6 +7,279 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [0.9.5] — Recursion, shared parameter values, and what real models asked for
+
+**Parameter values that several testsets share can be declared once, as a
+`Parameterset`.** A testset states one rekendatum and one set of parameter
+values; where the values are about the *model* rather than about that testset — a
+tariff table, the thresholds of a scheme — writing them out per testset is as
+many places for one table to drift. Declare it once instead, in a `*.test.rgs`
+file that holds no testset:
+
+```
+Parameterset Tarieven 2027
+geldig vanaf 2027 t/m 2027
+
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+```
+
+and name it beside the rekendatum of every testset that runs on it:
+
+```
+Testset Aflossing van een boete in termijnen
+Rekendatum 15-06-2027
+Parameterset Tarieven 2027
+```
+
+The set is the **bottom of three layers**: a testset's own `Parameters` block
+overrides it by name, and a testgeval's overrides both, each replacing only the
+lines it states. So one case can take another tariff in one line and keep the
+rest of the set.
+
+**The `geldig` line is required, and it is what the construct is for.** It does
+not choose the set — the testset names the one it wants — it is the check that
+the set you named is the set your rekendatum belongs to. Naming the 2027 tariffs
+in a testset that reckons on 2028 is the one mistake nothing else here can see:
+every value is type-correct, every name resolves, the run is green, and the
+numbers are a year out. That is **RS965** now, on the line that states the date —
+the testgeval's own where it overrides the testset's, so a testset of forty cases
+inheriting one date says it once. Where the values genuinely do not depend on a
+period, `geldig altijd` says so in the language's own word.
+
+Everything else follows from it being an ordinary declaration: F12 from the
+`Parameterset` line to the set, **rename** across both files, the outline and
+folding over a library file, completion offering the sets the workspace declares,
+the formatter indenting the values under the header, and — where two files
+declare one name — RS607 on each of them with the other named. A name nothing
+declares is RS964, and the run refuses on the same finding the editor shows, as
+every RS95x already does.
+
+`samples/tests/parameterwaarden.test.rgs` is the example, and it is where five of
+the six sample testsets used to repeat the same seven lines.
+
+**A kenmerk check is about the subject the sentence names.** `indien zijn reis
+een onbelaste reis is` is about the reis — and RS116 judged it against the rule's
+subject, so a kenmerk the model plainly declares was reported as one the subject
+had not got. Three declarations are enough to see it and no example model wrote
+the sentence, which is why it stood this long; a converted model wrote it twelve
+times. The rule reads and runs as it always did — what changes is that the editor
+stops objecting to it.
+
+**And the import got five readings right that it had been getting wrong**, each
+found by converting a real project and reading the result. A percentage kept its
+`%` sign, which it had been losing on every parameter value. A message with a
+value in the middle of it — *"Vanaf «de luchthaven van vertrek van de vlucht»
+zijn geen klimaatneutrale vluchten mogelijk."* — converts now: it had been
+declining as something the language cannot say, and the language says it. An
+input ALEF leaves empty is left empty rather than costing the whole testgeval. A
+rule outcome beside an expectation the language cannot write survives instead of
+going with it. And ALEF's **flow layer is not converted at all**, that
+functionality being deprecated: the flows and the flow tests are skipped and the
+report says so once, rather than reading as thirty gaps you have to fill in.
+
+**And an imported project keeps its own folders.** The conversion used to write
+three — `gegevens/`, `regels/`, `tests/` — which for a real project meant fifteen
+rule files in one flat list where ALEF had them in four groups. It now mirrors
+what the MPS explorer shows: the solution, the model, and the folders the
+modeller made inside it, so the file you are looking for is where you left it.
+Where two models would land on the same name the second is numbered and the
+report says so, instead of quietly replacing the first.
+
+**And importing from ALEF writes them.** ALEF holds a parameterset as a model of
+its own and stores no reference from a testset to one — which set applies is
+worked out from the validities — so the import writes each set as its own library
+file and names, in every testset, the set whose period covers that testset's
+rekendatum. Where two sets cover it the second one's values are written into the
+testset, and where none does, no set is named: the conversion report says which
+happened, because a set named against the wrong year is exactly the mistake
+RS965 exists to catch. It also fixes a period ALEF states as a bare year, which
+was being converted to 1 January at both ends — at the `t/m` end that ended the
+period eleven months early, in a rule version as much as in a set.
+
+**A rule group can recurse, which is §9.10 and the last thing in the language the
+engine refused outright.** Write `(recursief)` after the group's name and a rule
+may derive a property of one instance from the same property of **another**
+instance of the same object type — the chain of instalments that pays off a debt,
+a household chain, a schedule where each step starts from where the last one
+ended. Until now every such loop was refused, and rightly: the specification asks
+for the mark precisely because a machine cannot tell an intended chain from the
+mistake it resembles, a value defined in terms of itself.
+
+```
+Regelgroep aflossing in termijnen (recursief)
+```
+
+**Nothing is recomputed, and that is the whole design rather than an
+optimisation.** §9.10's recursion is iteration by *creating instances*: each
+round brings a new one into the world and the group's rules run over it as over
+any other, reading from the previous instance a value that was written once and
+is final. So a value still has exactly one derivation — **Leg uit** walks back
+through the previous instance as it walks back through anything else, the
+derivation tree stays a tree, and a breakpoint stops per instance as it always
+did. What stops the repetition is the condition the author writes on the creation
+rule, which is exactly where §9.10 puts it.
+
+**Five checks say when a group does not carry its own weight.** `RS616` reports a
+loop the mark does not permit and now names *why* in the same sentence — the
+group is not marked, the rules are in two groups, the loop creates nothing, one
+of its rules is about a type the loop does not create, two of them derive one
+instance's values from each other — because that is the next thing to do about
+it. Where the mark is the only thing missing there is a one-keystroke fix.
+`RS617`, `RS618` and `RS619` are §9.10's three conditions on a marked group: it
+has to create something, the creation needs a condition, and that condition has
+to bound something. `RS620` is the reverse and the one worth knowing about: a
+mark under which nothing actually recurses is a licence lying about for a loop
+somebody adds by accident later.
+
+**The Boekerij example shows it.** Article 8 of the reglement gained the
+instalment scheme, `gegevens/boeteschuld.rgs` the two object types and the
+self-relating fact type that is the chain, and
+`regels/h4-uitlening/art-08-boete-in-termijnen.rgs` the recursive group — its own
+file beside `art-08-boete.rgs`, because the group *is* the file and the mark
+covers everything in it, so keeping the licence as narrow as the chain that needs
+it is worth one extra file. `tests/boetetermijnen.test.rgs` runs both bounds.
+
+**A run says which round a value came from.** The panel writes `herhaling 3`
+beside the rule, on a write, on a skipped rule and on a fault; the debugger's
+Variables pane states it beside the rekendatum, which is what tells sixty stops
+on one rule apart. And a group whose bound does not work is not a hang: after a
+thousand rounds the run reports a *modelfout* naming the group and the creation
+rule, and then carries on deriving everything else.
+
+**`tot de macht` computes a fractional exponent.** A rate raised to a part of a
+period — the composed year rendement, a steering factor over a fraction of a
+year — is ordinary financial arithmetic and was the one sentence the engine
+would not answer: it validated clean, ran, and faulted with *een gebroken
+exponent wordt nog niet geëvalueerd*. It now produces a number.
+
+**And it produces the right digits.** RegelSpraak computes in exact fractions,
+and `1,05 tot de macht 0,832877` is irrational — there is no exact fraction to
+want. So the answer is *computed* to the rounding the sentence already states,
+the way a square root already was, rather than approximated: the arithmetic
+underneath is whole-number arithmetic throughout, every step carries a low and a
+high bound, and the digit at the rounding position is only given once both bounds
+agree on it. Where the answer *is* exact — `4 tot de macht 0,5` — it is stated
+exactly rather than one step beside it. All five rounding modes of §6.1.3 apply,
+a negative exponent inverts, and a fractional power of a negative number is
+refused for the reason a square root of one is.
+
+**A whole number written with decimals is a whole number.** This is what made
+the above visible on a testgeval where the year fraction is exactly one: a
+`Gegeven` line writes `1,000000` and the value is stored as it was written, so
+the check for a whole exponent — which looked at the written form rather than at
+the value — called a plain 1 a fraction. Two more places asked the same question
+the same way and are fixed with it: `de eerste paasdag van` refused a year
+written `2026,00`, and `de datum met jaar …` refused a whole day or month written
+with decimals.
+
+**A number written with a thousands separator now says so.** `RS005` reports
+`11.395,00` and offers to write `11395,00`. A RegelSpraak number is digits with an
+optional minus and an optional decimal comma and nothing else (§13.2), so the
+separator a product specification prints on every page is not something the
+language has — and the asymmetry is real rather than a nicety: a **delivery file**
+behind a `Gegevensbron` may use one, because its manifest says how *that file* is
+written. The separator belongs to somebody else's table and never to a `.rgs`
+document.
+
+Until now nothing said that. In a rule, a `Gegeven` line or a `Parameters` block
+the figure produced a general parse error naming a place rather than a cause
+(*Overbodige invoer: '395,00'*). **In a decision-table cell it produced nothing at
+all** — the cell parses as free text and is only read per column afterwards, so
+the condition column quietly contributed no condition, every row's conditions
+then held for every case, and the top row fired regardless of the value: on a
+two-row staffel, no diagnostic, no fault, and 500 where the model says 0. That
+is the one this release is really about.
+
+It reports the Dutch grouping and nothing wider — a leading group of one to three
+digits, then groups of exactly three, decimals only on the last, all of it written
+without spaces — so a sentence that ends in a number (`… op 500.`) and a date
+written with dots (`01.01.2027`, which is a different mistake) are left alone, as
+are numbers inside comments, text values, enumeration values and file paths. It
+is offered in a `*.test.rgs` testset as readily as in a model, since a worked
+example is copied into a testgeval as readily as into a rule. A model carrying one
+does not run: the run refuses with the file and the line named, which is what
+makes the decision-table case safe.
+
+**Hover a long number and it shows its grouping.** Hover `400000,00` and the
+popup reads `400.000,00`, and nothing else — no heading and no label, because
+the number is the whole answer. The document keeps the digits the language
+admits — RegelSpraak has no thousands separator and `RS005` reports one written
+into a model — and the grouping is a display, exactly as ALEF shows a grouped
+number over a value it stores ungrouped. That is what a projectional editor
+does, and there was no reason this one could not answer the same question when
+asked. It works in a testset as readily as in a rule, and in a decision table's
+cells, where a staffel of amounts actually lives.
+
+Numbers of four digits with no decimals stay silent: that is the shape of a year,
+and `2026` grouped as `2.026` is no spelling anybody writes. `1000,00` answers,
+which is the currency case this is for.
+
+**A `// Bron:` line can cite a provision in Dutch law, by the Juriconnect
+standard.** Until now a citation had to be a Markdown link to a document in the
+workspace, which is right for a reglement or a contract and has nothing to offer
+a model derived from a *regeling*: the provision lives at `wetten.overheid.nl`
+and there is no file to point at. So the other form the Dutch legal world already
+uses is read as a citation too —
+
+```
+// Bron: jci1.3:c:BWBR0035878&hoofdstuk=2&artikel=13
+```
+
+— and it is clickable in both the places a citation is, the hover over the
+declaration and the comment itself, both leading to the resolver. The **Permanente
+link** entry beside any article on `wetten.overheid.nl` is where one comes from;
+pasting the browser's address bar gives the same citation, and so does putting the
+reference in a Markdown link where you would rather name the article yourself.
+
+**The editor reads it back to you**, because ninety characters of `&key=value` is
+not something anybody parses: the hover states the provision in words —
+*Hoofdstuk 2, artikel 13 — BWBR0035878* — and the same words are the tooltip of
+the link in the text. A `&g=`/`&z=` date pair comes out as *(geldig op
+24-04-2026)*, in the date order a model writes, and the zichtdatum is named only
+where it differs from the geldigheidsdatum. Nothing is written back; the document
+keeps its own characters, exactly as with the grouped number above.
+
+**And a mistyped reference now says so — `RS120`**, a warning under the parameter
+it is about, from the standard's own §3: a version it does not define, a type that
+is not `c` or `v`, a BWB number of the wrong shape, an unknown structure element,
+a date that is not `jjjj-mm-dd`, a `z` without a `g` or before it, a `lid` without
+an `artikel`, `nummer` anywhere but last, `taal` outside a verdrag. A warning and
+never an error, so a mistyped comment cannot stop a run. Two rules of the standard
+are deliberately not checked and the reasons are written down: whether the
+structure elements run general to specific, since which of `afdeling` and
+`hoofdstuk` is the outer one differs per regulation, and whether a zichtdatum is
+in the future, which is a fact about today rather than about the citation. Whether
+the provision exists is the resolver's answer — the editor never asks the
+register.
+
+`npm run source:coverage` passes such a citation over: its two questions are about
+a document beside the model, and neither has an answer for a provision at
+`wetten.overheid.nl`. `docs/AUTHORING.md` has both forms and when each applies.
+
+**A block of `//` comment lines folds.** Every declaration and rule in an
+authored model carries a doc comment — a description and its `// Bron:` line —
+and a long one was the only block in a `.rgs` file that could not be collapsed.
+Two or more `//` lines in a row now fold under the first of them, and
+<kbd>Ctrl</kbd>+<kbd>K</kbd> <kbd>Ctrl</kbd>+<kbd>/</kbd> (**Fold All Block
+Comments**) folds every one in the file at once, so a fully documented model
+collapses to its declarations in a keystroke.
+
+RegelSpraak has no `/* … */`, and this is why it does not need one: a run of line
+comments is already a block, and only the editor had to learn to see it. The
+`//` comment is itself an extension this project adds to the file format — the
+language definition has no comment at all — so a block form was possible; it was
+not worth it. Every part of the tooling that reads a comment takes one to be
+bounded by its line: the hover's doc comment, the links inside comments, the
+formatter, the region markers. A form that spanned lines would change all four
+questions, for a fold that was available without it.
+
+A comment sitting after code on the same line belongs to no block — the code on
+that line is not what would be collapsed — and a `//#region` heading a block of
+prose stays the region it is, with the prose under it folding separately. A blank
+`//` holds a block together, which is what a comment with paragraphs looks like;
+a genuinely blank line splits it in two.
+
 ## [0.9.0] — Tables from outside the model, and the way into a run
 
 A model can now declare a table it does not contain. **`Gegevensbron`** is a

@@ -239,6 +239,16 @@
 			"\t\t${4:attribuutnaam}\t\t${5:0}"
 		]
 	},
+	"Parameterset": {
+		"prefix": "parameterset",
+		"description": "Parameterset met geldigheid en parameterwaarden",
+		"body": [
+			"Parameterset ${1:naam van de set}",
+			"geldig ${2:altijd}",
+			"",
+			"\t${3:parameternaam}\t\t${4:0}"
+		]
+	},
 	"Gegeven feit": {
 		"prefix": "gegeven-feit",
 		"description": "Feit tussen twee instanties, per rol",

@@ -1,0 +1,40 @@
+// Voorbeeldbibliotheek (TestSpraak) — parametersets.
+//
+// Een parameterset is één set parameterwaarden met een naam en een geldigheid,
+// gedeeld door elke testset die haar noemt. Dit bestand declareert er twee en
+// bevat daarom geen testset: een `*.test.rgs`-bestand is het één of het ander.
+//
+// Waarom niet gewoon een `Parameters`-blok per testset? Omdat er vijf testsets
+// in deze map staan die dezelfde tarieven nodig hebben, en vijf kopieën van één
+// tabel zijn vijf plekken waar hij uit de pas kan lopen. Een testset noemt de
+// set die zij nodig heeft, en overschrijft er per naam op wat zij anders wil —
+// eerst in haar eigen `Parameters`-blok, dan in dat van een testgeval.
+//
+// De geldigheid is verplicht, en zij is het verschil met dat blok: zij is de
+// controle dat de set die een testset noemt de set is waar haar rekendatum bij
+// hoort. `Tarieven 2027` geldt over één jaar, dus een testset die haar noemt en
+// op 2028 rekent krijgt RS965 — precies de fout die anders met de tarieven van
+// het verkeerde jaar doorrekent. `Standaardwaarden` geldt altijd, en dat is wat
+// een testset nodig heeft die haar testgevallen over drie jaren spreidt.
+
+Parameterset Tarieven 2027
+geldig vanaf 2027 t/m 2027
+
+	de standaardcontributie    50,00 EUR
+	de leenlimiet              10
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+	de aanlooptermijn          3 dagen
+	de startdrempel            100 pt
+	de bonusdrempel            500 pt
+
+Parameterset Standaardwaarden
+geldig altijd
+
+	de standaardcontributie    50,00 EUR
+	de leenlimiet              10
+	het boetetarief            0,25 EUR/dag
+	het verhoogde boetetarief  0,40 EUR/dag
+	de aanlooptermijn          3 dagen
+	de startdrempel            100 pt
+	de bonusdrempel            500 pt

@@ -1,0 +1,25 @@
+// De boeteschuld en haar aflossingstermijnen — het onderwerp van §9.10's
+// recursieve regelgroep in `regels/h4-uitlening/art-08-boete-in-termijnen.rgs`.
+//
+// Elke termijn brengt de volgende voort, dus het model heeft twee dingen nodig
+// die nergens anders in dit voorbeeld staan: een objecttype waarvan de regels
+// zelf instanties maken, en een feittype dat één objecttype aan zichzelf
+// relateert — de ketting.
+
+// Bron: [art. 8 lid 2](bron/reglement.md#artikel-8-boete)
+Objecttype de Boeteschuld (mv: Boeteschulden)
+	het boetebedrag                Geldbedrag;
+	het termijnbedrag              Geldbedrag;
+	het totaal afgelost            Geldbedrag;
+	het aantal betaalde termijnen  Numeriek (geheel getal);
+
+// (bezield), en voor één woord: de feitcreatie die een termijn aan zijn schuld
+// koppelt bereikt de vorige termijn met `zijn`, en een bezittelijk
+// voornaamwoord is geen naamdeel — het beëindigt de gulzige naam ervoor
+// ([D-12]), wat een zin met twee `van`'s nodig heeft.
+// Bron: [art. 8 lid 2](bron/reglement.md#artikel-8-boete)
+Objecttype de Aflossingstermijn (mv: Aflossingstermijnen) (bezield)
+	het termijnnummer                 Numeriek (positief geheel getal);
+	het beginsaldo                    Geldbedrag;
+	de aflossing (mv: aflossingen)    Geldbedrag;
+	de restschuld (mv: restschulden)  Geldbedrag;

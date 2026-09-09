@@ -79,12 +79,19 @@ export interface RunRow {
 	ruleAt?: 'label' | 'beside';
 	/**
 	 * A qualifier drawn after the rule's name, where the run knows which part of
-	 * it acted — a beslistabel's deciding row (§12), and nothing else today.
+	 * it acted — a beslistabel's deciding row (§12) and, inside a recursive rule
+	 * group, which repetition wrote this ([RG-9]).
 	 *
 	 * Beside `rule` rather than folded into it, because `rule` is a **name**: it
 	 * is what `revealRule` matches exactly against the workspace symbols, and
 	 * `Contributiestaffel (rij 2)` declares nothing. So the qualifier is drawn
 	 * and never clicked.
+	 *
+	 * Here rather than in `note`, which is where §9.10's repetition would
+	 * otherwise sit: UX-1's derivation section **replaces** a write row's note to
+	 * mark it `eindwaarde` or `overschreven`, and a pass number that vanished in
+	 * exactly the section a reader opens to compare four writes of one slot would
+	 * be missing where it is wanted most.
 	 */
 	ruleDetail?: string;
 	/** Where this row is written in the testset, for the rows that are. */
@@ -904,7 +911,10 @@ function verdict(
 
 	const fault = run.faults.find(one => one.rule === rule && mine(one));
 	if (fault) {
-		return { ...row, kind: 'fault', note: `faalde: ${fault.message}` };
+		return {
+			...row, kind: 'fault', note: `faalde: ${fault.message}`,
+			...(fault.pass ? { ruleDetail: `herhaling ${fault.pass}` } : {})
+		};
 	}
 	const skips = (detail.skipped ?? []).filter(one => one.rule === rule && mine(one));
 	const version = skips.find(one => one.reason === 'geldigheid');
@@ -922,6 +932,7 @@ function verdict(
 		return {
 			...row,
 			kind: 'skipped',
+			...(skipped.pass ? { ruleDetail: `herhaling ${skipped.pass}` } : {}),
 			note: `overgeslagen: ${why(skipped)}`,
 			// What it read, so the threshold and the value are both on screen —
 			// which is the next question after *which criterion*.
@@ -1035,7 +1046,7 @@ function writeRow(
 		// names the rule in its heading and so draws no `← <regel>`, but *which
 		// case of it* fired is not in the heading and is the whole question a
 		// table raises — so it is shown either way.
-		...(one.row ? { ruleDetail: one.row } : {}),
+		...(ruleDetailOf(one) ? { ruleDetail: ruleDetailOf(one) } : {}),
 		// **Steps first, then operands, at the same level and behind the one
 		// click** (§X7 stage 3). They answer the two halves of "why is this value
 		// what it is" and they answer them in this order: what this rule *did*,
@@ -1061,6 +1072,21 @@ function writeRow(
 			...(one.operands ?? []).map(operand => operandRow(operand, produced, seen))
 		]
 	};
+}
+
+/**
+ * What the run knows about *which part* of the rule acted — the table row it
+ * decided on (§12) and the repetition it was in ([RG-9]).
+ *
+ * Joined rather than chosen between: a beslistabel standing inside a recursive
+ * rule group is an ordinary thing to write, and a reader wants both facts.
+ */
+function ruleDetailOf(one: { row?: string; pass?: number }): string | undefined {
+	const parts = [
+		...(one.row ? [one.row] : []),
+		...(one.pass ? [`herhaling ${one.pass}`] : [])
+	];
+	return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 /** The four fields that identify one write in a trace. */
