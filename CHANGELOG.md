@@ -80,9 +80,9 @@ declarations in the outline beside the document's headings, and the extension
 points `markdown.copyFiles.destination` at a `media/` folder beside the notebook
 so a pasted figure lands there.
 
-[samples-notebook/](samples-notebook) is the worked example: hoofdstuk 10 of the
-Boekerij reglement, one notebook per artikel, over the declarations an engineer
-wrote beside it.
+[samples/workspace/sample-notebook/](samples/workspace/sample-notebook) is the
+worked example: hoofdstuk 10 of the Boekerij reglement, one notebook per
+artikel, over the declarations an engineer wrote beside it.
 
 ### Rekenen met de cijfers die een echt model draagt
 

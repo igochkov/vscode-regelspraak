@@ -29,7 +29,7 @@ const FIXTURE = vscode.Uri.file(path.resolve(
 
 /** A plain `.md` in the workspace: the control for question 1. */
 const PLAIN_MARKDOWN = vscode.Uri.file(path.resolve(
-	__dirname, '../../../samples/bron/reglement.md'));
+	__dirname, '../../../samples/workspace/single-folder/bron/reglement.md'));
 
 const MARKDOWN_EXTENSION = 'vscode.markdown-language-features';
 

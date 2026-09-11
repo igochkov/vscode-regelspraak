@@ -9,14 +9,15 @@
 // each other, and a reference resolves inside its own folder.
 //
 // **It asserts something in both runs**, which is deliberate. `npm test` opens
-// `samples/` alone and the cases below then check the complement: one folder,
-// no root rows, the tree exactly as it has always been. `npm run test:multiroot`
-// opens `client/src/test/fixtures/twee-werkmappen.code-workspace` and the same
+// `samples/workspace/single-folder/` alone and the cases below then check the
+// complement: one folder, no root rows, the tree exactly as it has always
+// been. `npm run test:multiroot` opens
+// `client/src/test/fixtures/twee-werkmappen.code-workspace` and the same
 // file checks the two-folder shape. A suite that quietly skipped in the
 // ordinary run would be a suite nobody notices has stopped working.
 //
-// **The second root is `samples-notebook/`** since §4.9, where it used to be a
-// fixture written for this suite alone. The collision it pins is the same one
+// **The second root is `samples/workspace/sample-notebook/`** since §4.9,
+// where it used to be a fixture written for this suite alone. The collision it pins is the same one
 // and is now one a reader can see happening for a reason: two reglementen of one
 // library, each in its own folder, each declaring `het Lid` and each deriving
 // `jeugdlid` by its own criterion. Nothing about the sample was arranged for
@@ -44,14 +45,15 @@ interface ModelExplorerLike {
 }
 
 /**
- * The second root: `samples-notebook/`, hoofdstuk 10 of the same reglement
- * written in juridische modus (§4.9).
+ * The second root: `samples/workspace/sample-notebook/`, hoofdstuk 10 of the
+ * same reglement written in juridische modus (§4.9).
  *
- * Resolved from the compiled location the way `getDocPath` resolves `samples/`:
- * this runs out of `client/out/test`, and the sample is at the repository root.
+ * Resolved from the compiled location the way `getDocPath` resolves
+ * `samples/workspace/single-folder/`: this runs out of `client/out/test`, and
+ * the sample is at the repository root.
  */
 const secondRootUri = (name: string): vscode.Uri =>
-	vscode.Uri.file(path.resolve(__dirname, '../../../samples-notebook', name));
+	vscode.Uri.file(path.resolve(__dirname, '../../../samples/workspace/sample-notebook', name));
 
 /** True in the multi-root run: the `.code-workspace` declares two folders. */
 const twoFolders = (): boolean => (vscode.workspace.workspaceFolders?.length ?? 0) > 1;
@@ -108,9 +110,9 @@ suite('Model per werkmap ([N-10])', () => {
 		assert.deepEqual([...new Set(rows.map(row => row.row))], ['root'],
 			`verwachtte alleen werkmaprijen, kreeg ${rows.map(row => row.row).join(' | ')}`);
 		const labels = rows.map(row => row.root!.label);
-		assert.ok(labels.includes('samples'), `samples ontbreekt: ${labels.join(' | ')}`);
-		assert.ok(labels.includes('samples-notebook'),
-			`samples-notebook ontbreekt: ${labels.join(' | ')}`);
+		assert.ok(labels.includes('single-folder'), `single-folder ontbreekt: ${labels.join(' | ')}`);
+		assert.ok(labels.includes('sample-notebook'),
+			`sample-notebook ontbreekt: ${labels.join(' | ')}`);
 	});
 
 	test('zet de objecttypen van elke werkmap onder haar eigen rij', async () => {
@@ -128,14 +130,14 @@ suite('Model per werkmap ([N-10])', () => {
 		};
 		// Both roots declare `Lid`, and each row shows its own — which is the
 		// collision drawn as what it is rather than as one model.
-		assert.ok((await namesUnder('samples')).includes('Lid'));
-		assert.ok((await namesUnder('samples-notebook')).includes('Lid'));
+		assert.ok((await namesUnder('single-folder')).includes('Lid'));
+		assert.ok((await namesUnder('sample-notebook')).includes('Lid'));
 		// And each tree is its own. Written as what is *absent* on either side
 		// rather than as the exact list, because the second root is a sample now
 		// and a sample grows: an exact list would fail on a declaration somebody
 		// adds to it, which says nothing about scopes.
-		assert.ok(!(await namesUnder('samples-notebook')).includes('Uitlening'));
-		assert.ok(!(await namesUnder('samples')).includes('Leeskring'));
+		assert.ok(!(await namesUnder('sample-notebook')).includes('Uitlening'));
+		assert.ok(!(await namesUnder('single-folder')).includes('Leeskring'));
 	});
 
 	// The model fact underneath the tree, and the one a reader meets first: two
@@ -166,8 +168,8 @@ suite('Model per werkmap ([N-10])', () => {
 
 	// The silent half, and the worse one: an object type declared in two folders
 	// is no report at all, it is a reference with two answers. Under one index
-	// F12 on `een Lid` here offered samples' declaration beside this folder's,
-	// and an evaluation took whichever was indexed first.
+	// F12 on `een Lid` here offered single-folder's declaration beside this
+	// folder's, and an evaluation took whichever was indexed first.
 	test('laat F12 binnen de eigen werkmap landen', async () => {
 		if (!twoFolders()) {
 			return;
@@ -196,6 +198,6 @@ suite('Model per werkmap ([N-10])', () => {
 		});
 		assert.deepEqual(targets.map(one => one.uri.fsPath),
 			[secondRootUri('gegevens/lid.rgs').fsPath],
-			'de definitie hoort in deze werkmap te staan, niet in samples');
+			'de definitie hoort in deze werkmap te staan, niet in single-folder');
 	});
 });

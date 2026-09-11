@@ -7,13 +7,22 @@
 			"request": "launch",
 			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			// The fixture folder is opened as the development host's workspace:
-			// without a folder there is no .rgs file to activate on
+			// The fixture workspace is opened as the development host's
+			// workspace: without one there is no .rgs file to activate on
 			// (`workspaceContains:**/*.rgs`) and no workspace to hold a
 			// `regelspraak.server.path` setting, so the host comes up inert.
+			// `sample.local.code-workspace` opens `single-folder/` and
+			// `sample-notebook/` together ([N-10]) — it is
+			// `sample.code-workspace` with `regelspraak.server.path` merged
+			// into its own `settings` by `npm run setup:dev` in the server
+			// repository, gitignored and regenerated on every run: a
+			// folder's own `.vscode/settings.json` is invisible to a
+			// resource-less `getConfiguration()` once there is more than one
+			// folder, so the setting has to live in the workspace file
+			// itself rather than in `single-folder/.vscode/`.
 			"args": [
 				"--extensionDevelopmentPath=${workspaceRoot}",
-				"${workspaceRoot}/samples"
+				"${workspaceRoot}/samples/workspace/sample.local.code-workspace"
 			],
 			"outFiles": [
 				"${workspaceRoot}/client/out/**/*.js",
@@ -59,7 +68,7 @@
 			"args": [
 				"--extensionDevelopmentPath=${workspaceRoot}",
 				"--extensionTestsPath=${workspaceRoot}/client/out/test/index",
-				"${workspaceRoot}/samples"
+				"${workspaceRoot}/samples/workspace/single-folder"
 			],
 			"outFiles": ["${workspaceRoot}/client/out/test/**/*.js"]
 		}

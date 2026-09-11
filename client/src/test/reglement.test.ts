@@ -1,16 +1,18 @@
 // Het voorbeeldreglement in juridische modus, tegen een draaiende taalserver.
 //
-// `samples-notebook/` is [N-1b]'s layout as the only thing that can state it:
-// executable. A folder per level the document has, a notebook per artikel, the
-// worked example under the bepaling it checks, and the declarations beside them
-// in technical mode — one model, two ways of writing it (§0.1). So the same
-// three properties `samples.test.ts` holds over `samples/` are held here, and
-// they are what would break first if the layout stopped working.
+// `samples/workspace/sample-notebook/` is [N-1b]'s layout as the only thing
+// that can state it: executable. A folder per level the document has, a
+// notebook per artikel, the worked example under the bepaling it checks, and
+// the declarations beside them in technical mode — one model, two ways of
+// writing it (§0.1). So the same three properties `samples.test.ts` holds over
+// `samples/workspace/single-folder/` are held here, and they are what would
+// break first if the layout stopped working.
 //
 //   - It reports nothing, in every cell of every notebook and in every `.rgs`.
 //     That also covers the cross-root half of §4.0's collision: `Regel Jeugdlid`
-//     is declared in this root **and** in `samples/`, and in one index that was
-//     RS607 on two files whose authors each wrote something correct.
+//     is declared in this root **and** in `samples/workspace/single-folder/`,
+//     and in one index that was RS607 on two files whose authors each wrote
+//     something correct.
 //   - Every testgeval passes, through the Test Explorer, which is the same
 //     request the cell's own run button makes ([N-7]).
 //   - The formatter leaves every code cell alone, so a line can be copied out of
@@ -36,7 +38,7 @@ import { TestExplorer } from '../testExplorer';
 import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 
 /** The sample lives at the repository root; this runs out of `client/out/test`. */
-const SAMPLE = path.resolve(__dirname, '../../../samples-notebook');
+const SAMPLE = path.resolve(__dirname, '../../../samples/workspace/sample-notebook');
 const CHAPTER = path.join(SAMPLE, 'h10-leeskringen');
 
 const notebooks = (): vscode.Uri[] => fs.readdirSync(CHAPTER)
@@ -56,7 +58,7 @@ function codeCells(notebook: vscode.NotebookDocument): vscode.NotebookCell[] {
 
 interface Api { testExplorer: TestExplorer }
 
-suite('Reglement als notebooks (samples-notebook)', () => {
+suite('Reglement als notebooks (samples/workspace/sample-notebook)', () => {
 
 	suiteSetup(async function () {
 		this.timeout(120000);
@@ -156,7 +158,7 @@ suite('Reglement als notebooks (samples-notebook)', () => {
 			return;
 		}
 		const api = await vscode.extensions.getExtension(EXTENSION_ID)!.activate() as Api;
-		const mine = (uri: string): boolean => uri.includes('samples-notebook');
+		const mine = (uri: string): boolean => uri.includes('sample-notebook');
 		// Discovery settles on the server's own schedule, and every notebook has to
 		// be in it: a gate that silently covered one artikel would pass forever.
 		const cases = await waitUntil('de rekenvoorbeelden van het reglement', async () => {

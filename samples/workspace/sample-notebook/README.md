@@ -20,15 +20,16 @@ er gewoon Markdown onder ligt, en **Reglement bekijken** geeft het hele artikel
 als één doorlopend document.
 
 Twee dingen die dit voorbeeld met opzet niet is. Het is **geen tweede exemplaar
-van [samples/](../samples)**: dat is hetzelfde reglement in technische modus, met
-de artikelen 1 tot en met 18, en de artikelen hier staan daar niet. En het is
-**geen volledige rondleiding langs de taal** -- daarvoor is `samples/`, waarin
-elke constructie van beide talen één keer voorkomt.
+van [single-folder/](../single-folder)**: dat is hetzelfde reglement in technische
+modus, met de artikelen 1 tot en met 18, en de artikelen hier staan daar niet. En
+het is **geen volledige rondleiding langs de taal** -- daarvoor is
+`single-folder/`, waarin elke constructie van beide talen één keer voorkomt.
 
 De mappen zijn twee werkmappen en dus twee modellen ([N-10]): allebei
 declareren ze `het Lid` en allebei kennen ze een `Regel Jeugdlid`, met andere
-inhoud, en ze weten niets van elkaar. Open ze samen en de modelverkenner zet elk
+inhoud, en ze weten niets van elkaar. Open ze samen via
+[sample.code-workspace](../sample.code-workspace) en de modelverkenner zet elk
 onder de naam van zijn eigen map.
 
 Hoe je zelf zo'n reglement opzet, staat in
-[docs/AUTHORING.md](../docs/AUTHORING.md).
+[docs/AUTHORING.md](../../../docs/AUTHORING.md).

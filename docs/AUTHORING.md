@@ -1,10 +1,12 @@
 # Laying out a RegelSpraak model
 
-How to name and arrange the files of a model, and why. [samples/](../samples) is
+How to name and arrange the files of a model, and why.
+[samples/workspace/single-folder/](../samples/workspace/single-folder) is
 written to these conventions and is the worked example — every construct of both
 languages appears in it somewhere, so a form can be looked up rather than
-reasoned about. [samples-notebook/](../samples-notebook) is the same reglement's
-tenth chapter in the other mode, **Een reglement als notebook** below.
+reasoned about. [samples/workspace/sample-notebook/](../samples/workspace/sample-notebook)
+is the same reglement's tenth chapter in the other mode, **Een reglement als
+notebook** below.
 
 None of this is enforced by the language. **A folder below the model root is not
 a namespace**: the language server indexes every `.rgs` file and `.rgs.md`
@@ -36,9 +38,9 @@ externe-tabellen/  deliveries — the content of a Gegevensbron, and its manifes
 ```
 
 Three of those are the language's three jobs, and a file only ever does one of
-them. In `samples/` that comes to 290 lines of declarations, 751 of rules and
-361 of testsets, over 33 files averaging 43 lines — small enough that a file is
-read rather than searched.
+them. In `samples/workspace/single-folder/` that comes to 290 lines of
+declarations, 751 of rules and 361 of testsets, over 33 files averaging 43
+lines — small enough that a file is read rather than searched.
 
 The fourth is the reason the other three are arranged the way they are.
 
@@ -62,8 +64,8 @@ another is what makes a layout awkward.
   comes from the definitions *and* from every article that computes with it.
   There is no one provision it belongs to, so it is grouped by what it is about.
 
-In `samples/`, `regels/` therefore has a folder per chapter and a file per
-article:
+In `samples/workspace/single-folder/`, `regels/` therefore has a folder per
+chapter and a file per article:
 
 ```
 regels/h4-uitlening/art-07-uitleentermijn.rgs
@@ -240,7 +242,7 @@ declaration by its kind puts an object type, the domain that types one of its
 attributes and the fact type that relates it in three different files, and the
 Model Explorer already gives you the by-kind view for free.
 
-Two placements in `samples/` are deliberate rather than incidental:
+Two placements in `samples/workspace/single-folder/` are deliberate rather than incidental:
 
 - `gegevens/voorkeuren.rgs` holds an `Extensie van objecttype het Lid` and
   nothing else. An extension block's whole purpose is to add members to a type
@@ -485,7 +487,7 @@ never run are not tests; they are guesses that go red at the worst moment.
 
 ## Two properties worth keeping
 
-`samples/` holds both, and
+`samples/workspace/single-folder/` holds both, and
 [client/src/test/samples.test.ts](../client/src/test/samples.test.ts) asserts
 them against a running server — as
 [reglement.test.ts](../client/src/test/reglement.test.ts) does for the notebook

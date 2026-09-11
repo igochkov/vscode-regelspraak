@@ -10,10 +10,19 @@ node_modules
 server/
 client/server
 
-# The Extension Development Host opens samples/, so a developer's
-# "regelspraak.server.path" belongs there (see the README). It names a path on
-# one machine, to a build this repository does not own.
-samples/.vscode/
+# "regelspraak.server.path" names a build this repository does not own, so it
+# is developer-local. `npm test` and the "Language Server E2E Test" launch
+# config open `samples/workspace/single-folder/` alone, where an ordinary
+# folder-scoped settings.json is read natively. F5 ("Launch Client") opens
+# `samples/workspace/sample.code-workspace` instead — two folders together —
+# where a folder's own settings.json is invisible to a resource-less
+# `getConfiguration()`, so the setting has to sit inside the workspace file's
+# own `settings`. `sample.local.code-workspace` is that file: a generated copy
+# of the committed, settings-free template, written by `setup:dev` so a
+# personal path is never at risk of being committed with it.
+samples/workspace/single-folder/.vscode/
+samples/sample-wet/.vscode/
+samples/workspace/sample.local.code-workspace
 
 # The on-disk cache of externally supplied tables ([R-15]); rebuilt on demand.
 .regelspraak/

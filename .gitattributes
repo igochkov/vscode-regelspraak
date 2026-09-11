@@ -19,4 +19,4 @@ syntaxes/*.json text eol=lf
 # binds the table is *refused* — which is what the E2E suite reports, and what CI
 # never sees, being Linux. Unlike the two rules above this one is not about a
 # file showing as modified: the content is the contract.
-samples/externe-tabellen/*.csv text eol=lf
+samples/workspace/single-folder/externe-tabellen/*.csv text eol=lf

@@ -1,10 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "../../../../samples"
+			"path": "../../../../samples/workspace/single-folder"
 		},
 		{
-			"path": "../../../../samples-notebook"
+			"path": "../../../../samples/workspace/sample-notebook"
 		}
 	]
 }

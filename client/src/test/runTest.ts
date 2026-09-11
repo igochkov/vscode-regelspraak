@@ -55,8 +55,8 @@ function supportedFloor(root: string): string {
  *
  * The committed fixture declares the two folders and nothing else, because
  * `regelspraak.server.path` names a build this repository does not own — which
- * is why `.gitignore` keeps `samples/.vscode/` out and `setup:dev` writes it
- * there. But that file is *folder*-scoped, and a resource-less
+ * is why `.gitignore` keeps `samples/workspace/single-folder/.vscode/` out and
+ * `setup:dev` writes it there. But that file is *folder*-scoped, and a resource-less
  * `getConfiguration()` — which is what `resolveServerModule` asks, the server
  * being one per window rather than one per folder — does not see a folder's
  * settings in a `.code-workspace`. So the setting is lifted to the workspace
@@ -91,9 +91,12 @@ function multiRootWorkspace(here: string): string {
 	return generated;
 }
 
-/** `regelspraak.server.path` as `setup:dev` left it in `samples/`, if it did. */
+/**
+ * `regelspraak.server.path` as `setup:dev` left it in
+ * `samples/workspace/single-folder/`, if it did.
+ */
 function developmentServerPath(root: string): string | undefined {
-	const settings = path.join(root, 'samples/.vscode/settings.json');
+	const settings = path.join(root, 'samples/workspace/single-folder/.vscode/settings.json');
 	if (!fs.existsSync(settings)) {
 		return undefined;
 	}
@@ -103,11 +106,12 @@ function developmentServerPath(root: string): string | undefined {
 		if (typeof configured !== 'string' || configured.trim().length === 0) {
 			return undefined;
 		}
-		// Made absolute against `samples/`, which is what the setting is relative
-		// to there and is no longer the first folder of the generated copy.
+		// Made absolute against `samples/workspace/single-folder/`, which is what
+		// the setting is relative to there and is no longer the first folder of
+		// the generated copy.
 		return path.isAbsolute(configured)
 			? configured
-			: path.resolve(root, 'samples', configured);
+			: path.resolve(root, 'samples/workspace/single-folder', configured);
 	} catch {
 		// A settings file with a comment in it is JSON with comments, which this
 		// cannot read. Falling back to the staged server beats failing the run.
@@ -134,14 +138,17 @@ async function main() {
 		// `--twee-werkmappen` opens a `.code-workspace` of two folders instead
 		// ([N-10]): a scope is a workspace folder, so the multi-root shape is a
 		// thing only a second folder can show. The second folder is
-		// `samples-notebook/`, the reglement in juridische modus, so one run
-		// checks both the scope arithmetic and the sample that is a model of its
-		// own. It is a second *run* rather than a flag inside the existing one
-		// because VS Code decides the workspace at launch, and every other suite
-		// here is written against `samples/` alone.
+		// `samples/workspace/sample-notebook/`, the reglement in juridische
+		// modus, so one run checks both the scope arithmetic and the sample that
+		// is a model of its own. It is a second *run* rather than a flag inside
+		// the existing one because VS Code decides the workspace at launch, and
+		// every other suite here is written against
+		// `samples/workspace/single-folder/` alone.
 		const multiRoot = process.argv.includes('--twee-werkmappen');
 		const workspacePath = process.env.CODE_TESTS_WORKSPACE
-			?? (multiRoot ? multiRootWorkspace(__dirname) : path.resolve(__dirname, '../../../samples'));
+			?? (multiRoot
+				? multiRootWorkspace(__dirname)
+				: path.resolve(__dirname, '../../../samples/workspace/single-folder'));
 		// Narrowed to the two suites that are about a workspace folder: the rest
 		// assume one, and a run that fails them would say nothing about this.
 		// `scopes` is the arithmetic, `reglement` the notebook sample that is the

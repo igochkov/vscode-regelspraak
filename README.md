@@ -10,8 +10,8 @@ The extension activates on `.rgs` files — models, the `*.test.rgs` testsets th
 
 **The mode is the kind of document you open, not a setting**, and everything below works in both.
 
-- **Technische modus** — `.rgs` and `*.test.rgs` files in `gegevens/`, `regels/` and `tests/`, with the document the model renders under `bron/` and a `// Bron:` line from each rule back to the provision it renders. This is the mode of a model somebody else wrote the text for: a converted PTPO, a regeling, an ALEF project brought across. [samples/](samples) is the worked example.
-- **Juridische modus** — a **notebook**: an `.rgs.md` document in which the text of the reglement and the RegelSpraak that computes it alternate, in the order the text has, with the worked example under the bepaling it checks. One notebook is one artikel, and the folders above it are the levels the document itself has. This is the mode of a text and a rule written together, by the person who means both. [samples-notebook/](samples-notebook) is the worked example.
+- **Technische modus** — `.rgs` and `*.test.rgs` files in `gegevens/`, `regels/` and `tests/`, with the document the model renders under `bron/` and a `// Bron:` line from each rule back to the provision it renders. This is the mode of a model somebody else wrote the text for: a converted PTPO, a regeling, an ALEF project brought across. [samples/workspace/single-folder/](samples/workspace/single-folder) is the worked example.
+- **Juridische modus** — a **notebook**: an `.rgs.md` document in which the text of the reglement and the RegelSpraak that computes it alternate, in the order the text has, with the worked example under the bepaling it checks. One notebook is one artikel, and the folders above it are the levels the document itself has. This is the mode of a text and a rule written together, by the person who means both. [samples/workspace/sample-notebook/](samples/workspace/sample-notebook) is the worked example.
 
 **They are one model.** A notebook and a folder of `.rgs` files under the same workspace folder share one namespace: a rule in a notebook resolves an object type an engineer declared in `gegevens/`, a testset in `tests/` runs the notebook's rules, and a name declared twice is reported once. So a team may split the work by role and the model does not know the split happened. Laying out either, and choosing between them: [docs/AUTHORING.md](docs/AUTHORING.md).
 
@@ -24,7 +24,7 @@ The extension activates on `.rgs` files — models, the `*.test.rgs` testsets th
 Writing with completion, three kinds of mistake caught, a testset running with the
 derivation trace behind every value, navigation and rename that cross between a
 model and the testset that tests it, the formatter, the decision-table preview,
-and the whole workspace in one tree — over the model in [samples/](samples).
+and the whole workspace in one tree — over the model in [samples/workspace/single-folder/](samples/workspace/single-folder).
 [The film](https://github.com/user-attachments/assets/e6379585-41eb-4051-bbb4-fbec90c844f0) plays in the browser: one minute fifty-five, with Dutch
 captions (mp4, 7 MB).
 
@@ -57,7 +57,7 @@ Each of these in full, with the reasoning behind the shape it takes, is in
 - **Two constructs go beyond RegelSpraak v2.3.0**, and both are optional. `Regelgroep <naam>` gives §9.10's rule group the written form the specification withholds — including the `(recursief)` qualifier a recursive group needs — and `Gegevensbron` declares an externally supplied table — which §9.3 puts outside its own scope and hands to the execution environment. A model that uses either is not portable to a strict v2.3.0 tool, which is worth knowing you are opting in to. (`//` comments are the other thing the specification does not define, and have been accepted since the first release.)
 - **Interface language is Dutch throughout**, matching the language itself; there is no English UI mode.
 - **Settings, and why line wrapping is off** for `.rgs` files (a RegelSpraak sentence cannot be broken across lines, and an aligned decision table is wider than any wrap column worth having): [docs/SETTINGS.md](docs/SETTINGS.md).
-- **Laying out a model** — how to name and arrange its files in either mode, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/](samples) and [samples-notebook/](samples-notebook) are the worked examples.
+- **Laying out a model** — how to name and arrange its files in either mode, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/workspace/single-folder/](samples/workspace/single-folder) and [samples/workspace/sample-notebook/](samples/workspace/sample-notebook) are the worked examples. [samples/workspace/sample.code-workspace](samples/workspace/sample.code-workspace) opens both together.
 
 ## Issues
 

@@ -52,7 +52,8 @@ suite('Testverkenner (W7)', () => {
 
 	test('noemt elke testset van de werkmap', async () => {
 		const names = (await testsets()).map(one => one.label);
-		// `samples/tests/` holds four, each with a Testset line of its own.
+		// `samples/workspace/single-folder/tests/` holds four, each with a
+		// Testset line of its own.
 		assert.ok(names.length >= 4, names.join(' | '));
 		assert.ok(names.some(name => name.includes('contributie') || name.includes('Contributie')),
 			names.join(' | '));
