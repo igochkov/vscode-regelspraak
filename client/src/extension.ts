@@ -34,6 +34,7 @@ import { NOTEBOOK_TYPE, RegelSpraakNotebookSerializer } from './notebook/seriali
 import {
 	NEW_NOTEBOOK_COMMAND, PREVIEW_REGLEMENT_COMMAND, newNotebook, previewReglement
 } from './notebook/commands';
+import { TestgevalController } from './notebook/controller';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -224,6 +225,17 @@ const explain = new Explain(testExplorer, runPanels, () => activeScenario);
  */
 const failureLenses = new FailureLenses(testExplorer);
 
+/**
+ * [N-7]. The run button of a notebook, on the worked example and on nothing
+ * else — which is what `supportedLanguages: ['testspraak']` comes to.
+ *
+ * Beside the Test Explorer rather than inside it: both ask the same two custom
+ * methods, and one verdict comes back whichever surface asked, but a
+ * `TestController` and a `NotebookController` are two workbench objects with
+ * two lifetimes and neither is a projection of the other.
+ */
+const testgevalController = new TestgevalController();
+
 /** X2b's, and the only one of these that needs the extension context. */
 let activeScenario: ActiveScenario | undefined;
 
@@ -273,6 +285,12 @@ export interface RegelSpraakApi {
 	modelSource: ModelSource;
 	testExplorer: TestExplorer;
 	activeScenario: ActiveScenario;
+	/**
+	 * [N-7]'s controller, for the one thing about it that cannot be asserted any
+	 * other way: a run button is drawn by the workbench, so what the suite reads
+	 * is the language list that decides whether one appears at all.
+	 */
+	testgevalController: TestgevalController;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -327,7 +345,10 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		// that makes the first one, and one that reads the whole of it as the
 		// document it is ([N-1a]).
 		commands.registerCommand(NEW_NOTEBOOK_COMMAND, newNotebook),
-		commands.registerCommand(PREVIEW_REGLEMENT_COMMAND, previewReglement));
+		commands.registerCommand(PREVIEW_REGLEMENT_COMMAND, previewReglement),
+		// And the gesture a notebook has that a `.rgs` file does not: the run
+		// button on a worked example ([N-7]).
+		testgevalController);
 
 	context.subscriptions.push(
 		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
@@ -455,7 +476,10 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus, modelSource, testExplorer, activeScenario };
+	return {
+		modelExplorer, serverStatus, modelSource, testExplorer, activeScenario,
+		testgevalController
+	};
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -825,6 +849,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	});
 	modelSource.setClient(client);
 	testExplorer.setClient(client);
+	testgevalController.setClient(client);
 	explain.setClient(client);
 	modelExplorer.refresh();
 }
@@ -836,6 +861,7 @@ async function stopClient(): Promise<void> {
 	watcher = undefined;
 	modelSource.setClient(undefined);
 	testExplorer.setClient(undefined);
+	testgevalController.setClient(undefined);
 	explain.setClient(undefined);
 	modelExplorer.refresh();
 	// Only where one was running: a failed start already said something more
