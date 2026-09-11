@@ -1,12 +1,44 @@
-// [N-7]/[N-8] — the run button on a worked example, and nothing else.
+// [N-7]/[N-8] — the run button, what it runs, and what it says where it runs
+// nothing.
 //
 // **The thing you run is the worked example.** There is no isolated evaluation
 // of a rule ([E-7]), so *running a rule* was always *running a testgeval and
 // looking at one rule* — and in a notebook the testgeval is two cells away,
-// written by the same hand under the rule it exercises (§0.1). So the
-// controller declares `supportedLanguages: ['testspraak']` and VS Code draws no
-// run button on a cell of any other language. That is the whole mechanism: no
-// `when` clause, no gate, nothing to keep in step.
+// written by the same hand under the rule it exercises (§0.1). That decision
+// stands.
+//
+// **Its stated mechanism was wrong, and the workbench says so** (11 September
+// 2026, reported by a reader who pressed the button). [N-7] read
+// `supportedLanguages: ['testspraak']` as *VS Code draws no run button on a
+// cell of any other language*. It draws one on **every code cell** of a
+// notebook that has a kernel at all: the execute action's precondition is
+// `NOTEBOOK_CELL_TYPE == 'code' && (kernelCount > 0 || kernelSourceCount > 0)`,
+// with nothing about a language in it, and no context key exists that could
+// carry one — `notebookCellType` says code or markup and there is no
+// `notebookCellLanguage`. `supportedLanguages` decides what happens when the
+// button is *pressed*: `executeNotebookCells` opens an execution for every code
+// cell and then `complete({})`s the ones the kernel does not support, which is
+// a button that flickers and does nothing. Verified in the workbench bundle
+// before concluding it, as §UX-1's lens finding was.
+//
+// **So the button cannot be hidden, and what is left to decide is what it
+// says.** The controller supports both languages and answers a rule cell with
+// one line naming the cell to run instead (`RULE_CELL`, and no verdict mark,
+// since nothing ran). That is the ruling the testset-header cell already
+// carries — *a cell that ran nothing says so* — one language over, and it is
+// what [N-7]'s own words ask for: the reader is told *you run the worked
+// example, not the rule* at the moment they try the other thing.
+//
+// It buys one more thing, which is why the widening is not a workaround.
+// Inserting a code cell copies the language of the cell it is inserted under
+// and then drops back to `supportedLanguages[0]` where that language is not in
+// the list — so with the narrow list every cell added below a rule cell came
+// out as **testspraak**, silently. Read off the same bundle and then confirmed
+// by driving `notebook.cell.insertCodeCellBelow` in the test host (11 September
+// 2026); the assertion is **not** kept, because closing the editor it needs
+// disturbs four cases in the suite around it and a flaky end-to-end gate is
+// worse than none. What is gated is the line itself, by the rule cell's own
+// case: without `regelspraak` in this list that cell writes nothing at all.
 //
 // **No new custom method** ([N-7]). A cell asks `regelspraak/tests` which
 // testgevallen are written in it and `regelspraak/runTest` to run one — the two
@@ -21,11 +53,11 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
-import { TEST_LANGUAGE } from '../languages';
+import { MODEL_LANGUAGE, TEST_LANGUAGE } from '../languages';
 import { TestRun } from '../testExplorer';
 
 import { NOTEBOOK_TYPE } from './serializer';
-import { asMarkdown, asText, verdictOf } from './verdict';
+import { RULE_CELL, asMarkdown, asText, verdictOf } from './verdict';
 
 const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
@@ -88,9 +120,16 @@ export class TestgevalController {
 	constructor() {
 		this.controller = vscode.notebooks.createNotebookController(
 			CONTROLLER_ID, NOTEBOOK_TYPE, 'RegelSpraak');
-		// [N-7] in one line. Every other language in a notebook of ours is
-		// `regelspraak` or Markdown, and neither gets a run button.
-		this.controller.supportedLanguages = [TEST_LANGUAGE];
+		// Both code languages, and the header above says why: this list does not
+		// decide which cells get a button, only which ones reach `execute`. A
+		// rule cell reaching it is what lets `runCell` answer instead of leaving
+		// the workbench to complete the execution behind our back.
+		//
+		// `testspraak` leads because it is the one that runs; the order is read
+		// only by the Interactive Window and by the language of a code cell
+		// inserted into an *empty* notebook, and ours is never empty
+		// (`commands.ts` seeds both).
+		this.controller.supportedLanguages = [TEST_LANGUAGE, MODEL_LANGUAGE];
 		this.controller.supportsExecutionOrder = false;
 		this.controller.description = 'Voert de rekenvoorbeelden uit';
 		this.controller.executeHandler = (cells) => this.execute(cells);
@@ -110,9 +149,12 @@ export class TestgevalController {
 
 	/**
 	 * Exposed for the reason `runProfile` is: a notebook controller is drawn by
-	 * the workbench and hands nothing back, so the suite that asserts [N-7] —
-	 * which is *no run button on a rule cell*, and a button is not assertable —
-	 * reads `supportedLanguages` off the controller itself.
+	 * the workbench and hands nothing back, so a suite that wants to know what
+	 * it declares reads it off the controller itself.
+	 *
+	 * It is **not** a proxy for *which cells have a run button*, which is what
+	 * the suite used to read it as — see the header. What a rule cell does when
+	 * it is pressed is asserted by pressing it.
 	 */
 	get notebookController(): vscode.NotebookController {
 		return this.controller;
@@ -143,6 +185,15 @@ export class TestgevalController {
 		execution.start(Date.now());
 		execution.clearOutput();
 		try {
+			// A rule cell, which has a button because every code cell does. It
+			// runs nothing and says which cell to press instead ([N-7]); no
+			// verdict mark, because neither green nor red is honest about a run
+			// that did not happen.
+			if (cell.document.languageId !== TEST_LANGUAGE) {
+				await replaceWith(execution, RULE_CELL);
+				execution.end(undefined, Date.now());
+				return;
+			}
 			const client = this.client;
 			if (!client) {
 				await replaceWith(execution, 'Er draait geen RegelSpraak-taalserver.');

@@ -51,10 +51,10 @@ nearest heading above its cell and lists the source links in the prose between
 them, a Juriconnect reference to Dutch law included, read back in words. An
 explicit `// Bron:` line in the cell wins where a rule renders something else.
 
-**You run the rekenvoorbeeld, not the regel.** A `testspraak` cell has a run
-button and a `regelspraak` cell has none: a run evaluates the whole model
-against a situation, so *running a rule* was always *running a testgeval and
-looking at one rule*. Under the cell each `Verwacht` line gets its verdict, with
+**You run the rekenvoorbeeld, not the regel.** A `testspraak` cell's run button
+runs its testgevallen, and a `regelspraak` cell's says to press that one
+instead: a run evaluates the whole model against a situation, so *running a
+rule* was always *running a testgeval and looking at one rule*. Under the cell each `Verwacht` line gets its verdict, with
 the expected and the actual value where they differ; the same testgevallen are
 in the Testing view, under the notebook, and it is one request either way.
 Editing any code cell clears every output, the run having been against a model

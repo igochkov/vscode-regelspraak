@@ -68,14 +68,18 @@ happened. Laying out either is [AUTHORING.md](AUTHORING.md).
   for the rule that renders a provision other than the one it stands under.
   Nothing is written into the code for this: a derived citation is something you
   ask for, and drawing it in the text would be an annotation nobody typed.
-- **You run the worked example, not the rule.** The run button is on a
-  `testspraak` cell and on no other, because there is no such thing as running
-  one rule — a run evaluates the whole model against a situation, and *running a
-  rule* was always *running a testgeval and looking at one rule*. Under the cell
-  each `Verwacht` line gets its verdict, with the expected and the actual value
-  where they differ and the faults the run recorded. The same testgevallen are
-  in the Testing view, under the notebook, and it is the same request either
-  way. A cell holding only the testset header runs nothing and says so.
+- **You run the worked example, not the rule.** What a `testspraak` cell's run
+  button does is run the testgevallen written in it: under the cell each
+  `Verwacht` line gets its verdict, with the expected and the actual value where
+  they differ and the faults the run recorded. The same testgevallen are in the
+  Testing view, under the notebook, and it is the same request either way.
+  There is no such thing as running one rule — a run evaluates the whole model
+  against a situation, and *running a rule* was always *running a testgeval and
+  looking at one rule* — so a **rule** cell's button says which cell to press
+  instead rather than running anything. (VS Code draws a run button on every
+  code cell of a notebook it has a kernel for, and there is no way to ask it for
+  one on some and not others; what an extension decides is what pressing it
+  does.) A cell holding only the testset header runs nothing and says so too.
 - **Outputs are ephemeral.** Editing any code cell clears every output in the
   notebook: the run was against a model that no longer exists, and a stored
   verdict in a file would be a stale panel committed to the repository.

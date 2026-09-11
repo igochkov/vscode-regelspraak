@@ -165,9 +165,10 @@ bottom right of a cell switches between the two and writes the fence.
   `Testset <naam>` and the `Rekendatum`, `Parameters` or `Parameterset` lines,
   and the ones after it carry a testgeval each. One rekenvoorbeeld per cell, and
   under the bepaling it is about.
-- **You run the rekenvoorbeeld, not the regel.** A `testspraak` cell has a run
-  button and a `regelspraak` cell has none, because there is no such thing as
-  running one rule — a run evaluates the whole model against a situation.
+- **You run the rekenvoorbeeld, not the regel.** Pressing the run button on a
+  `testspraak` cell runs its testgevallen; pressing the one on a `regelspraak`
+  cell tells you to press that one instead. There is no such thing as running
+  one rule — a run evaluates the whole model against a situation.
 
 ### Citing the source
 

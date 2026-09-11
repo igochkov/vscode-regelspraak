@@ -282,18 +282,25 @@ suite('Testverkenner, lens en Leg uit in een notebook (Notebook Plan §4.6)', ()
 	});
 
 	/**
-	 * En de cel is de enige taal die een uitvoerknop krijgt — hier herhaald
-	 * omdat deze suite de andere kant van dezelfde keuze aantoont.
+	 * En het uitvoeren blijft aan de knop van de cel — hier herhaald omdat deze
+	 * suite de andere kant van dezelfde keuze aantoont.
 	 *
 	 * [N-7]'s run button and [N-9]'s absent run lens are one decision seen from
 	 * two sides, and a change that put the lens back would most likely be made by
 	 * somebody who had just read this file rather than §4.5's.
+	 *
+	 * **What this used to assert was that the list held one language**, read as
+	 * *only a testgeval cell has a button*. The workbench draws one on every code
+	 * cell whatever the list says, so that reading was wrong in two files at once
+	 * (11 September 2026); what a rule cell's button *does* is §4.5's case, and
+	 * what is left here is the half this suite is about — a testgeval is run by
+	 * the controller and not by a lens.
 	 */
-	test('laat het uitvoeren aan de knop van de cel, in één taal ([N-7])', async () => {
+	test('laat het uitvoeren aan de knop van de cel ([N-7])', async () => {
 		const api = await vscode.extensions.getExtension(EXTENSION_ID)!.activate() as {
 			testgevalController: { notebookController: vscode.NotebookController }
 		};
-		assert.deepEqual(
-			api.testgevalController.notebookController.supportedLanguages, [TEST_LANGUAGE]);
+		assert.ok(api.testgevalController.notebookController
+			.supportedLanguages?.includes(TEST_LANGUAGE));
 	});
 });

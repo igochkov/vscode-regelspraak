@@ -73,6 +73,25 @@ export const NOTHING_RAN =
 	+ 'Een rekenvoorbeeld begint met een regel `Testgeval`.';
 
 /**
+ * What a **rule** cell says, since it has a run button after all.
+ *
+ * [N-7] assumed `supportedLanguages` decided whether the workbench *draws* the
+ * button. It does not: VS Code draws one on every code cell of a notebook that
+ * has a kernel at all, and `supportedLanguages` decides only what happens when
+ * it is pressed — `executeNotebookCells` completes the execution of an
+ * unsupported cell immediately, which is a button that flickers and does
+ * nothing. So the decision [N-7] took stands and the mechanism does not: the
+ * only thing left to choose is what pressing it says, and an answer beats a
+ * gesture that appears to be broken. It is the same ruling as the line above,
+ * one language over — an empty output reads as a run that failed, which is a
+ * different fact and the worse one to be told by accident.
+ */
+export const RULE_CELL =
+	'Je voert het rekenvoorbeeld uit, niet de regel: voer de cel met het '
+	+ '`Testgeval` uit. Wat een regel heeft gedaan, laat `Leg uit` op een '
+	+ '`Verwacht`-regel zien.';
+
+/**
  * The verdict of one testgeval.
  *
  * The rules are the Test Explorer's `report`, said once more rather than said a

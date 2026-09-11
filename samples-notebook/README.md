@@ -13,8 +13,9 @@ gegevens/            de declaraties, in technische modus ernaast
 ```
 
 Open een `.rgs.md` en VS Code opent hem als notebook: de tekst leest als tekst,
-de cellen zijn RegelSpraak, en op een `testspraak`-cel staat een knop. **Je voert
-het rekenvoorbeeld uit, niet de regel.** *Openen met → Teksteditor* laat zien dat
+de cellen zijn RegelSpraak, en op elke codecel staat een knop. **Je voert
+het rekenvoorbeeld uit, niet de regel** — druk je op die van een regelcel, dan
+zegt hij dat. *Openen met → Teksteditor* laat zien dat
 er gewoon Markdown onder ligt, en **Reglement bekijken** geeft het hele artikel
 als één doorlopend document.
 

@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { MODEL_LANGUAGE, TEST_LANGUAGE } from '../languages';
+import { MODEL_LANGUAGE } from '../languages';
 import { casesInCell } from '../notebook/controller';
 import { NOTHING_RAN, asMarkdown, asText, verdictOf } from '../notebook/verdict';
 import { TestRun } from '../testExplorer';
@@ -17,9 +17,9 @@ import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
  * failure, a fault and a scenario, which is the set of things a run can come to
  * and which no single fixture produces at once. The controller is checked end
  * to end against a real server and a real worker, because what [N-7] and [N-8]
- * claim is about the workbench: a run button that appears on one language and
- * not on the others, an output under the cell it was run from, and an output
- * that goes away when the model under it changes.
+ * claim is about the workbench: what a cell does when its button is pressed, an
+ * output under the cell it was run from, and an output that goes away when the
+ * model under it changes.
  */
 
 /** Self-contained, and outside every workspace folder — a scope of one ([N-10]). */
@@ -275,24 +275,38 @@ suite('Rekenvoorbeeld uitvoeren (Notebook Plan §4.5)', () => {
 		});
 
 		/**
-		 * [N-7], asserted where it is decided.
+		 * [N-7], asserted where it is actually decided — which is not where this
+		 * suite used to look.
 		 *
-		 * *A rule cell has no run button* is a claim about a picture, and a
-		 * picture is not assertable — but the one line that decides it is. VS
-		 * Code draws a run button on a cell exactly where a controller for the
-		 * notebook's type lists its language, and ours lists one.
+		 * It read `supportedLanguages` and called that *no run button on a rule
+		 * cell*, on [N-7]'s own reading of the API. The workbench draws a button
+		 * on **every** code cell of a notebook with a kernel, so the assertion
+		 * was true of the field and false of the picture, and a reader pressed
+		 * the button and got nothing. A field is a proxy for a picture only
+		 * where somebody has checked that it is.
+		 *
+		 * So what is asserted is the behaviour: a rule cell runs nothing and
+		 * says which cell to press instead, with **no verdict mark** — neither
+		 * green nor red is honest about a run that did not happen.
 		 */
-		test('alleen een testspraak-cel heeft een uitvoerknop ([N-7])', async () => {
+		test('een regelcel voert niets uit en zegt wat je wél uitvoert ([N-7])', async function () {
+			this.timeout(120000);
+			const rule = codeCells(notebook)
+				.find(cell => cell.document.languageId === MODEL_LANGUAGE)!;
+			assert.ok(rule, 'de fixture hoort een regelcel te hebben');
+			await execute(notebook, rule.index);
+			const text = await waitUntil('de uitvoer van de regelcel',
+				() => plainOutput(rule) || undefined);
+			assert.ok(text.includes('rekenvoorbeeld uit, niet de regel'), text);
+			assert.strictEqual(rule.executionSummary?.success, undefined);
+			// And the controller reaches it at all only because it declares the
+			// language: without that the workbench completes the execution
+			// itself and `runCell` is never called.
 			const api = await vscode.extensions.getExtension(EXTENSION_ID)!.activate() as {
 				testgevalController: { notebookController: vscode.NotebookController }
 			};
-			assert.deepStrictEqual(
-				api.testgevalController.notebookController.supportedLanguages,
-				[TEST_LANGUAGE]);
-			// And the fixture genuinely has a cell of the other language, so the
-			// assertion above is about something that is on screen.
-			assert.ok(codeCells(notebook).some(
-				cell => cell.document.languageId === MODEL_LANGUAGE));
+			assert.ok(api.testgevalController.notebookController
+				.supportedLanguages?.includes(MODEL_LANGUAGE));
 		});
 
 		/**
