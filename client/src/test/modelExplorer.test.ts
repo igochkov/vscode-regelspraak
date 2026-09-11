@@ -14,8 +14,11 @@ import { EXTENSION_ID, activate, getDocUri, waitUntil } from './helper';
 /** Mirrors what `client/src/modelExplorer.ts` exposes, structurally. */
 interface ModelEntry {
 	row: 'group' | 'declaration';
-	group?: { kind: string; label: string; nodes: unknown[] };
-	node?: { name: string; kind: string; label: string; detail?: string; children: unknown[] };
+	group?: { kind: string; label: string; nodes: unknown[]; contents?: string };
+	node?: {
+		name: string; kind: string; label: string; detail?: string; contents?: string;
+		children: unknown[];
+	};
 }
 
 interface ModelExplorerLike {
@@ -125,6 +128,24 @@ suite('Modelverkenner (W1, W2)', () => {
 		const kinds = new Set((await explorer.getChildren(contributie))
 			.map(entry => entry.node!.kind));
 		assert.deepStrictEqual([...kinds].sort(), ['beslistabel', 'regel']);
+	});
+
+	// Een model dat de constructie overal gebruikt heeft geen platte lijst regels
+	// meer: de rij erboven telt groepen, de regels zitten er een niveau onder, en
+	// hoeveel het er zijn stond nergens.
+	test('telt naast de regelgroepen ook de regels die erin zitten', async () => {
+		const groepen = (await groups()).find(entry => entry.group!.kind === 'regelgroep');
+		assert.ok(groepen, 'geen groep regelgroepen');
+		const heading = explorer.getTreeItem(groepen).description;
+		// Het kale aantal staat waar het altijd stond; wat erin zit komt erachter,
+		// in de woorden van het model zelf.
+		assert.match(String(heading), /^\d+ \(\d+ regels?(, \d+ beslistabellen?)?\)$/);
+
+		const contributie = (await explorer.getChildren(groepen))
+			.find(entry => entry.node!.name === 'contributie');
+		assert.ok(contributie, 'de regelgroep contributie ontbreekt');
+		assert.match(String(explorer.getTreeItem(contributie).description),
+			/^\d+ regels?(, \d+ beslistabellen?)?$/);
 	});
 
 	test('kent het commando dat de verkenner naar voren haalt', async () => {

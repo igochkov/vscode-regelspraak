@@ -30,12 +30,23 @@ export interface ModelNode {
 	range: WireRange;
 	selectionRange: WireRange;
 	children: ModelNode[];
+	/** What it holds, where that is worth stating — see `ModelGroup.contents`. */
+	contents?: string;
 }
 
 export interface ModelGroup {
 	kind: string;
 	label: string;
 	nodes: ModelNode[];
+	/**
+	 * What the row holds that its own row-count does not say — `98 regels`.
+	 *
+	 * A `Regelgroep` adopts its file's rules, so the row labelled *Regelgroepen*
+	 * counts groups and every rule is a level down. The phrase is the server's
+	 * because the words are the model's own vocabulary, `label`'s reason: a
+	 * plural built here would be free to disagree with the one beside it.
+	 */
+	contents?: string;
 }
 
 export interface ModelTree {
@@ -64,6 +75,8 @@ export interface ModelRoot {
 	label: string;
 	uri: string;
 	groups: ModelGroup[];
+	/** What the folder's model holds — see `ModelGroup.contents`. */
+	contents?: string;
 }
 
 export const EMPTY: ModelTree = { groups: [] };

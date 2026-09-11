@@ -129,7 +129,9 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
  * reader can open but the model held in one, and the row beneath it is a group
  * of declarations. Expanded, because a folder collapsed by default hides the
  * whole tree behind two clicks — and the description counts the groups, which
- * is what the top level used to count for the window as a whole.
+ * is what the top level used to count for the window as a whole, followed by
+ * what the folder's model holds: "how big is this model" is the question a
+ * reader brings to a row that stands for a whole reglement.
  */
 function rootItem(root: ModelRoot): TreeItem {
 	const item = new TreeItem(root.label, TreeItemCollapsibleState.Expanded);
@@ -139,15 +141,27 @@ function rootItem(root: ModelRoot): TreeItem {
 	// The folder's own path, which is what tells two folders of one name apart —
 	// and a reader supporting several jurists has exactly that.
 	item.tooltip = Uri.parse(root.uri).fsPath;
-	item.description = `${root.groups.length}`;
+	item.description = counted(root.groups.length, root.contents);
 	return item;
 }
 
 function groupItem(group: ModelGroup): TreeItem {
 	const item = new TreeItem(group.label, TreeItemCollapsibleState.Expanded);
 	item.contextValue = `regelspraakGroup.${group.kind}`;
-	item.description = `${group.nodes.length}`;
+	item.description = counted(group.nodes.length, group.contents);
 	return item;
+}
+
+/**
+ * How many rows, and — where the server said so — what they hold.
+ *
+ * The bare number keeps the position it has always had, so every row reads the
+ * same way and the extra fact is an addition rather than a second convention.
+ * It is the server's sentence verbatim: what the words are is the model's
+ * vocabulary and not this side's to compose (see `ModelGroup.contents`).
+ */
+function counted(rows: number, contents?: string): string {
+	return contents ? `${rows} (${contents})` : `${rows}`;
 }
 
 function declarationItem(node: ModelNode): TreeItem {
@@ -156,8 +170,12 @@ function declarationItem(node: ModelNode): TreeItem {
 		node.children.length > 0
 			? TreeItemCollapsibleState.Collapsed
 			: TreeItemCollapsibleState.None);
-	item.description = node.detail;
-	item.tooltip = node.detail ? `${node.label} — ${node.detail}` : node.label;
+	// What the declaration itself states where it states something, and what it
+	// holds where it does not: a Regelgroep declares a name and no members, so
+	// its row would otherwise be the only one in the tree with nothing to say.
+	const detail = node.detail ?? node.contents;
+	item.description = detail;
+	item.tooltip = detail ? `${node.label} — ${detail}` : node.label;
 	item.iconPath = new ThemeIcon(ICONS[node.kind] ?? 'symbol-misc');
 	// So a later action can be offered for one kind and not another (run a rule,
 	// Phase 5) without this side having to re-read what kind a row is.

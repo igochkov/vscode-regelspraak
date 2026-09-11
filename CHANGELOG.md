@@ -192,6 +192,17 @@ worden toegepast — in het doel van een toekenning, waar een regel per instanti
 schrijft — werd en wordt de regel geweigerd, nu met de werkelijke reden erbij:
 stil een verkeerd getal opleveren doet geen van deze plaatsen nog.
 
+### Hoeveel regels een model telt
+
+**De Modelverkenner telde regelgroepen, niet de regels erin.** Een model dat
+`Regelgroep` overal gebruikt heeft geen platte lijst regels meer — elke regel
+hangt onder haar groep — zodat de rij *Regelgroepen 12* groepen telde en het
+getal waar een lezer naar zoekt nergens stond. Achter dat aantal staat nu wat
+die groepen bevatten: **Regelgroepen  12 (98 regels, 7 beslistabellen)**. Elke
+regelgroep zegt het ook van zichzelf — *contributie  8 regels* — zodat zichtbaar
+is welke groep de grote is, en in een venster met meer dan één werkmap telt de
+maprij élke regel van die map, ook die buiten een groep staat.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a
