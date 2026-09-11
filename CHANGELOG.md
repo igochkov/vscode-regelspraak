@@ -172,6 +172,26 @@ alles op één diepte schrijft betekent wat het altijd betekende: een groep neem
 altijd het item ná haar kop, en pas een bullet die ondieper is dan dat eerste lid
 sluit de groep. Er hoort geen melding bij — de zin was gewoon goed.
 
+**En een `die`-subselectie werd alleen toegepast waar zij om de héle keten
+stond.** §13.4.2 #8 laat `… die <predicaat>` overal in een keten staan, en de
+gewone plaats is middenin: in `de som van de bedragen van alle bijdragen van de
+Pot die een grote storting zijn` selecteert het predicaat de bijdragen en leest
+`bedragen` daarna af wat overblijft. Dat filter viel weg — de som telde alles op,
+zonder melding, zonder fout en met een schone ontleding. Op drie stortingen van
+€ 50, € 60 en € 500 waarvan alleen de laatste het kenmerk heeft: € 610,00 waar
+het model € 500,00 zegt. Alle drie de filtervormen, met en zonder rolketen,
+rekenen nu wat er staat.
+
+**En het viel op drie andere plaatsen ook weg**, waarvan twee erger dan een som
+die te hoog uitvalt: een **verdeling** (§9.7) gaf een gelijk deel aan ontvangers
+die de subselectie uitsluit, een variabele uit **`Daarbij geldt:`** telde de
+ongefilterde verzameling op, en een **consistentieregel** (§9.5) meldde een
+inconsistentie op een model dat klopt, doordat de eis werd nagekeken op elementen
+waar de zin niet over gaat. Alle vier zijn hersteld. Waar het filter niet kan
+worden toegepast — in het doel van een toekenning, waar een regel per instantie
+schrijft — werd en wordt de regel geweigerd, nu met de werkelijke reden erbij:
+stil een verkeerd getal opleveren doet geen van deze plaatsen nog.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a
