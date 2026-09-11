@@ -7,7 +7,7 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased] — A reglement as a notebook, and one model per workspace folder
+## [Unreleased] — A reglement as a notebook, one model per workspace folder, and exact arithmetic without a ceiling
 
 **A model can now be written as the document it renders.** Until now the text
 came first and the rules rendered it afterwards, from a folder of `.rgs` files
@@ -83,6 +83,53 @@ so a pasted figure lands there.
 [samples-notebook/](samples-notebook) is the worked example: hoofdstuk 10 of the
 Boekerij reglement, one notebook per artikel, over the declarations an engineer
 wrote beside it.
+
+### Rekenen met de cijfers die een echt model draagt
+
+**Een factor met tien of meer decimalen rekende niet, en nu wel.** Gemeld uit
+een productiemodel: `het te gebruiken pensioenvermogen gedeeld door de
+contantewaardefactor` met een contantewaardefactor zoals de administratie hem
+levert — `1,6802319798572` — leverde géén waarde op en meldde bij uitvoering
+*het getal is te groot om exact mee te rekenen*, over een operand kleiner dan
+twee en een uitkomst van ongeveer 59.515. De grens lag tussen acht en tien
+decimalen en het gedeclareerde domein maakte niets uit, ook `Numeriek (getal)`
+niet.
+
+**De grens zat niet in het getal maar in de deling.** RegelSpraak rekent exact
+met breuken, en een deling is precies waar zo'n breuk haar noemer verdient:
+100.000 gedeeld door die factor is een breuk met een teller van 2,5·10^17, en
+de teller mocht niet groter zijn dan wat een gewoon getal exact vasthoudt. Dat
+is nu geen grens meer. De uitkomst is `€ 59.515,59`, de factor mag er veertien
+decimalen hebben zoals de keten hem aanlevert, en ver daarvoorbij.
+
+**Er is nog steeds een grens, en die staat nu in de foutmelding.** Een waarde is
+een breuk van twee gehele getallen van elk ten hoogste **duizend cijfers**;
+loopt een berekening daaroverheen, dan zegt de melding hoeveel significante
+cijfers zij nodig had in plaats van dat het getal "te groot" is. Duizend is ver
+voorbij wat een model schrijft: de factor uit de melding heeft er veertien, en
+elke deling op rij telt op. Wat er *niet* gebeurt is stilzwijgend afronden op de
+gedeclareerde precisie — liever geen antwoord dan een antwoord dat een cent
+mist.
+
+**Een afronding voorbij vijftien decimalen kan nu ook.** `afgerond op 20
+decimalen` werd geweigerd omdat het getal niet te vertegenwoordigen was; dat
+gold de voorstelling en niet §6.1.3, en het geldt niet meer.
+
+**Waarom er geen diagnostic op het literaal kwam.** Het rapport vroeg er als
+eerste om, en er valt niets te melden: `1,6802319798572` is een keurige waarde
+die optelt, vermenigvuldigt en vergelijkt — wat overliep was het *quotiënt*, en
+hoe groot dat is hangt af van de andere operand, die uit een `Gegeven`-regel of
+een gegevensbron komt. Een melding op het literaal zou een gok zijn geweest over
+een zin die klopt. Dat de grens geen eigenschap was van iets wat de editor kan
+zien, is precies waarom je hem pas bij uitvoering tegenkwam — en dat is wat
+hier is weggenomen in plaats van gemeld.
+
+**Twee dingen die er stil onder lagen, gingen mee.** Een sleutel van een
+gegevensbron en een jaartal als periodegrens vroegen of de *noemer* 1 was, en
+een testgeval schrijft `2025,00` — waarmee de waarde geheel is en de
+schrijfwijze niet, dus zo'n sleutel adresseerde geen cel. En een geschreven
+getal met veertien decimalen werd voor de weergave door een afronding gehaald,
+zodat het in een trace anders kon staan dan het was geschreven.
 
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
