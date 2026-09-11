@@ -58,3 +58,23 @@ Testgeval 001
 Testgeval 002
 	Gegeven een Gastlezer (G2)
 ```
+
+### Een voorbeeld waarvan de verwachting een cel verderop staat
+
+Dit is de vorm waar §4.6 over gaat: het testgeval staat in de ene cel en wat het
+verwacht in de volgende, met de uitleg ertussen. De cellen zijn samen één
+document ([N-3]), dus de zin loopt gewoon door — en de mislukte verwachting
+staat dan in een *andere* cel dan het `Testgeval` waar ze bij hoort, wat de enige
+plek is waar `TestAssertion.uri` iets anders zegt dan de cel van het testgeval.
+
+```testspraak
+Testgeval 003
+	Gegeven een Gastlezer (G3)
+```
+
+De toeslag is hier met dezelfde opzet verkeerd opgeschreven als in 001.
+
+```testspraak
+	Verwacht G3 met
+		toeslag  10,00 EUR
+```

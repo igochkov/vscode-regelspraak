@@ -513,7 +513,12 @@ class Panel {
 			return;
 		}
 		if (gesture.kind === 'reveal') {
-			await this.jump(drawn.source, toRange(gesture.range));
+			// The row's own document where it has one ([N-3]) — a notebook's
+			// expectations are written in cells and the run was asked about the
+			// notebook — and the run's source everywhere else, which is every file.
+			await this.jump(
+				gesture.uri === undefined ? drawn.source : Uri.parse(gesture.uri),
+				toRange(gesture.range));
 			return;
 		}
 		if (gesture.kind === 'explain') {

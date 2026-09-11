@@ -67,6 +67,18 @@ interface TestProblem { code: string; message: string; range: WireRange }
 
 interface TestCaseInfo {
 	name: string;
+	/**
+	 * The document this case's own text is in, where it is not the testset's
+	 * ([N-3]).
+	 *
+	 * A notebook is one testset whose header may be in one cell and whose cases
+	 * are in others, so a case cannot inherit its testset's URI the way a case
+	 * in a `*.test.rgs` file does. The server sends it **only where it would
+	 * differ**, so absent means "the same document as the header" — and the
+	 * fallback is the ordinary path rather than a notebook special case, which
+	 * is what keeps a client that forgot it from looking correct on a file.
+	 */
+	uri?: string;
 	nameRange: WireRange;
 	range: WireRange;
 	testable: boolean;
@@ -87,6 +99,17 @@ interface TestAssertion {
 	label: string;
 	passed: boolean;
 	range: WireRange;
+	/**
+	 * The document that line is in, where it is not the one the run was asked
+	 * about ([N-3]).
+	 *
+	 * A testgeval written in a notebook cell has its `Verwacht` lines in that
+	 * cell while the run was requested for the notebook — so the range alone
+	 * would put the failure's location, and the `leg uit` lens with it, on a
+	 * line of a file the reader is looking at as cells. Absent for every
+	 * `*.test.rgs` file, and the fallback is the run's own document.
+	 */
+	uri?: string;
 	expected?: string;
 	actual?: string;
 	rule?: string;
@@ -365,8 +388,16 @@ export class TestExplorer {
 	private client: LanguageClient | undefined;
 	/** Moved by every invalidation, so a reply in flight can be told from a fresh one. */
 	private generation = 0;
-	/** Each case's whole extent by item id — the item itself carries only its name. */
-	private readonly spans = new Map<string, [number, number]>();
+	/**
+	 * Each case's own document and whole extent, by item id.
+	 *
+	 * The document as well as the lines, because a notebook's cases are written
+	 * in several cells and a case's extent means nothing without saying which
+	 * one it counts against — the same reason W4's `Spot` carries a version
+	 * index. The item's own `uri` says the same thing, and this is the reading
+	 * `casesOfDocument` takes because it needs the extent beside it.
+	 */
+	private readonly spans = new Map<string, { uri: string; start: number; end: number }>();
 	/**
 	 * What failed in the last run, by item id (UX-1's lens).
 	 *
@@ -508,10 +539,15 @@ export class TestExplorer {
 		const item = this.controller.createTestItem(testset.uri, testset.name, uri);
 		item.range = rangeOf(testset.nameRange);
 		item.children.replace(testset.cases.map(one => {
+			// Where its own text is, which for a notebook is not where its header
+			// is ([N-3]) — so the item reveals the cell the testgeval is written
+			// in and its range counts against that cell.
+			const where = one.uri ?? testset.uri;
 			const child = this.controller.createTestItem(
-				`${testset.uri}#${one.name}`, one.name, uri);
+				`${testset.uri}#${one.name}`, one.name, vscode.Uri.parse(where));
 			child.range = rangeOf(one.nameRange);
-			this.spans.set(child.id, [one.range.start.line, one.range.end.line]);
+			this.spans.set(child.id,
+				{ uri: where, start: one.range.start.line, end: one.range.end.line });
 			// What the server said about it, on the item rather than in a run: a
 			// case that cannot compose is worth seeing before anybody presses play,
 			// and a run-only case is worth telling apart from one that asserts.
@@ -662,21 +698,29 @@ export class TestExplorer {
 		return found;
 	}
 
-	/** Every testgeval of one document, with the lines it spans (X4's cursor lookup). */
+	/**
+	 * Every testgeval written in one document, with the lines it spans (X4's
+	 * cursor lookup).
+	 *
+	 * **By where each case is, not by which testset it belongs to** ([N-9]). A
+	 * notebook's testset is one testset whose header is in one cell and whose
+	 * cases are in others, so looking the testset up by the asked-about URI
+	 * answers nothing for every cell but the header's — which is exactly the
+	 * cell **Leg uit** is invoked from. A file is unchanged by the same code:
+	 * every case there carries its testset's own URI.
+	 */
 	casesOfDocument(uri: string): { name: string; startLine: number; endLine: number }[] {
-		const testset = this.controller.items.get(uri);
-		if (!testset) {
-			return [];
-		}
 		const found: { name: string; startLine: number; endLine: number }[] = [];
-		testset.children.forEach(one => {
-			// The item's range is its *name*; the case spans further, so the lookup
-			// needs the declaration's extent. Kept beside the item when the tree was
-			// built rather than re-derived here.
-			const span = this.spans.get(one.id);
-			if (span) {
-				found.push({ name: one.label, startLine: span[0], endLine: span[1] });
-			}
+		this.controller.items.forEach(testset => {
+			testset.children.forEach(one => {
+				// The item's range is its *name*; the case spans further, so the
+				// lookup needs the declaration's extent. Kept beside the item when
+				// the tree was built rather than re-derived here.
+				const span = this.spans.get(one.id);
+				if (span?.uri === uri) {
+					found.push({ name: one.label, startLine: span.start, endLine: span.end });
+				}
+			});
 		});
 		return found;
 	}
@@ -864,9 +908,15 @@ export class TestExplorer {
 		// error is most likely to be the *cause* of the expectation failing, so it is
 		// the last place to leave it out. Ahead of the diffs, because "the run could
 		// not do what the model asked" is the thing to read first.
+		// **Where the expectation is written, which is not always where the case
+		// is** ([N-3]): a notebook's `Verwacht` lines sit in the cell the testgeval
+		// is in, and the run was asked for the notebook. The item's own URI is the
+		// fallback and the answer for every file.
 		const source = item.uri ?? vscode.Uri.parse(splitId(item.id)[0]);
+		const where = (one: TestAssertion): vscode.Uri =>
+			one.uri === undefined ? source : vscode.Uri.parse(one.uri);
 		this.recordFailures(item, failed.map((one): FailedExpectation => ({
-			uri: source.toString(),
+			uri: where(one).toString(),
 			case: item.label,
 			line: one.range.start.line,
 			label: one.label
@@ -878,7 +928,7 @@ export class TestExplorer {
 				one.rule ? `${one.label} (${one.rule})` : one.label,
 				one.expected ?? 'leeg',
 				one.actual ?? 'leeg');
-			message.location = new vscode.Location(source, rangeOf(one.range));
+			message.location = new vscode.Location(where(one), rangeOf(one.range));
 			// UX-1, and what it is *not*: this tag reaches the Test Results tree's
 			// context menu and nothing else, because the peek's button — the other
 			// contribution point that reads it — needs the peek opened first and was
