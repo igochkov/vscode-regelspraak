@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import { CODE_LANGUAGES, CodeLanguage } from '../languages';
+
 /**
  * The `.rgs.md` format ([N-1]) — read leniently, written canonically.
  *
@@ -33,10 +35,10 @@ import * as vscode from 'vscode';
  */
 export const NOTEBOOK_TYPE = 'regelspraak-notebook';
 
-/** The two info strings that make a fence a code cell ([N-1], [N-5]). */
-export const CODE_LANGUAGES = ['regelspraak', 'testspraak'] as const;
-
-export type CodeLanguage = typeof CODE_LANGUAGES[number];
+// The two info strings that make a fence a code cell are the two language ids,
+// and there is one answer to what those are — `languages.ts`. Re-exported here
+// because the format is what a reader of this file is after.
+export { CODE_LANGUAGES, CodeLanguage } from '../languages';
 
 export interface ReadCell {
 	kind: 'code' | 'markdown';
@@ -204,9 +206,32 @@ export function readCells(text: string): ReadCell[] {
  */
 export function writeCells(cells: readonly { kind: 'code' | 'markdown'; language: string; value: string }[]): string {
 	const parts = cells.map(cell => cell.kind === 'code'
-		? `\`\`\`${cell.language}\n${cell.value}\n\`\`\``
-		: cell.value);
+		? `\`\`\`${cell.language}\n${lf(cell.value)}\n\`\`\``
+		: lf(cell.value));
 	return parts.length === 0 ? '' : `${parts.join('\n\n')}\n`;
+}
+
+/**
+ * LF, whatever the editor hands over — the canonical form's last rule, and the
+ * one that had to be measured rather than reasoned to.
+ *
+ * A cell's text comes from a `TextDocument` the workbench owns, and on Windows
+ * that document's end-of-line is CRLF: so a notebook read from an LF file and
+ * saved again came back with a CR on every line **inside** the fences and none
+ * on the blank lines this function writes between the cells. Mixed endings in
+ * one file, every line of every cell rewritten on the first save, and a diff of
+ * the reglement saying the whole document changed when one word did — on a
+ * document whose whole point is that it reviews as prose.
+ *
+ * **This is layout and not code**, which is the distinction FR-P17.2 draws one
+ * surface up. The canonical form already fixes the fence, its indent and the
+ * blank lines between cells, and a line terminator is the same kind of fact:
+ * the container's, not the language's. Every character the author typed is
+ * untouched. Nothing else is normalised — a lone CR is not a line ending
+ * anything here writes, and dropping one would be editing content.
+ */
+function lf(value: string): string {
+	return value.replace(/\r\n/gu, '\n');
 }
 
 /**

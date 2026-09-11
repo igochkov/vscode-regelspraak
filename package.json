@@ -135,15 +135,28 @@
 				"command": "regelspraak.invoegenInvulling",
 				"title": "Invulling invoegen (« »)",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.nieuwNotebook",
+				"title": "Nieuw notebook",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.bekijkReglement",
+				"title": "Reglement bekijken",
+				"category": "RegelSpraak",
+				"icon": "$(open-preview)"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
+					"//": "Both ids, here and below, wherever the command is about a document of either language. A testset is `testspraak` since [N-5], and every one of these `when` clauses used to cover it by accident; the three that stay `regelspraak` alone do so on purpose, and each says why.",
 					"command": "regelspraak.formatDocument",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == regelspraak || editorLangId == testspraak"
 				},
 				{
+					"//": "The model view and the beslistabel preview describe declarations and rules, which a test document has none of ([T-26]) — so they are `regelspraak` alone, and after [N-5] they refuse a testset instead of opening an empty view of one.",
 					"command": "regelspraak.showAst",
 					"when": "editorLangId == regelspraak"
 				},
@@ -152,27 +165,33 @@
 					"when": "editorLangId == regelspraak"
 				},
 				{
+					"//": "A testgeval lives in a testset and nowhere else, so these two narrow to `testspraak` rather than widening.",
 					"command": "regelspraak.showUitkomst",
-					"when": "editorLangId == regelspraak"
-				},
-				{
-					"command": "regelspraak.legUit",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == testspraak"
 				},
 				{
 					"command": "regelspraak.vergelijkUitvoering",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == testspraak"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak || editorLangId == testspraak"
+				},
+				{
+					"//": "[N-1a]. Only where a notebook of ours is in front of the reader: the preview is of the reglement, which is the notebook's own file.",
+					"command": "regelspraak.bekijkReglement",
+					"when": "notebookType == regelspraak-notebook"
 				}
 			],
 			"editor/context": [
 				{
 					"command": "regelspraak.formatDocument",
-					"when": "editorLangId == regelspraak",
+					"when": "editorLangId == regelspraak || editorLangId == testspraak",
 					"group": "1_modification"
 				},
 				{
 					"command": "regelspraak.legUit",
-					"when": "editorLangId == regelspraak && regelspraak.uitlegbaar",
+					"when": "(editorLangId == regelspraak || editorLangId == testspraak) && regelspraak.uitlegbaar",
 					"group": "navigation@9"
 				}
 			],
@@ -191,13 +210,21 @@
 					"command": "regelspraak.showAst",
 					"when": "editorLangId == regelspraak"
 				}
+			],
+			"notebook/toolbar": [
+				{
+					"//": "[N-1a]'s read-through, where a reader of the reglement is already looking. The command takes the notebook URI the toolbar hands it, so it is about the notebook the button sits on rather than about whatever is active.",
+					"command": "regelspraak.bekijkReglement",
+					"when": "notebookType == regelspraak-notebook",
+					"group": "navigation/execute@10"
+				}
 			]
 		},
 		"keybindings": [
 			{
 				"command": "regelspraak.formatDocument",
 				"key": "shift+alt+f",
-				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+				"when": "(editorLangId == regelspraak || editorLangId == testspraak) && editorTextFocus && !editorReadonly"
 			},
 			{
 				"command": "regelspraak.invoegenOpsommingsteken",
@@ -212,12 +239,12 @@
 			{
 				"command": "regelspraak.showUitkomst",
 				"key": "alt+r",
-				"when": "editorLangId == regelspraak && editorTextFocus"
+				"when": "editorLangId == testspraak && editorTextFocus"
 			},
 			{
 				"command": "regelspraak.legUit",
 				"key": "alt+e",
-				"when": "editorLangId == regelspraak && editorTextFocus && regelspraak.uitlegbaar"
+				"when": "(editorLangId == regelspraak || editorLangId == testspraak) && editorTextFocus && regelspraak.uitlegbaar"
 			}
 		],
 		"languages": [
@@ -233,11 +260,14 @@
 				"configuration": "./language-configuration.json"
 			},
 			{
-				"//": "[N-5]. A cell has no suffix, so the fence's info string is the discriminator and it is also the cell's language. Cells only for now: giving this id the .test.rgs files as well is the rest of [N-5] and belongs with the snippet split and the documentSelector in §4.4.",
+				"//": "[N-5]. A cell has no suffix, so the fence's info string is the discriminator and it is also the cell's language — which is why this id exists. The .test.rgs files take it too, in the same release: two ids for one language, one for files and another for cells, is a wrinkle that would be explained for ever. VS Code scores an extension association by its length, so the nine characters of .test.rgs beat the four of .rgs and a testset is never read as a model file.",
 				"id": "testspraak",
 				"aliases": [
 					"TestSpraak",
 					"testspraak"
+				],
+				"extensions": [
+					".test.rgs"
 				],
 				"configuration": "./language-configuration.json"
 			}
@@ -272,6 +302,11 @@
 			{
 				"language": "regelspraak",
 				"path": "./snippets/regelspraak.code-snippets"
+			},
+			{
+				"//": "[N-5]'s snippet split. The two languages accept different text ([T-1]), so a testgeval offered inside a rule file was always wrong; until the ids were one it could not be said. Both files are parser-validated by the server's snippets.test.ts, each through its own grammar.",
+				"language": "testspraak",
+				"path": "./snippets/testspraak.code-snippets"
 			}
 		],
 		"semanticTokenTypes": [
@@ -511,6 +546,10 @@
 		"breakpoints": [
 			{
 				"language": "regelspraak"
+			},
+			{
+				"//": "A mark on a Verwacht line means \"stop where this value comes from\" (§X5), so a breakpoint belongs in a testset as much as in a rule file. It used to follow from .test.rgs being regelspraak; with [N-5] it has to be said.",
+				"language": "testspraak"
 			}
 		],
 		"debuggers": [
@@ -519,7 +558,8 @@
 				"label": "RegelSpraak",
 				"conditionDescription": "De naam van één instantie, bijvoorbeeld 'Alice' — de regel stopt dan alleen voor die instantie. Laat leeg om bij elke instantie te stoppen.",
 				"languages": [
-					"regelspraak"
+					"regelspraak",
+					"testspraak"
 				],
 				"configurationAttributes": {
 					"launch": {

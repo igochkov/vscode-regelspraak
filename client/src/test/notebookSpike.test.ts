@@ -207,10 +207,12 @@ suite('Notebook spike (Notebook Plan §4.1)', () => {
 		suiteSetup(async function () {
 			this.timeout(60000);
 			// A second client, pointed at the observer described in
-			// `notebookStub.ts`. It cannot collide with the extension's own: that
-			// one's `documentSelector` is `scheme: 'file'`, so it never claims a
-			// `vscode-notebook-cell:` document and never answers a hover asked of
-			// one.
+			// `notebookStub.ts`. Since §4.4 it stands *beside* the extension's
+			// own, which now claims the cell scheme too ([N-5]) — so a hover on
+			// a code cell is answered twice and the assertions below look for
+			// the stub's answer among them rather than taking the first. What
+			// the extension's client cannot do is answer for a **markdown**
+			// cell, which is the half the selector test below turns on.
 			const stub = path.resolve(__dirname, 'notebookStub.js');
 			client = new LanguageClient(
 				'regelspraakNotebookSpike',
@@ -309,7 +311,13 @@ suite('Notebook spike (Notebook Plan §4.1)', () => {
 				'vscode.executeHoverProvider', cell.document.uri, new vscode.Position(line, character));
 
 			assert.ok(hovers.length > 0, 'geen hover; antwoordde de stub wel?');
-			const answered = (hovers[0].contents[0] as vscode.MarkdownString).value ?? String(hovers[0].contents[0]);
+			// The real server answers this position as well, so what is looked
+			// for is the stub's own marker among the answers and not whichever
+			// of the two the editor happened to put first.
+			const answered = hovers
+				.flatMap(one => one.contents)
+				.map(one => typeof one === 'string' ? one : (one as vscode.MarkdownString).value)
+				.join('\n');
 			assert.ok(answered.includes(`${line}:${character}|bepaal`),
 				`de stub kreeg iets anders dan de celpositie: ${answered}`);
 

@@ -29,7 +29,11 @@ import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses, siteOf } from './
 import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
+import { DOCUMENT_SELECTOR, TEST_EVERYWHERE, isOurs } from './languages';
 import { NOTEBOOK_TYPE, RegelSpraakNotebookSerializer } from './notebook/serializer';
+import {
+	NEW_NOTEBOOK_COMMAND, PREVIEW_REGLEMENT_COMMAND, newNotebook, previewReglement
+} from './notebook/commands';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -318,7 +322,12 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 				transientOutputs: true,
 				transientCellMetadata: { executionOrder: true },
 				transientDocumentMetadata: {}
-			}));
+			}),
+		// The two gestures a notebook needs that VS Code has no default for: one
+		// that makes the first one, and one that reads the whole of it as the
+		// document it is ([N-1a]).
+		commands.registerCommand(NEW_NOTEBOOK_COMMAND, newNotebook),
+		commands.registerCommand(PREVIEW_REGLEMENT_COMMAND, previewReglement));
 
 	context.subscriptions.push(
 		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
@@ -347,8 +356,11 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		// `explain`, which is also what keeps the gate's context key in step.
 		explain,
 		failureLenses,
-		languages.registerCodeLensProvider(
-			{ language: 'regelspraak' }, failureLenses),
+		// [N-9]. A failure lens sits on a `Verwacht` line, which is only ever in a
+		// testset — so it follows the test language rather than both, in a file
+		// and in a notebook cell alike. It covered `.test.rgs` by accident until
+		// [N-5] gave those files their own id.
+		languages.registerCodeLensProvider(TEST_EVERYWHERE, failureLenses),
 		// A recorded line is a fact about the text that produced it, so an edit
 		// retires it: after one the lens would sit on whatever moved into that
 		// line, which is a confident wrong answer rather than a missing one.
@@ -593,7 +605,9 @@ async function insertGuillemets(): Promise<void> {
 
 async function formatDocument(): Promise<void> {
 	const editor = window.activeTextEditor;
-	if (!editor || editor.document.languageId !== 'regelspraak') {
+	// Both languages: the layout engine reads a testset as it reads a model file,
+	// and the round-trip gate runs over both corpora.
+	if (!editor || !isOurs(editor.document.languageId)) {
 		return;
 	}
 	// The message is this half's — it knows what the user pressed — and the
@@ -753,8 +767,11 @@ async function startClient(context: ExtensionContext): Promise<void> {
 
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
-		// Register the server for RegelSpraak documents
-		documentSelector: [{ scheme: 'file', language: 'regelspraak' }],
+		// Four entries, and which four is `languages.ts` — the file rule and the
+		// cell rule are one question ([N-5]) and answering it twice is how a
+		// provider comes to be registered for a document the menus think it
+		// covers.
+		documentSelector: DOCUMENT_SELECTOR,
 		synchronize: {
 			fileEvents: watcher
 		},
