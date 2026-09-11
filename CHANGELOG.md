@@ -203,6 +203,18 @@ regelgroep zegt het ook van zichzelf — *contributie  8 regels* — zodat zicht
 is welke groep de grote is, en in een venster met meer dan één werkmap telt de
 maprij élke regel van die map, ook die buiten een groep staat.
 
+### Regelterugloop staat voortaan uit
+
+**Een `.rgs`-bestand liep standaard terug op kolom 100, en dat maakte juist het
+opmaken zichtbaar slechter.** Een uitgelijnde beslistabel is 112 tot 124 kolommen
+breed, dus onder een gebonden terugloop vouwden precies de rijen om die **Document
+opmaken** net had uitgelijnd: de pipes stonden na het opmaken minder recht onder
+elkaar dan ervoor. Terugloop staat nu uit voor `.rgs` en `*.test.rgs` — een zin
+die langer is dan het venster loopt over de rechterrand, wat zichtbaar is en niets
+kapotmaakt. <kbd>Alt</kbd>+<kbd>Z</kbd> zet hem aan voor het bestand dat voor je
+staat, en `"[regelspraak]": { "editor.wordWrap": "bounded" }` in je eigen
+instellingen wint van deze standaard.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a

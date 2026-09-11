@@ -46,21 +46,27 @@ empty — rather than an error of fact.
 A RegelSpraak sentence cannot be broken across lines. The specification makes the
 newline significant (§13.1.8) and gives it a job — it ends a rule's name,
 separates versions, bullets and variables — so a result sentence stays on one
-line however long it grows. The extension therefore turns **soft** wrapping on
-for `.rgs` files, which changes the display and never the file:
+line however long it grows. Soft wrapping would therefore be the obvious kindness,
+and the extension shipped it until `1.0.0`. It is **off** now, and the reason is
+the one thing on the other side of the trade:
 
 | Setting | Default here | What it does |
 | --- | --- | --- |
-| `editor.wordWrap` | `bounded` | Wraps at the column below, or the width of the editor, whichever is narrower. |
-| `editor.wordWrapColumn` | `100` | Around a tenth of the lines in a typical model reach it. |
-| `editor.wrappingIndent` | `deepIndent` | Indents a continuation two levels, so it reads as part of the sentence above rather than a new one. |
+| `editor.wordWrap` | `off` | Nothing wraps. A sentence longer than the window runs past the right edge. |
+| `editor.wordWrapColumn` | `100` | Inert while the wrap is off; the width to bound it at if you turn it on. |
+| `editor.wrappingIndent` | `deepIndent` | Likewise inert; it indents a continuation two levels, so it reads as part of the sentence above rather than as a new one. |
 
-Override any of them for yourself in user or workspace settings, and they win
-over these:
+**An aligned decision table is wider than any wrap column worth having** — 112 to
+124 columns in the samples — so under a bounded wrap the rows the formatter has
+just lined up are exactly the ones that fold, and the pipes stop lining up. On the
+old default, formatting a table made it *look* worse. A sentence that runs off the edge,
+by contrast, is visibly incomplete and one keystroke from being read.
+
+Turn it back on for yourself in user or workspace settings, which win over these:
 
 ```json
 "[regelspraak]": {
-	"editor.wordWrap": "off"
+	"editor.wordWrap": "bounded"
 }
 ```
 

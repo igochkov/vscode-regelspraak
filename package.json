@@ -528,13 +528,14 @@
 			}
 		},
 		"configurationDefaults": {
+			"//[regelspraak]": "Wrapping is off. An aligned beslistabel is 112 to 124 columns wide, so under a bounded wrap the rows P17 has just lined up are exactly the ones that fold and the pipes stop lining up — formatting a table makes it look worse. Outside a table an over-long sentence runs past the right edge, which is visible and breaks nothing. The two settings below do nothing while the wrap is off and are the tuned values for a reader who turns it on (Alt+Z, or editor.wordWrap in their own settings).",
 			"[regelspraak]": {
-				"editor.wordWrap": "bounded",
+				"editor.wordWrap": "off",
 				"editor.wordWrapColumn": 100,
 				"editor.wrappingIndent": "deepIndent"
 			},
 			"[testspraak]": {
-				"editor.wordWrap": "bounded",
+				"editor.wordWrap": "off",
 				"editor.wordWrapColumn": 100,
 				"editor.wrappingIndent": "deepIndent"
 			},

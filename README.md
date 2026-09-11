@@ -56,7 +56,7 @@ Each of these in full, with the reasoning behind the shape it takes, is in
 - **Nothing leaves your machine.** The language server runs locally as a child process; there is no network service.
 - **Two constructs go beyond RegelSpraak v2.3.0**, and both are optional. `Regelgroep <naam>` gives §9.10's rule group the written form the specification withholds — including the `(recursief)` qualifier a recursive group needs — and `Gegevensbron` declares an externally supplied table — which §9.3 puts outside its own scope and hands to the execution environment. A model that uses either is not portable to a strict v2.3.0 tool, which is worth knowing you are opting in to. (`//` comments are the other thing the specification does not define, and have been accepted since the first release.)
 - **Interface language is Dutch throughout**, matching the language itself; there is no English UI mode.
-- **Settings, and the line wrapping the extension turns on** for `.rgs` files (a RegelSpraak sentence cannot be broken across lines): [docs/SETTINGS.md](docs/SETTINGS.md).
+- **Settings, and why line wrapping is off** for `.rgs` files (a RegelSpraak sentence cannot be broken across lines, and an aligned decision table is wider than any wrap column worth having): [docs/SETTINGS.md](docs/SETTINGS.md).
 - **Laying out a model** — how to name and arrange its files in either mode, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/](samples) and [samples-notebook/](samples-notebook) are the worked examples.
 
 ## Issues
