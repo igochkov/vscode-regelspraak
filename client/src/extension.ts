@@ -737,10 +737,19 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		}
 	};
 
-	// The server indexes every .rgs file in the workspace into one model
-	// (FSD §3.5); watched-file events keep unopened files fresh. Held in a
-	// variable because the client hooks it but never owns it — see stopClient.
-	watcher = workspace.createFileSystemWatcher('**/*.rgs');
+	// The server indexes every model file in the workspace into one model per
+	// workspace folder ([N-10], FSD §3.5); watched-file events keep unopened
+	// files fresh. Held in a variable because the client hooks it but never owns
+	// it — see stopClient.
+	//
+	// **Both suffixes, and they are two**: a `.rgs.md` notebook ([N-1]) does not
+	// match `**/*.rgs`, and it is part of the model exactly as a `.rgs` file is —
+	// a declaration in a notebook cell is a declaration of the workspace. Left
+	// out, a notebook nobody has open would be indexed once by the scan and never
+	// re-read, so a `git pull` that changed it would leave every other file
+	// judged against the old one. `workspace/files.ts`'s `findRgsFiles` is the
+	// other half of this and collects the same two.
+	watcher = workspace.createFileSystemWatcher('**/*.{rgs,rgs.md}');
 
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
