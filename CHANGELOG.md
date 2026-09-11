@@ -115,6 +115,14 @@ mist.
 decimalen` werd geweigerd omdat het getal niet te vertegenwoordigen was; dat
 gold de voorstelling en niet §6.1.3, en het geldt niet meer.
 
+**En een product van twee gebroken machten evenmin.** Apart gemeld, als een
+nieuwe grens: één `tot de macht` met een gebroken exponent rekende op tien
+decimalen, maar twee van zulke machten vermenigvuldigd weigerden vanaf negen —
+en alleen als beide uitkomsten irrationaal waren. Dat is dezelfde grens, één
+operator verderop: twee waarden van negen decimalen vragen samen achttien
+cijfers in de noemer. Zij is met het bovenstaande verdwenen, en het model uit
+die melding rekent nu op elk aantal decimalen dat het schrijft.
+
 **Waarom er geen diagnostic op het literaal kwam.** Het rapport vroeg er als
 eerste om, en er valt niets te melden: `1,6802319798572` is een keurige waarde
 die optelt, vermenigvuldigt en vergelijkt — wat overliep was het *quotiënt*, en
