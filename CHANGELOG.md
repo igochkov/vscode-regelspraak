@@ -7,6 +7,83 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased] — A reglement as a notebook, and one model per workspace folder
+
+**A model can now be written as the document it renders.** Until now the text
+came first and the rules rendered it afterwards, from a folder of `.rgs` files
+with a `// Bron:` line back to each provision. That is the right shape for a
+converted PTPO and the wrong one for a jurist writing a reglement: the sentence
+and the rule that computes it are written together, by the person who means
+both, and a folder cannot hold them in one place. So the extension now offers
+**two ways to write one model**, and the mode is the kind of document you open
+rather than a setting:
+
+- **Technische modus** — everything that was here before: `.rgs` and
+  `*.test.rgs` files in `gegevens/`, `regels/` and `tests/`, over a source
+  document under `bron/`.
+- **Juridische modus** — a **notebook**: an `.rgs.md` document in which the
+  reglement's text and its RegelSpraak alternate, in the order the text has,
+  with the worked example under the bepaling it checks.
+
+**The file is Markdown.** A fenced block whose language is `regelspraak` or
+`testspraak` is a code cell and everything between two of them is prose; no
+outputs, no execution counters and no cell metadata are stored, so the document
+is readable and diffable as what it is — a reglement in review is a pull request
+over prose. *Openen met → Teksteditor* shows the same file as text, and
+**Reglement bekijken** renders the whole of it in VS Code's Markdown preview,
+fences and all.
+
+**A notebook is one file to the model**, exactly as a `.rgs` file is: its
+`regelspraak` cells in order are one rule group and its `testspraak` cells in
+order are one testset. Everything the language server does in a file, it does in
+a cell — colour, the whole diagnostics catalogue, completion, hover, the
+outline, folding, definition, references, rename, formatting, quick fixes,
+signature help, the decision-table preview, the Model Explorer, the hierarchies
+and **Leg uit** — with a diagnostic landing in the cell it is about.
+
+**One notebook is one artikel**, and the folders above it are the levels the
+document itself has. An amendment amends an artikel, so a legal change is then
+the diff of one file, and a rule's citation is the lid it stands under rather
+than the chapter. Declarations stay in `gegevens/` beside the notebooks.
+
+**A rule's citation is its position.** Hovering a rule in a notebook names the
+nearest heading above its cell and lists the source links in the prose between
+them, a Juriconnect reference to Dutch law included, read back in words. An
+explicit `// Bron:` line in the cell wins where a rule renders something else.
+
+**You run the rekenvoorbeeld, not the regel.** A `testspraak` cell has a run
+button and a `regelspraak` cell has none: a run evaluates the whole model
+against a situation, so *running a rule* was always *running a testgeval and
+looking at one rule*. Under the cell each `Verwacht` line gets its verdict, with
+the expected and the actual value where they differ; the same testgevallen are
+in the Testing view, under the notebook, and it is one request either way.
+Editing any code cell clears every output, the run having been against a model
+that no longer exists.
+
+**And a workspace folder is now one model.** The server held one index for the
+whole window, so two reglementen open at once shared a namespace: every
+`Deelnemer` collided with every other, a duplicated rule name was `RS607` on two
+files whose authors each wrote something correct, and a duplicated **object
+type** was no report at all — just a reference with two answers, resolved by
+whichever file happened to be indexed first. Each workspace folder now has its
+own model. Workspace symbol search still spans them and says which folder a hit
+is in; the Model Explorer groups by folder where there is more than one; a run
+sees its own folder's documents and no others.
+
+**`.test.rgs` files have their own language id**, `testspraak`, which a cell
+needs — a cell has no suffix to decide its grammar by — and which would have been
+a wrinkle to explain for ever if files and cells had answered to different
+names. Nothing changes about what a testset is or how it behaves.
+
+No new setting. VS Code's own `notebook.outline.showCodeCells` puts a cell's
+declarations in the outline beside the document's headings, and the extension
+points `markdown.copyFiles.destination` at a `media/` folder beside the notebook
+so a pasted figure lands there.
+
+[samples-notebook/](samples-notebook) is the worked example: hoofdstuk 10 of the
+Boekerij reglement, one notebook per artikel, over the declarations an engineer
+wrote beside it.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a

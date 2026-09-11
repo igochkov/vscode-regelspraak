@@ -1,0 +1,8 @@
+// Parameters (§13.3.8): waarden die bij geen enkel object horen. Een testgeval
+// stelt ze -- hier in de `Parameters` van de testset in ieder artikelnotebook.
+
+// Bron: [art. 20 lid 3](h10-leeskringen/art-20-bijwoning.rgs.md#lid-3)
+Parameter de bijwoningsdrempel : Numeriek (niet-negatief geheel getal)
+
+// Bron: [art. 21 lid 1](h10-leeskringen/art-21-leeskringkorting.rgs.md#lid-1)
+Parameter de basiskorting : Bedrag

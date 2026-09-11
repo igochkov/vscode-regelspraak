@@ -7,7 +7,89 @@ including the full list of diagnostic codes, is in the
 [CHANGELOG](../CHANGELOG.md).
 
 All of it resolves **across files**: rules in one file are coloured, checked,
-navigated and renamed against the GegevensSpraak declarations in another.
+navigated and renamed against the GegevensSpraak declarations in another. The
+boundary is the **workspace folder** — one folder is one model, so two
+reglementen opened together are two models and neither knows the other's names.
+
+## Two ways to write one model
+
+**The mode is the kind of document you open, not a setting.** Nothing below is
+in one mode and not the other; what differs is where the text of the document
+the model renders lives, and who writes it.
+
+- **Technische modus** is `.rgs` and `*.test.rgs` files in `gegevens/`,
+  `regels/` and `tests/`, with the source document under `bron/` and a
+  `// Bron:` line from every declaration and rule back to the provision it
+  renders. It is the mode of a model whose text somebody else wrote first: a
+  converted PTPO, a regeling, an ALEF project brought across. The explorer is
+  then the document's table of contents, and a gap in the numbering is visible.
+- **Juridische modus** is a **notebook**, an `.rgs.md` document in which the
+  reglement's text and the RegelSpraak that computes it alternate in the order
+  the text has. It is the mode of a text and a rule written together, by the
+  person who means both — which a folder of files cannot hold, because there the
+  rule is in one place and the sentence it renders in another.
+
+**They are one model**, and that is the point rather than a side effect: a
+notebook and a folder of `.rgs` files under one workspace folder share one
+namespace, so a team may split the work by role — declarations and delivery
+tables written by an engineer in technical mode, provisions and worked examples
+by the jurist in notebooks — and nothing in the model records that the split
+happened. Laying out either is [AUTHORING.md](AUTHORING.md).
+
+## A reglement as a notebook
+
+- **The file is Markdown and the notebook is a view of it.** A fenced block whose
+  language is `regelspraak` or `testspraak` is a code cell; everything between
+  two of them is one prose cell. Nothing else is stored — no outputs, no
+  execution counters, no cell metadata — so the document is readable and
+  diffable as what it is: a reglement in review is a pull request over prose.
+  *Openen met → Teksteditor* shows the same file as text, and **Reglement
+  bekijken** renders the whole of it — prose, headings, figures and the rules
+  between them — in VS Code's own Markdown preview, which is the read-through
+  before sending it to a colleague, and the print-and-PDF path.
+- **A notebook is one file to the model**, exactly as a `.rgs` file is: its
+  `regelspraak` cells in order are one rule group, its `testspraak` cells in
+  order are one testset. So a `Regelgroep` line in the first cell heads the
+  notebook, a second one anywhere is reported, and a group marked `(recursief)`
+  licenses a loop between cell one and cell five. Every check, every colour and
+  every navigation is the one the same text gets in a file, and a diagnostic
+  lands in the cell it is about.
+- **One notebook is one artikel**, and the folders above it are the levels the
+  document itself has — `deel`, `hoofdstuk`, `afdeling`, whichever it has. An
+  amendment amends an artikel, so a legal change is then the diff of one file;
+  review is per artikel; and the citation of a rule is the lid it sits under
+  rather than the chapter. Declarations do not go in an artikel notebook: an
+  object type is synthesised across the whole document and belongs to no one
+  provision, so it lives in `gegevens/` beside the notebooks.
+- **A rule's citation is its position.** Hovering a rule in a notebook names the
+  nearest heading above its cell and lists every source link in the prose
+  between that heading and the cell — including a Juriconnect reference to Dutch
+  law, read back in words. An explicit `// Bron:` line inside the cell wins,
+  for the rule that renders a provision other than the one it stands under.
+  Nothing is written into the code for this: a derived citation is something you
+  ask for, and drawing it in the text would be an annotation nobody typed.
+- **You run the worked example, not the rule.** The run button is on a
+  `testspraak` cell and on no other, because there is no such thing as running
+  one rule — a run evaluates the whole model against a situation, and *running a
+  rule* was always *running a testgeval and looking at one rule*. Under the cell
+  each `Verwacht` line gets its verdict, with the expected and the actual value
+  where they differ and the faults the run recorded. The same testgevallen are
+  in the Testing view, under the notebook, and it is the same request either
+  way. A cell holding only the testset header runs nothing and says so.
+- **Outputs are ephemeral.** Editing any code cell clears every output in the
+  notebook: the run was against a model that no longer exists, and a stored
+  verdict in a file would be a stale panel committed to the repository.
+- **The derivation is one gesture away, not under the cell.** `leg uit` on a
+  failing `Verwacht` line opens the run panel focused on that value, exactly as
+  it does from a file; drawing the trace under the cell would print forty lines
+  under every expectation. Breakpoints, the Test Explorer and **Leg uit** all
+  reach into a cell, a cell being a document like any other.
+- **A figure goes beside the notebook.** Images in a prose cell are relative
+  paths resolved against the file, and pasting one into a cell writes it into a
+  `media/` folder named after the notebook rather than loose in the model root.
+- **The outline of a notebook is its headings.** VS Code draws those itself;
+  turn on `notebook.outline.showCodeCells` to have the declarations and rules in
+  the cells beside them.
 
 ## Reading a model
 

@@ -1,0 +1,8 @@
+// Het feittype waarlangs artikel 20 van een lid naar zijn leeskring loopt
+// (§13.3.9). De kardinaliteitsregel eronder is vrije tekst op de rolnamen na.
+
+// Bron: [art. 19 lid 1](h10-leeskringen/art-19-deelname.rgs.md#lid-1)
+Feittype leeskringdeelname
+	de bezochte leeskring          Leeskring
+	de deelnemer (mv: deelnemers)  Lid
+	Eén bezochte leeskring telt meerdere deelnemers

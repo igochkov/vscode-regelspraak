@@ -18,6 +18,7 @@ eslint.config.mjs
 scripts/**
 docs/**
 samples/**
+samples-notebook/**
 images/icon.svg
 # The demo still, which the README shows by URL and not out of the package: the
 # Marketplace resolves a README image over https, so shipping it would be weight

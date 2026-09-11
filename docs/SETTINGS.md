@@ -19,6 +19,23 @@ Every setting the extension contributes, and the editor defaults it sets for
 | `regelspraak.server.path` | *(empty)* | Path to a language server build. Empty uses the bundled server. |
 | `regelspraakLanguageServer.trace.server` | `off` | Traces LSP communication into the output channel. |
 
+## Notebooks
+
+**A notebook adds no setting, and that is deliberate.** Juridische modus is the
+kind of document you open rather than a mode to switch on, so there is nothing
+to configure: every setting above applies to a `.rgs.md` notebook exactly as it
+does to the `.rgs` files beside it, and asks about the notebook's own file — so
+`format.enable` off leaves a cell's layout alone, `validation.scope: workspace`
+sweeps a notebook nobody has open, and `execution.blockOnErrors` counts an error
+in a cell like any other.
+
+Two of VS Code's own settings are worth knowing. The extension sets
+`markdown.copyFiles.destination` for `**/*.rgs.md`, so an image pasted into a
+prose cell lands in a `media/` folder beside the notebook rather than loose in
+the model root. And `notebook.outline.showCodeCells` — off by default, and VS
+Code's rather than ours — puts the declarations and rules of the code cells in
+the outline beside the document's headings.
+
 `strictPrecision` and `emptyValueHazards` quiet whole families rather than filter
 their output: a family that is off is never run. They exist because `RS4xx` and
 `RS5xx` report a *judgement* — that a precision is unclear, that a value might be

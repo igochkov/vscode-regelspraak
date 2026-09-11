@@ -14,6 +14,14 @@
 // opens `client/src/test/fixtures/twee-werkmappen.code-workspace` and the same
 // file checks the two-folder shape. A suite that quietly skipped in the
 // ordinary run would be a suite nobody notices has stopped working.
+//
+// **The second root is `samples-notebook/`** since §4.9, where it used to be a
+// fixture written for this suite alone. The collision it pins is the same one
+// and is now one a reader can see happening for a reason: two reglementen of one
+// library, each in its own folder, each declaring `het Lid` and each deriving
+// `jeugdlid` by its own criterion. Nothing about the sample was arranged for
+// this suite — which is the argument for using it, since a fixture that is also
+// a sample cannot quietly drift into saying only what the test wants to hear.
 
 import * as assert from 'assert';
 import * as path from 'path';
@@ -36,13 +44,14 @@ interface ModelExplorerLike {
 }
 
 /**
- * The second root's own files — test data, not a sample anybody reads.
+ * The second root: `samples-notebook/`, hoofdstuk 10 of the same reglement
+ * written in juridische modus (§4.9).
  *
  * Resolved from the compiled location the way `getDocPath` resolves `samples/`:
- * this runs out of `client/out/test`, and the fixture is beside its source.
+ * this runs out of `client/out/test`, and the sample is at the repository root.
  */
 const secondRootUri = (name: string): vscode.Uri =>
-	vscode.Uri.file(path.resolve(__dirname, '../../src/test/fixtures/tweede-werkmap', name));
+	vscode.Uri.file(path.resolve(__dirname, '../../../samples-notebook', name));
 
 /** True in the multi-root run: the `.code-workspace` declares two folders. */
 const twoFolders = (): boolean => (vscode.workspace.workspaceFolders?.length ?? 0) > 1;
@@ -100,8 +109,8 @@ suite('Model per werkmap ([N-10])', () => {
 			`verwachtte alleen werkmaprijen, kreeg ${rows.map(row => row.row).join(' | ')}`);
 		const labels = rows.map(row => row.root!.label);
 		assert.ok(labels.includes('samples'), `samples ontbreekt: ${labels.join(' | ')}`);
-		assert.ok(labels.includes('tweede-werkmap'),
-			`tweede-werkmap ontbreekt: ${labels.join(' | ')}`);
+		assert.ok(labels.includes('samples-notebook'),
+			`samples-notebook ontbreekt: ${labels.join(' | ')}`);
 	});
 
 	test('zet de objecttypen van elke werkmap onder haar eigen rij', async () => {
@@ -120,21 +129,27 @@ suite('Model per werkmap ([N-10])', () => {
 		// Both roots declare `Lid`, and each row shows its own — which is the
 		// collision drawn as what it is rather than as one model.
 		assert.ok((await namesUnder('samples')).includes('Lid'));
-		assert.deepEqual(await namesUnder('tweede-werkmap'), ['Lid']);
-		// And the second root's tree is its own: samples' own object types are
-		// not in it.
-		assert.ok(!(await namesUnder('tweede-werkmap')).includes('Uitlening'));
+		assert.ok((await namesUnder('samples-notebook')).includes('Lid'));
+		// And each tree is its own. Written as what is *absent* on either side
+		// rather than as the exact list, because the second root is a sample now
+		// and a sample grows: an exact list would fail on a declaration somebody
+		// adds to it, which says nothing about scopes.
+		assert.ok(!(await namesUnder('samples-notebook')).includes('Uitlening'));
+		assert.ok(!(await namesUnder('samples')).includes('Leeskring'));
 	});
 
 	// The model fact underneath the tree, and the one a reader meets first: two
-	// folders declaring `Objecttype het Lid` and `Regel Jeugdlid` report nothing
-	// about each other. In one index the rule name is RS607 on two files whose
-	// authors each wrote something correct.
+	// folders declaring `Objecttype het Lid` report nothing about each other.
+	//
+	// The rule-name half of the same collision — both roots have a `Regel
+	// Jeugdlid`, which in one index is RS607 on two files whose authors each
+	// wrote something correct — lives in a notebook cell here, so it is asserted
+	// where the notebooks are opened (`reglement.test.ts`) rather than restated.
 	test('meldt niets over de andere werkmap, RS607 noch een dubbelzinnige naam', async () => {
 		if (!twoFolders()) {
 			return;
 		}
-		const rules = secondRootUri('regels.rgs');
+		const rules = secondRootUri('gegevens/lid.rgs');
 		const document = await vscode.workspace.openTextDocument(rules);
 		await vscode.window.showTextDocument(document);
 		// Waited for rather than read once: diagnostics arrive after the 250 ms
@@ -157,7 +172,7 @@ suite('Model per werkmap ([N-10])', () => {
 		if (!twoFolders()) {
 			return;
 		}
-		const rules = secondRootUri('regels.rgs');
+		const rules = secondRootUri('gegevens/feittypen.rgs');
 		const document = await vscode.workspace.openTextDocument(rules);
 		await vscode.window.showTextDocument(document);
 		// **On the sentence and not on the bare phrase.** A position inside a
@@ -167,17 +182,20 @@ suite('Model per werkmap ([N-10])', () => {
 		// comment now quotes nothing from the rule, and this anchors on the whole
 		// sentence so the two guards are independent.
 		const text = document.getText();
-		const sentence = 'De drempel van een Lid';
+		const sentence = 'de deelnemer (mv: deelnemers)';
 		const at = text.indexOf(sentence);
-		assert.ok(at >= 0, `de fixture mist «${sentence}»`);
-		const position = document.positionAt(at + sentence.length - 'Lid'.length);
+		assert.ok(at >= 0, `het voorbeeld mist «${sentence}»`);
+		// The object type that fills the role, which is the word both roots
+		// declare. Taken from after the role's own name so the search cannot
+		// land on the `Lid` inside a word somewhere above.
+		const position = document.positionAt(text.indexOf('Lid', at + sentence.length));
 		const targets = await waitUntil('een definitie voor `Lid`', async () => {
 			const found = await vscode.commands.executeCommand<vscode.Location[]>(
 				'vscode.executeDefinitionProvider', rules, position);
 			return found && found.length > 0 ? found : undefined;
 		});
 		assert.deepEqual(targets.map(one => one.uri.fsPath),
-			[secondRootUri('gegevens.rgs').fsPath],
+			[secondRootUri('gegevens/lid.rgs').fsPath],
 			'de definitie hoort in deze werkmap te staan, niet in samples');
 	});
 });

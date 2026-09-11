@@ -133,17 +133,21 @@ async function main() {
 		//
 		// `--twee-werkmappen` opens a `.code-workspace` of two folders instead
 		// ([N-10]): a scope is a workspace folder, so the multi-root shape is a
-		// thing only a second folder can show, and `scopes.test.ts` is the suite
-		// that checks it. It is a second *run* rather than a flag inside the
-		// existing one because VS Code decides the workspace at launch, and
-		// every other suite here is written against `samples/` alone.
+		// thing only a second folder can show. The second folder is
+		// `samples-notebook/`, the reglement in juridische modus, so one run
+		// checks both the scope arithmetic and the sample that is a model of its
+		// own. It is a second *run* rather than a flag inside the existing one
+		// because VS Code decides the workspace at launch, and every other suite
+		// here is written against `samples/` alone.
 		const multiRoot = process.argv.includes('--twee-werkmappen');
 		const workspacePath = process.env.CODE_TESTS_WORKSPACE
 			?? (multiRoot ? multiRootWorkspace(__dirname) : path.resolve(__dirname, '../../../samples'));
-		// Narrowed to the one suite that is about scopes: the rest assume one
-		// folder, and a run that fails them would say nothing about this.
+		// Narrowed to the two suites that are about a workspace folder: the rest
+		// assume one, and a run that fails them would say nothing about this.
+		// `scopes` is the arithmetic, `reglement` the notebook sample that is the
+		// second folder — and glob reads the braces, so adding a third is a word.
 		if (multiRoot) {
-			process.env.TEST_FILE = process.env.TEST_FILE ?? 'scopes';
+			process.env.TEST_FILE = process.env.TEST_FILE ?? '{scopes,reglement}';
 		}
 
 		const version = process.env.VSCODE_TEST_VERSION

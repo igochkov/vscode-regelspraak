@@ -1,0 +1,5 @@
+// Domeinen (§13.3.4) van hoofdstuk 10. Eén eigen naam voor het datatype van
+// alle bedragen, zodat de korting en de uitkering van artikel 21 hetzelfde zijn.
+
+// Bron: [art. 21 lid 1](h10-leeskringen/art-21-leeskringkorting.rgs.md#lid-1)
+Domein Bedrag is van het type Numeriek (getal met 2 decimalen) met eenheid €

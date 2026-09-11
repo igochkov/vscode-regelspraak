@@ -3,16 +3,28 @@
 How to name and arrange the files of a model, and why. [samples/](../samples) is
 written to these conventions and is the worked example — every construct of both
 languages appears in it somewhere, so a form can be looked up rather than
-reasoned about.
+reasoned about. [samples-notebook/](../samples-notebook) is the same reglement's
+tenth chapter in the other mode, **Een reglement als notebook** below.
 
-None of this is enforced by the language. **A folder is not a namespace**: the
-language server indexes every `.rgs` file under the workspace folders as one
-model, global names are one namespace across all of it, and a name resolves the
-same wherever it is written. Moving a file never changes what resolves. That is
-what makes the layout free to be for people — and it is worth knowing before you
-reach for a folder to disambiguate two names, because it will not.
+None of this is enforced by the language. **A folder below the model root is not
+a namespace**: the language server indexes every `.rgs` file and `.rgs.md`
+notebook under one workspace folder as one model, global names are one namespace
+across all of it, and a name resolves the same wherever it is written. Moving a
+file never changes what resolves. That is what makes the layout free to be for
+people — and it is worth knowing before you reach for a folder to disambiguate
+two names, because it will not.
+
+**The workspace folder itself is the boundary.** One folder is one model, and a
+window with two folders in it holds two models that know nothing of each other —
+which is what lets an engineer keep two reglementen open without every
+`Deelnemer` in one colliding with the `Deelnemer` in the other. So the model
+root is a workspace folder, not a subfolder of one with other models beside it.
 
 ## The tree
+
+This is technische modus — the layout of a model whose source document already
+exists. The other mode is a notebook and has a tree of its own; **A reglement as
+a notebook** below says which to choose.
 
 ```
 bron/              the document the model renders
@@ -62,6 +74,137 @@ regels/h7-spaarprogramma/art-11-punten.rgs
 The explorer is then the table of contents, in the document's own order — and a
 gap in the numbering is visible, which is the audit question ("what did we not
 implement?") answered by looking rather than by asking.
+
+## A reglement as a notebook
+
+Everything above assumes the document exists first and the model renders it
+afterwards. **When the text and the rules are written together, by the person
+who means both, they belong in one document** — and that document is a notebook:
+an `.rgs.md` file in which prose and RegelSpraak alternate, in the order the
+text has, with the worked example under the bepaling it checks.
+
+**Which mode to use is decided by where the text comes from, not by taste.**
+
+- **Technische modus** — everything above — where the document is somebody
+  else's and already exists: a converted PTPO, a regeling, a contract, an ALEF
+  project brought across. `bron/` is then authoritative, the model renders it,
+  and the `// Bron:` lines are how the two are held together and checked.
+- **Juridische modus** — a notebook — where you are writing the provision *and*
+  the rule. There is no `bron/` and no `regels/`: the notebook is the source
+  document and the rules, so there is nothing to hold in step with anything.
+
+A model may use both, and usually does: the declarations and the delivery tables
+of a notebook reglement are written in technical mode beside it. What may **not**
+be written twice is one provision — the same rule in `regels/` and in a notebook
+is one name declared twice, and the model says so.
+
+### The tree
+
+**One notebook is one artikel, and the folders above it are the levels the
+document itself has.**
+
+```
+aanbestedingswet-2012/            the model root, and the workspace folder
+  deel-1-algemene-bepalingen/
+    h1-1-begripsbepalingen/
+      art-1-1-begrippen.rgs.md
+      art-1-2-aanbestedende-diensten.rgs.md
+    h1-2-beginselen/
+      art-1-4-gelijke-behandeling.rgs.md
+  gegevens/                       technical mode, beside it
+  tests/
+  externe-tabellen/
+```
+
+The spelling is the one `regels/` already uses — lowercase, hyphenated, the
+number first and the subject after it — with a `deel-` level where the document
+has one and the `.rgs.md` suffix. **Only the levels the document actually has**:
+a wet may have `deel`, `titel`, `hoofdstuk`, `afdeling`, `paragraaf`, in orders
+that differ between regulations, and a level a document does not have is a
+folder that does not exist.
+
+**Per artikel and not per chapter**, for four reasons and only the last is about
+the tool:
+
+- **An amendment amends an artikel.** A wijzigingsbesluit changes artikel 2.6
+  and leaves the rest alone, so a notebook per artikel makes the diff of a legal
+  change the diff of one file.
+- **A rule's citation gets sharper as the notebook gets smaller.** In an
+  artikel-sized notebook the headings are the leden, so the provision a rule
+  renders is the lid it sits under rather than the chapter.
+- **Review is per artikel.** A jurist reviews, and a colleague checks, one
+  provision.
+- **A keystroke reparses all of a notebook's code.** An artikel costs about 6 ms
+  and a hoofdstuk about 64; a whole wet pasted into one notebook is half a
+  second per keystroke, which is the ceiling worth knowing rather than a limit
+  anybody meets.
+
+**Declarations do not go in an artikel notebook.** An object type is synthesised
+across the whole document and belongs to no one provision — the same reason
+`gegevens/` is organized by the model where `regels/` is organized by the
+document — so it lives in `gegevens/` beside the notebooks, or, where a jurist
+writes them, in the notebook for the *begripsbepalingen*, which is where the
+document itself puts its definitions.
+
+Two things follow from a notebook being one file. **It is one regelgroep**, so a
+`Regelgroep` line in any cell heads the whole notebook and a second one anywhere
+is `RS614` — and a recursive loop has to live inside one artikel, a group being
+the boundary a `(recursief)` mark is drawn on. And **rule names are workspace-
+wide**, so two artikelen that both name a rule *Recht op uitkering* collide as
+`RS607`: name a rule for what it derives.
+
+### The cells
+
+A fenced block whose language is `regelspraak` or `testspraak` is a code cell;
+everything between two of them is one prose cell. The language picker at the
+bottom right of a cell switches between the two and writes the fence.
+
+- **The `regelspraak` cells of a notebook are one rule file**, in cell order, so
+  a rule may read what a rule three cells up derives.
+- **The `testspraak` cells are one testset**, in cell order: the first carries
+  `Testset <naam>` and the `Rekendatum`, `Parameters` or `Parameterset` lines,
+  and the ones after it carry a testgeval each. One rekenvoorbeeld per cell, and
+  under the bepaling it is about.
+- **You run the rekenvoorbeeld, not the regel.** A `testspraak` cell has a run
+  button and a `regelspraak` cell has none, because there is no such thing as
+  running one rule — a run evaluates the whole model against a situation.
+
+### Citing the source
+
+**The citation of a rule is its position.** A code cell stands under the heading
+of the provision it renders, so hovering a rule names that heading and lists
+every source link in the prose between the heading and the cell. Nothing is
+written into the code, and no `// Bron:` line is needed. Where a rule renders a
+provision *other* than the one it sits under, write one anyway: an explicit
+`// Bron:` inside the cell wins.
+
+**A reference to Dutch law in prose is written as a Markdown link.** All three
+spellings are read, but a prose cell is read *rendered*, and a renderer is not a
+language server:
+
+| Written as | Rendered as |
+| --- | --- |
+| `jci1.3:c:BWBR0035878&artikel=5` | literal characters — **not** a link |
+| `https://wetten.overheid.nl/jci1.3:c:BWBR0035878&artikel=5` | clickable, and ninety characters of query string in the middle of a sentence |
+| `[artikel 5 Wsob](https://wetten.overheid.nl/jci1.3:c:BWBR0035878&artikel=5)` | **clickable, and named** |
+
+The bare reference is the one that does not work, and it works one line lower:
+inside a *code* cell it is a comment the server reads, so it is a link and the
+hover states it in words. In prose the same characters reach a Markdown
+renderer, which has never heard of `jci1.3:`. The chain icon beside every
+artikel on `wetten.overheid.nl` hands over exactly the URL the third row needs,
+so the gesture is copy, paste, and type the name of the artikel in the brackets.
+
+`npm run source:coverage` — the check that answers "does every provision have a
+rule" — is about a document beside the model and passes a notebook over. In
+juridische modus the provision and the rule are in one file, so the question it
+answers is one you can see.
+
+### A figure
+
+Images are relative paths resolved against the notebook file, so
+`![Figuur 1](media/staffel.png)` in a prose cell renders from a `media/` folder
+beside it. Pasting an image into a cell writes the file there for you.
 
 ## Naming
 
@@ -343,7 +486,9 @@ never run are not tests; they are guesses that go red at the worst moment.
 
 `samples/` holds both, and
 [client/src/test/samples.test.ts](../client/src/test/samples.test.ts) asserts
-them against a running server. They are worth holding in your own model too:
+them against a running server — as
+[reglement.test.ts](../client/src/test/reglement.test.ts) does for the notebook
+example, cell by cell. They are worth holding in your own model too:
 
 1. **It reports nothing.** Not "no errors" — no diagnostics at all. A model that
    carries a few known warnings trains you to ignore the Problems panel, and the

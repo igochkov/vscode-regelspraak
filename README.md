@@ -4,9 +4,18 @@ Write, read and review RegelSpraak models with the editor support you expect fro
 
 [RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
 
-The extension activates on `.rgs` files — models, and the `*.test.rgs` testsets that go with them. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
+The extension activates on `.rgs` files — models, the `*.test.rgs` testsets that go with them, and the `.rgs.md` notebooks of the mode below. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
 
-> **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file in the workspace — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets** — showing the derivation behind every value, why a rule stayed quiet, and, with <kbd>F5</kbd>, the run itself one rule at a time. What is next is in the [roadmap](docs/ROADMAP.md).
+## Two ways to write one model
+
+**The mode is the kind of document you open, not a setting**, and everything below works in both.
+
+- **Technische modus** — `.rgs` and `*.test.rgs` files in `gegevens/`, `regels/` and `tests/`, with the document the model renders under `bron/` and a `// Bron:` line from each rule back to the provision it renders. This is the mode of a model somebody else wrote the text for: a converted PTPO, a regeling, an ALEF project brought across. [samples/](samples) is the worked example.
+- **Juridische modus** — a **notebook**: an `.rgs.md` document in which the text of the reglement and the RegelSpraak that computes it alternate, in the order the text has, with the worked example under the bepaling it checks. One notebook is one artikel, and the folders above it are the levels the document itself has. This is the mode of a text and a rule written together, by the person who means both. [samples-notebook/](samples-notebook) is the worked example.
+
+**They are one model.** A notebook and a folder of `.rgs` files under the same workspace folder share one namespace: a rule in a notebook resolves an object type an engineer declared in `gegevens/`, a testset in `tests/` runs the notebook's rules, and a name declared twice is reported once. So a team may split the work by role and the model does not know the split happened. Laying out either, and choosing between them: [docs/AUTHORING.md](docs/AUTHORING.md).
+
+> **Status:** Everything below works today. The extension understands your model — declarations, rules and expressions, across every `.rgs` file and `.rgs.md` notebook under the workspace folder — and the `*.test.rgs` testsets that say what it should produce. It checks all of it, lets you navigate, restructure and format it, and **runs your testsets** — showing the derivation behind every value, why a rule stayed quiet, and, with <kbd>F5</kbd>, the run itself one rule at a time. What is next is in the [roadmap](docs/ROADMAP.md).
 
 ## The extension in two minutes
 
@@ -34,6 +43,7 @@ captions (mp4, 7 MB).
 - **The provision a rule renders.** A `// Bron:` comment above a declaration or a rule may link the article it comes from; hovering opens that article **rendered**, and the same link in the comment opens the source at the line. The path is written from the model root, so a rule file can be moved without its citations going stale.
 - **A model need not spell out its plurals.** `(mv: …)` is optional in the specification's syntax chapter, and the editor works the form out: write `Objecttype de Vestiging` and a rule may still say `alle Vestigingen`, with navigation, colour, references and rename all following. A derived form never overrides one you wrote and never competes with another declaration, so the worst a wrong guess does is what happens today — the phrase does not resolve, and the editor says so.
 - **Tables from outside the model.** A `Gegevensbron` declares the *shape* of an externally supplied table — key columns marked `(sleutel)`, one value — and a rule reads one cell with `het tarief uit de tarieftabel bij de zone en de gewichtsklasse`, checked as it is written: the value name, the number of keys, each key's datatype and unit. The content never enters the model: a testgeval states a miniature inline, or the testset binds a delivery on disk through its manifest, and a run says which delivery it read. An extension beyond RegelSpraak v2.3.0, marked as one in the grammar, and optional.
+- **A reglement as a notebook.** In juridische modus an `.rgs.md` document opens as cells: the text reads as text, the rules stand between the paragraphs and get everything above — colour, checks, completion, navigation, rename, formatting — and the worked example under a bepaling has a run button that reports each `Verwacht` line under the cell. A rule cell has none: what you run is the worked example. A rule's citation is its position, so hovering one names the heading it stands under and the law that heading cites; **Reglement bekijken** renders the whole artikel as one document, and *Openen met → Teksteditor* shows the Markdown underneath, because that is all it ever was.
 - **Bring a model in from ALEF.** **Importeren uit ALEF** reads the models of an ALEF project and writes RegelSpraak text — declarations, rules and testsets — laid out the way **Document opmaken** would. It is a one-shot migration: from that moment the text is the model, and a conversion report beside the files lists everything that was not translated, every reading worth checking, and every word the conversion had to invent.
 
 Each of these in full, with the reasoning behind the shape it takes, is in
@@ -42,12 +52,12 @@ Each of these in full, with the reasoning behind the shape it takes, is in
 
 ## Good to know
 
-- **All of it resolves across files.** Rules in one file are coloured, checked, navigated and renamed against the GegevensSpraak declarations in another.
+- **All of it resolves across files** — and a workspace folder is one model. Rules in one file are coloured, checked, navigated and renamed against the GegevensSpraak declarations in another, wherever under the folder either sits. Open two reglementen as two folders and they are two models: each keeps its own `Deelnemer`, and neither reports anything about the other.
 - **Nothing leaves your machine.** The language server runs locally as a child process; there is no network service.
 - **Two constructs go beyond RegelSpraak v2.3.0**, and both are optional. `Regelgroep <naam>` gives §9.10's rule group the written form the specification withholds — including the `(recursief)` qualifier a recursive group needs — and `Gegevensbron` declares an externally supplied table — which §9.3 puts outside its own scope and hands to the execution environment. A model that uses either is not portable to a strict v2.3.0 tool, which is worth knowing you are opting in to. (`//` comments are the other thing the specification does not define, and have been accepted since the first release.)
 - **Interface language is Dutch throughout**, matching the language itself; there is no English UI mode.
 - **Settings, and the line wrapping the extension turns on** for `.rgs` files (a RegelSpraak sentence cannot be broken across lines): [docs/SETTINGS.md](docs/SETTINGS.md).
-- **Laying out a model** — how to name and arrange its files, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/](samples) is the worked example.
+- **Laying out a model** — how to name and arrange its files in either mode, and why: [docs/AUTHORING.md](docs/AUTHORING.md). [samples/](samples) and [samples-notebook/](samples-notebook) are the worked examples.
 
 ## Issues
 
