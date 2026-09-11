@@ -1,0 +1,17 @@
+// De regels van de tweede werkmap ([N-10]).
+//
+// De regelnaam hieronder komt ook in de eerste werkmap voor, en het objecttype
+// waarover de regel gaat staat in het gegevensbestand hiernaast. Beide feiten
+// worden in client/src/test/scopes.test.ts tegen een echte taalserver
+// nagegaan.
+//
+// Dit commentaar noemt met opzet geen zinsdeel uit de regel zelf: die suite
+// zoekt de plek van een naam op in de tekst, en een treffer in een commentaar
+// wijst naar iets wat geen naam is — een time-out op een server die het goed
+// doet, in plaats van een melding die zegt wat er mis is.
+
+Regelgroep Tweede werkmap
+
+Regel Jeugdlid
+	geldig altijd
+		De drempel van een Lid moet gesteld worden op 3.

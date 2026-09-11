@@ -49,6 +49,72 @@ function supportedFloor(root: string): string {
 	return version.length > 0 ? version : 'stable';
 }
 
+/**
+ * The two-folder workspace to open, written out with the development server's
+ * path in it.
+ *
+ * The committed fixture declares the two folders and nothing else, because
+ * `regelspraak.server.path` names a build this repository does not own — which
+ * is why `.gitignore` keeps `samples/.vscode/` out and `setup:dev` writes it
+ * there. But that file is *folder*-scoped, and a resource-less
+ * `getConfiguration()` — which is what `resolveServerModule` asks, the server
+ * being one per window rather than one per folder — does not see a folder's
+ * settings in a `.code-workspace`. So the setting is lifted to the workspace
+ * level in a generated copy under `out/`, which is gitignored and regenerated
+ * on every run.
+ *
+ * Where there is no such setting the copy carries none, and the extension falls
+ * back to the server staged at its own `server/out/server.js` — exactly as the
+ * single-folder run does.
+ */
+function multiRootWorkspace(here: string): string {
+	const root = path.resolve(here, '../../..');
+	const declared = path.join(root, 'client/src/test/fixtures/twee-werkmappen.code-workspace');
+	const workspace = JSON.parse(fs.readFileSync(declared, 'utf8')) as {
+		folders: { path: string }[];
+		settings?: Record<string, unknown>;
+	};
+
+	// Folder paths in a `.code-workspace` are relative to the file, and the copy
+	// lives somewhere else — so they are made absolute rather than re-derived.
+	workspace.folders = workspace.folders.map(folder => ({
+		path: path.resolve(path.dirname(declared), folder.path)
+	}));
+
+	const serverPath = developmentServerPath(root);
+	if (serverPath) {
+		workspace.settings = { ...workspace.settings, 'regelspraak.server.path': serverPath };
+	}
+
+	const generated = path.join(here, 'twee-werkmappen.code-workspace');
+	fs.writeFileSync(generated, JSON.stringify(workspace, undefined, '\t'), 'utf8');
+	return generated;
+}
+
+/** `regelspraak.server.path` as `setup:dev` left it in `samples/`, if it did. */
+function developmentServerPath(root: string): string | undefined {
+	const settings = path.join(root, 'samples/.vscode/settings.json');
+	if (!fs.existsSync(settings)) {
+		return undefined;
+	}
+	try {
+		const held = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
+		const configured = held['regelspraak.server.path'];
+		if (typeof configured !== 'string' || configured.trim().length === 0) {
+			return undefined;
+		}
+		// Made absolute against `samples/`, which is what the setting is relative
+		// to there and is no longer the first folder of the generated copy.
+		return path.isAbsolute(configured)
+			? configured
+			: path.resolve(root, 'samples', configured);
+	} catch {
+		// A settings file with a comment in it is JSON with comments, which this
+		// cannot read. Falling back to the staged server beats failing the run.
+		return undefined;
+	}
+}
+
 async function main() {
 	try {
 		dropInheritedHostEnvironment();
@@ -64,8 +130,21 @@ async function main() {
 		// Without a folder there is no workspace for `workspaceContains:**/*.rgs`
 		// to match, so the extension never activates and the server never
 		// indexes anything.
+		//
+		// `--twee-werkmappen` opens a `.code-workspace` of two folders instead
+		// ([N-10]): a scope is a workspace folder, so the multi-root shape is a
+		// thing only a second folder can show, and `scopes.test.ts` is the suite
+		// that checks it. It is a second *run* rather than a flag inside the
+		// existing one because VS Code decides the workspace at launch, and
+		// every other suite here is written against `samples/` alone.
+		const multiRoot = process.argv.includes('--twee-werkmappen');
 		const workspacePath = process.env.CODE_TESTS_WORKSPACE
-			?? path.resolve(__dirname, '../../../samples');
+			?? (multiRoot ? multiRootWorkspace(__dirname) : path.resolve(__dirname, '../../../samples'));
+		// Narrowed to the one suite that is about scopes: the rest assume one
+		// folder, and a run that fails them would say nothing about this.
+		if (multiRoot) {
+			process.env.TEST_FILE = process.env.TEST_FILE ?? 'scopes';
+		}
 
 		const version = process.env.VSCODE_TEST_VERSION
 			?? supportedFloor(extensionDevelopmentPath);

@@ -39,6 +39,30 @@ export interface ModelGroup {
 }
 
 export interface ModelTree {
+	/**
+	 * The top level in a window with one model, and **empty where `roots` is
+	 * present**: one shape per answer, so this side never has to decide which of
+	 * the two is the tree.
+	 */
+	groups: ModelGroup[];
+	/**
+	 * The folders, where the window has more than one ([N-10]).
+	 *
+	 * A scope is a workspace folder, so a two-folder window holds two models and
+	 * every `Lid` in one collides with every `Lid` in the other. Drawing them in
+	 * one flat tree would show that collision as though it were one model, so
+	 * each folder gets a row. Absent in the ordinary one-folder case rather than
+	 * present with a single entry: a row to expand before seeing anything
+	 * carries no fact.
+	 */
+	roots?: ModelRoot[];
+}
+
+/** One workspace folder's model (W2, multi-root only). */
+export interface ModelRoot {
+	/** The folder's own name — the server's, since it decided the boundary. */
+	label: string;
+	uri: string;
 	groups: ModelGroup[];
 }
 

@@ -1,0 +1,11 @@
+// Een tweede werkmap, met opzet dezelfde namen als `samples/` ([N-10]).
+//
+// Dit is geen voorbeeldmodel maar testgegevens: het bestaat om te laten zien
+// dat twee werkmappen twee modellen zijn. Zowel `Objecttype het Lid` als
+// `Regel Jeugdlid` staan ook in `samples/`, en in één index was dat een naam
+// met twee antwoorden — en voor de regelnaam een RS607 op twee bestanden die
+// elk in zichzelf correct zijn.
+
+Objecttype het Lid (mv: Leden)
+	de drempel (mv: drempels)                       Numeriek (geheel getal);
+	is jeugdlid                                     kenmerk (bijvoeglijk);

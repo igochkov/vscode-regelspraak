@@ -16,16 +16,23 @@ import {
 	TreeItem, TreeItemCollapsibleState, Uri
 } from 'vscode';
 
-import { ModelGroup, ModelNode, ModelSource, WirePosition, WireRange } from './model';
+import { ModelGroup, ModelNode, ModelRoot, ModelSource, WirePosition, WireRange } from './model';
 
 /**
- * A row of the tree: a heading, or a declaration.
+ * A row of the tree: a workspace folder, a heading, or a declaration.
  *
  * The wire records are the elements themselves rather than a wrapper class,
  * because they are replaced wholesale on every refresh — VS Code re-asks for
  * children from the root, so nothing needs to survive that.
+ *
+ * The folder row exists only where the window has more than one ([N-10]), and
+ * whether it does is the server's answer and not a count taken here: a scope is
+ * a workspace folder, and which folder a model belongs to is what `indexFor`
+ * decided. So this side draws `roots` when the answer carries them and `groups`
+ * when it does not.
  */
 export type ModelEntry =
+	| { row: 'root'; root: ModelRoot }
 	| { row: 'group'; group: ModelGroup }
 	| { row: 'declaration'; node: ModelNode };
 
@@ -90,10 +97,16 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
 	}
 
 	getTreeItem(entry: ModelEntry): TreeItem {
+		if (entry.row === 'root') {
+			return rootItem(entry.root);
+		}
 		return entry.row === 'group' ? groupItem(entry.group) : declarationItem(entry.node);
 	}
 
 	async getChildren(entry?: ModelEntry): Promise<ModelEntry[]> {
+		if (entry?.row === 'root') {
+			return entry.root.groups.map(group => ({ row: 'group', group }));
+		}
 		if (entry?.row === 'group') {
 			return entry.group.nodes.map(node => ({ row: 'declaration', node }));
 		}
@@ -101,8 +114,33 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
 			return entry.node.children.map(node => ({ row: 'declaration', node }));
 		}
 		const tree = await this.source.workspace();
-		return tree.groups.map(group => ({ row: 'group', group }));
+		// `roots` and `groups` are one answer in two shapes, never both: the
+		// server leaves `groups` empty where it sends folders.
+		return tree.roots
+			? tree.roots.map(root => ({ row: 'root', root }))
+			: tree.groups.map(group => ({ row: 'group', group }));
 	}
+}
+
+/**
+ * One workspace folder.
+ *
+ * `folder-library` rather than a plain `folder`: it is not a directory the
+ * reader can open but the model held in one, and the row beneath it is a group
+ * of declarations. Expanded, because a folder collapsed by default hides the
+ * whole tree behind two clicks — and the description counts the groups, which
+ * is what the top level used to count for the window as a whole.
+ */
+function rootItem(root: ModelRoot): TreeItem {
+	const item = new TreeItem(root.label, TreeItemCollapsibleState.Expanded);
+	item.contextValue = 'regelspraakRoot';
+	item.iconPath = new ThemeIcon('folder-library');
+	item.resourceUri = Uri.parse(root.uri);
+	// The folder's own path, which is what tells two folders of one name apart —
+	// and a reader supporting several jurists has exactly that.
+	item.tooltip = Uri.parse(root.uri).fsPath;
+	item.description = `${root.groups.length}`;
+	return item;
 }
 
 function groupItem(group: ModelGroup): TreeItem {
