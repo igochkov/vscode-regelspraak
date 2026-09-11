@@ -29,6 +29,7 @@ import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses, siteOf } from './
 import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
+import { NOTEBOOK_TYPE, RegelSpraakNotebookSerializer } from './notebook/serializer';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -304,6 +305,20 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	context.subscriptions.push(
 		commands.registerCommand(SHOW_MODEL_EXPLORER_COMMAND,
 			() => commands.executeCommand(`${MODEL_EXPLORER_VIEW}.focus`)));
+
+	// [N-1]. A notebook is a Markdown file and this is the view of it: the cells
+	// are regions of the text, and what is written back is the text. Outputs are
+	// transient because a run is a fact about a model and a scenario at one
+	// moment, and a stored one goes stale the way UX-3's *gone* state already
+	// handles.
+	context.subscriptions.push(
+		workspace.registerNotebookSerializer(
+			NOTEBOOK_TYPE, new RegelSpraakNotebookSerializer(),
+			{
+				transientOutputs: true,
+				transientCellMetadata: { executionOrder: true },
+				transientDocumentMetadata: {}
+			}));
 
 	context.subscriptions.push(
 		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),

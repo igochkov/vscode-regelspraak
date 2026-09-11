@@ -157,7 +157,10 @@ async function main() {
 			launchArgs: [
 				workspacePath,
 				// Other extensions would only add noise and timing to the run;
-				// the one under development is unaffected by this flag.
+				// the one under development is unaffected by this flag. Nor are
+				// the **built-in** ones, which is why the notebook spike can ask
+				// about the Markdown extension here rather than in a run of its
+				// own (§4.1 #3 and #7, measured 11 September 2026).
 				'--disable-extensions',
 				// An untrusted folder puts extensions in restricted mode, where
 				// the language server would never start.

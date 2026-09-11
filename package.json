@@ -41,7 +41,8 @@
 	},
 	"main": "./client/out/extension",
 	"activationEvents": [
-		"workspaceContains:**/*.rgs"
+		"workspaceContains:**/*.rgs",
+		"workspaceContains:**/*.rgs.md"
 	],
 	"contributes": {
 		"viewsContainers": {
@@ -230,6 +231,15 @@
 					".rgs"
 				],
 				"configuration": "./language-configuration.json"
+			},
+			{
+				"//": "[N-5]. A cell has no suffix, so the fence's info string is the discriminator and it is also the cell's language. Cells only for now: giving this id the .test.rgs files as well is the rest of [N-5] and belongs with the snippet split and the documentSelector in §4.4.",
+				"id": "testspraak",
+				"aliases": [
+					"TestSpraak",
+					"testspraak"
+				],
+				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [
@@ -237,6 +247,25 @@
 				"language": "regelspraak",
 				"scopeName": "source.regelspraak",
 				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			},
+			{
+				"//": "The same grammar: it already reads both lexers ([T-25]).",
+				"language": "testspraak",
+				"scopeName": "source.regelspraak",
+				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			}
+		],
+		"notebooks": [
+			{
+				"//": "[N-1], [N-4]. `default` claims *.rgs.md and leaves every other .md to the Markdown editor; the text is one gesture away under Open With.",
+				"type": "regelspraak-notebook",
+				"displayName": "RegelSpraak-notebook",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "**/*.rgs.md"
+					}
+				]
 			}
 		],
 		"snippets": [
@@ -468,6 +497,15 @@
 				"editor.wordWrap": "bounded",
 				"editor.wordWrapColumn": 100,
 				"editor.wrappingIndent": "deepIndent"
+			},
+			"[testspraak]": {
+				"editor.wordWrap": "bounded",
+				"editor.wordWrapColumn": 100,
+				"editor.wrappingIndent": "deepIndent"
+			},
+			"//markdown.copyFiles.destination": "[N-1a]. A figure pasted into a Markdown cell is written by the Markdown extension's own paste provider, which resolves a cell URI to the notebook it belongs to — so the variables below are computed from the .rgs.md file. ${documentBaseName} strips only the last extension, so the transform drops the .rgs that would otherwise name the folder.",
+			"markdown.copyFiles.destination": {
+				"**/*.rgs.md": "${documentDirName}/media/${documentBaseName/\\.rgs$//}/${fileName}"
 			}
 		},
 		"breakpoints": [
