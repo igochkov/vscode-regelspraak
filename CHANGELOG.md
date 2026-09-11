@@ -131,6 +131,39 @@ schrijfwijze niet, dus zo'n sleutel adresseerde geen cel. En een geschreven
 getal met veertien decimalen werd voor de weergave door een afronding gehaald,
 zodat het in een trace anders kon staan dan het was geschreven.
 
+**Twee zinnen die de editor en de engine verschillend lazen.** Beide gemeld door
+een team dat er wetsregels mee schrijft, beide gereproduceerd, beide dezelfde
+fout in twee gedaanten: één laag las de woorden, de andere las de boom.
+
+**`hij heeft de actieve reservering` viel om bij het uitvoeren en de editor zei
+niets.** Het lidwoord hoort bij de *declaratie* van een kenmerk (§13.3.2 schrijft
+`de actieve reservering  kenmerk (bezittelijk)`) en niet bij de naam; wie hem
+daarna noemt schrijft `een <kenmerknaam>` of niets. Omdat `de` en `het` ook
+gewone naamwoorden zijn — `het jaar uit omloop` — slikte de gulzige naam het
+lidwoord op, ontleedde de regel gewoon, kleurde de zin, werkte F12 en hernoemen,
+en viel alleen de run om met *is geen kenmerk of rol die de engine kent*. De
+engine leest het lidwoord nu zoals elke andere laag, en **RS126** zegt dat de zin
+niettemin fout is: een model dat zo geschreven is, wordt door ALEF en door elke
+andere v2.3.0-implementatie geweigerd. De melding komt alleen waar de naam zónder
+lidwoord wél oplost, en de quick fix haalt precies dat woord weg.
+
+**En een zusterbullet ná een geneste groep werd binnen die groep uitgerekend.**
+De nesting van bullets zit in het aantal `•` (§8.3.2), en een grammatica kan niet
+tellen: zodra een geneste kop was binnengegaan verdween elke volgende bulletregel
+daarin, hoe ondiep ook. Zo las
+
+    indien hij aan alle van de volgende voorwaarden voldoet:
+        • hij voldoet aan geen van de volgende voorwaarden:
+            •• hij is jeugdlid
+        • zijn leeftijd is kleiner dan 0.
+
+als `alle( geen(jeugdlid, leeftijd < 0) )` in plaats van `alle( geen(jeugdlid),
+leeftijd < 0 )` — waar, waar de zin onwaar zegt, met een schone ontleding, schone
+diagnostiek en een regel die vuurde. De diepte wordt nu gelezen. Een model dat
+alles op één diepte schrijft betekent wat het altijd betekende: een groep neemt
+altijd het item ná haar kop, en pas een bullet die ondieper is dan dat eerste lid
+sluit de groep. Er hoort geen melding bij — de zin was gewoon goed.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
 **Parameter values that several testsets share can be declared once, as a
