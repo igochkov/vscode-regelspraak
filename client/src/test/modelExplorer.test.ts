@@ -139,13 +139,13 @@ suite('Modelverkenner (W1, W2)', () => {
 		const heading = explorer.getTreeItem(groepen).description;
 		// Het kale aantal staat waar het altijd stond; wat erin zit komt erachter,
 		// in de woorden van het model zelf.
-		assert.match(String(heading), /^\d+ \(\d+ regels?(, \d+ beslistabellen?)?\)$/);
+		assert.match(String(heading), /^\d+ \(\d+ regels?(, \d+ beslistabel(len)?)?\)$/);
 
 		const contributie = (await explorer.getChildren(groepen))
 			.find(entry => entry.node!.name === 'contributie');
 		assert.ok(contributie, 'de regelgroep contributie ontbreekt');
 		assert.match(String(explorer.getTreeItem(contributie).description),
-			/^\d+ regels?(, \d+ beslistabellen?)?$/);
+			/^\d+ regels?(, \d+ beslistabel(len)?)?$/);
 	});
 
 	test('kent het commando dat de verkenner naar voren haalt', async () => {

@@ -32,6 +32,13 @@ jobs:
       # The example model cites the document it renders (docs/AUTHORING.md).
       # This needs no language server, so unlike the rest of the model's gates
       # it can run here.
+      #
+      # `samples/sample-wet/` is deliberately not named here and cannot be: its
+      # provisions are Dutch law, so every `// Bron:` in it is a Juriconnect
+      # reference, and both of this script's questions — does the citation still
+      # resolve, is every provision rendered — are about a document beside the
+      # model. That folder is gated from the server repository instead, by
+      # `npm run model -- check` and `run`, which need no workbench.
       - name: Check the source citations
         run: npm run source:coverage
 
@@ -46,6 +53,7 @@ jobs:
               "package.json",
               "language-configuration.json",
               "snippets/regelspraak.code-snippets",
+              "snippets/testspraak.code-snippets",
               "syntaxes/regelspraak.tmLanguage.json",
             ]) {
               JSON.parse(strip(fs.readFileSync(f, "utf8")));

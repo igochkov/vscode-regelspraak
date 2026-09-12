@@ -187,10 +187,12 @@ die te hoog uitvalt: een **verdeling** (§9.7) gaf een gelijk deel aan ontvanger
 die de subselectie uitsluit, een variabele uit **`Daarbij geldt:`** telde de
 ongefilterde verzameling op, en een **consistentieregel** (§9.5) meldde een
 inconsistentie op een model dat klopt, doordat de eis werd nagekeken op elementen
-waar de zin niet over gaat. Alle vier zijn hersteld. Waar het filter niet kan
-worden toegepast — in het doel van een toekenning, waar een regel per instantie
-schrijft — werd en wordt de regel geweigerd, nu met de werkelijke reden erbij:
-stil een verkeerd getal opleveren doet geen van deze plaatsen nog.
+waar de zin niet over gaat. En op een vijfde: in het **doel** van een toekenning
+(`Het merk van alle bijdragen van de Pot die een grote storting zijn moet
+gesteld worden op 7 EUR`), waar een regel per instantie schrijft. Daar koos het
+filter tot nu toe de verkeerde instantie of geen enkele — het werd genegeerd,
+dus schreef de zin naar een bijdrage die zij uitsluit. Alle vijf rekenen nu wat
+er staat, en stil een verkeerd getal opleveren doet geen van deze plaatsen nog.
 
 ### Hoeveel regels een model telt
 

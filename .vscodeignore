@@ -18,7 +18,6 @@ eslint.config.mjs
 scripts/**
 docs/**
 samples/**
-samples-notebook/**
 images/icon.svg
 # The demo still, which the README shows by URL and not out of the package: the
 # Marketplace resolves a README image over https, so shipping it would be weight
@@ -34,6 +33,16 @@ images/regelspraak-demo.png
 # vscode-languageclient changed.
 node_modules/**
 client/node_modules/**
+
+# The client's own sources and its suites. **This line is load-bearing and was
+# missing until 12 September 2026**: everything under here used to be TypeScript,
+# so the `**/*.ts` rule at the bottom covered it by accident — and then the
+# notebook work added fixtures that are not TypeScript (§4.0's
+# `twee-werkmappen.code-workspace`, §4.9's three `.rgs.md` notebooks) and all
+# four shipped. A test fixture in a published extension is weight nothing reads,
+# and a `.rgs.md` in it is an example a user may open and edit believing it is
+# theirs. What ships from this tree is the one bundled file below.
+client/src/**
 
 # Development build output. `client/out/extension.js` is overwritten by the
 # bundle at packaging time and is the only file from here that ships.
