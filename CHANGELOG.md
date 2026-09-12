@@ -7,34 +7,7 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased]
-
-### Added
-
-- **Test coverage over a model.** The Testing view has a **Dekking** run profile
-  beside **Uitvoeren**: it runs the testgevallen you pick and then marks the
-  model, green in the gutter for every regelversie a run fired and red for every
-  one nothing reached, with the Test Coverage view listing them by name.
-
-  **The unit is the regelversie and not the rule**, which is the whole point of
-  it. A rekendatum selects at most one version of a rule (§4.2, and RS601 forbids
-  two from overlapping), so a testset that reckons in 2027 can never reach a
-  `geldig t/m 2026` beside it — and a count over rules would call such a model
-  fully tested. The sample workspace had exactly that gap: all six of its testsets
-  reckon in 2027, so `bepaal oude contributie · geldig t/m 2026` had never been
-  run by anything. A beslistabel has versions the same way ([D-47a]) and is
-  measured the same way.
-
-  *Fired* is the strict reading, and it is the language's own word — §8.1.9 and a
-  `Verwacht Regelversie … gevuurd is` line already ask exactly this. So a version
-  whose condition never held in any testgeval counts as uncovered: its derivation
-  has never run. Files nothing touched are in the report as well, since a file
-  with no coverage is exactly the file you are looking for.
-
-  `npm run model -- tested <map…>` is the same figure from the command line, for
-  a build or for a quick look without the editor.
-
-## [1.0.0] — A reglement as a notebook, one model per workspace folder, and exact arithmetic without a ceiling
+## [1.0.0] — A reglement as a notebook, one model per workspace folder, exact arithmetic without a ceiling, and test coverage over the model
 
 **A model can now be written as the document it renders.** Until now the text
 came first and the rules rendered it afterwards, from a folder of `.rgs` files
@@ -110,6 +83,39 @@ so a pasted figure lands there.
 [samples/workspace/sample-notebook/](samples/workspace/sample-notebook) is the
 worked example: hoofdstuk 10 of the Boekerij reglement, one notebook per
 artikel, over the declarations an engineer wrote beside it.
+
+### Which of your model the tests actually run
+
+**The Testing view has a `Dekking` profile beside `Uitvoeren`.** It runs the
+testgevallen you pick and then marks the model: green in the gutter for every
+regelversie a run fired, red for every one nothing reached, and the Test Coverage
+view lists them by name — `bepaal boete · geldig altijd` — with a percentage per
+file and per folder. Open a file and the versions nothing ran are the red blocks
+down its left edge.
+
+**The unit is the regelversie and not the rule**, and that is the whole point of
+it. A rekendatum selects at most one version of a rule (§4.2, and RS601 forbids
+two from overlapping), so a testset that reckons in 2027 can never reach a
+`geldig t/m 2026` beside it — and a count over rules would call such a model
+fully tested. The sample workspace had exactly that gap: all six of its testsets
+reckon in 2027, so `bepaal oude contributie · geldig t/m 2026` had never been run
+by anything. A beslistabel has versions the same way and is measured the same
+way.
+
+**Gevuurd is the strict reading, and it is the language's own word** — §8.1.9 and
+a `Verwacht Regelversie … gevuurd is` line already ask exactly this question. So
+a version whose condition never held in any testgeval counts as uncovered: its
+derivation has never run. Files nothing touched are in the report as well, since
+a file with no coverage at all is exactly the file you are looking for. A
+notebook is measured per cell where you have it open and per file otherwise, so
+juridische modus is covered like anything else.
+
+`npm run model -- tested <map…>` is the same figure from the command line, for a
+build or for a look without the editor. It names every version nothing fires and
+the line it is written on, and it does **not** fail over them — which half of a
+two-version pair deserves a testgeval is yours to decide. A testgeval that could
+*not run* does fail it, since a coverage figure computed over fewer runs than the
+folder has is a figure about a broken testset rather than about the model.
 
 ### Rekenen met de cijfers die een echt model draagt
 
