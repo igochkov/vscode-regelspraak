@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.9.5",
+	"version": "1.0.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -610,6 +610,7 @@
 		"test:multiroot": "node ./client/out/test/runTest.js --twee-werkmappen",
 		"build:icon": "node scripts/build-icon.mjs",
 		"source:coverage": "node scripts/source-coverage.mjs",
+		"check:contributions": "node scripts/check-contributions.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
 	},
 	"devDependencies": {

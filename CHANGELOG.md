@@ -7,7 +7,7 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
-## [Unreleased] — A reglement as a notebook, one model per workspace folder, and exact arithmetic without a ceiling
+## [1.0.0] — A reglement as a notebook, one model per workspace folder, and exact arithmetic without a ceiling
 
 **A model can now be written as the document it renders.** Until now the text
 came first and the rules rendered it afterwards, from a folder of `.rgs` files
