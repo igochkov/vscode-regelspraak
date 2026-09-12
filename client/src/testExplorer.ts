@@ -20,6 +20,7 @@ const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
 const EXPAND_REQUEST = 'regelspraak/expandCollection';
 const RUN_DETAIL_REQUEST = 'regelspraak/runDetail';
+const COVERAGE_REQUEST = 'regelspraak/coverage';
 
 /**
  * What a failing expectation's message is tagged with, so UX-1's **Leg uit** can
@@ -375,6 +376,64 @@ export interface TestRun {
 	faults: TestFault[];
 	detail?: RunDetail;
 	sources?: BoundSource[];
+	/**
+	 * Which regelversies this run fired — opaque handles, echoed back and never
+	 * read (see the server's `protocol.ts`).
+	 *
+	 * Present only when the run was asked for coverage, and absent on a refusal
+	 * rather than empty: nothing ran, which is not the same as nothing firing.
+	 */
+	coverage?: string[];
+}
+
+/** The server's answer about the model's regelversies — see its `protocol.ts`. */
+interface CoverageAnswer {
+	files: { uri: string; versions: CoverageVersion[] }[];
+}
+
+interface CoverageVersion {
+	label: string;
+	range: WireRange;
+	fired: boolean;
+}
+
+/**
+ * One document's coverage, as VS Code's own model of it.
+ *
+ * **Two readings of one fact, which is what every coverage reporter emits.** A
+ * regelversie is a named, rangeable unit, so it is a *declaration* — that is
+ * what puts `bepaal boete · geldig altijd` in the Test Coverage view by name —
+ * and its lines are what a reader wants coloured in the gutter, which is
+ * *statements*. lcov says the same thing about a function and its body, and the
+ * locations mirror that: the declaration sits on the `geldig` line that opens
+ * the version, the statement spans the whole of it.
+ *
+ * There is no branch coverage and there will not be. A rule's condition decides
+ * *whether* the version fires, so a version whose condition never held is
+ * already reported as uncovered; splitting that into branches would claim this
+ * side knows which bullet of a compound condition was reached, and the run
+ * records that only under `detail` ([§X7 stage 1]).
+ *
+ * Pure, and exported, for `rangeOfGesture`'s reason (W4): a coverage gutter
+ * cannot be driven from a test, so the half that decides anything lives where a
+ * test reaches it.
+ */
+export interface DrawnCoverage {
+	uri: vscode.Uri;
+	details: vscode.FileCoverageDetail[];
+}
+
+export function coverageOf(answer: CoverageAnswer): DrawnCoverage[] {
+	return answer.files.map(file => ({
+		uri: vscode.Uri.parse(file.uri),
+		details: file.versions.flatMap((version): vscode.FileCoverageDetail[] => {
+			const range = rangeOf(version.range);
+			return [
+				new vscode.DeclarationCoverage(version.label, version.fired, range.start),
+				new vscode.StatementCoverage(version.fired, range)
+			];
+		})
+	}));
 }
 
 function rangeOf(wire: WireRange): vscode.Range {
@@ -385,6 +444,20 @@ function rangeOf(wire: WireRange): vscode.Range {
 export class TestExplorer {
 	private readonly controller: vscode.TestController;
 	private readonly profile: vscode.TestRunProfile;
+	private readonly coverageProfile: vscode.TestRunProfile;
+	/**
+	 * What each run's coverage details were, so they can be handed over lazily.
+	 *
+	 * Keyed by the `TestRun` rather than kept as one map, because VS Code asks
+	 * for the details of a run it names and two runs may be alive at once — a
+	 * single map would answer the newer run's details for the older one's
+	 * question, which is a coverage report about the wrong set of tests. A
+	 * `WeakMap` because a run that VS Code has let go is one nothing will ask
+	 * about again.
+	 */
+	private readonly coverageDetails =
+		new WeakMap<vscode.TestRun, Map<string, vscode.FileCoverageDetail[]>>();
+	private drawn: readonly DrawnCoverage[] = [];
 	private client: LanguageClient | undefined;
 	/** Moved by every invalidation, so a reply in flight can be told from a fresh one. */
 	private generation = 0;
@@ -435,6 +508,16 @@ export class TestExplorer {
 		// there is no debug profile to leave unimplemented.
 		this.profile = this.controller.createRunProfile('Uitvoeren',
 			vscode.TestRunProfileKind.Run, (request, token) => this.run(request, token), true);
+		// **The same run, plus one question afterwards.** Coverage is not a
+		// different way of running a testgeval — it is the ordinary run with
+		// `RunTestParams.coverage` set and one join at the end — so the two profiles
+		// share `run` rather than each having a handler. A second implementation of
+		// "run these cases and report them" is how the coverage profile would come
+		// to report a failure differently from the plain one.
+		this.coverageProfile = this.controller.createRunProfile('Dekking',
+			vscode.TestRunProfileKind.Coverage, (request, token) => this.run(request, token), true);
+		this.coverageProfile.loadDetailedCoverage = (testRun, file) =>
+			Promise.resolve(this.coverageDetails.get(testRun)?.get(file.uri.toString()) ?? []);
 		this.controller.resolveHandler = async () => {
 			await this.refresh();
 		};
@@ -491,6 +574,26 @@ export class TestExplorer {
 	 */
 	get runProfile(): vscode.TestRunProfile {
 		return this.profile;
+	}
+
+	/** The coverage profile, exposed for the reason `runProfile` is. */
+	get testCoverageProfile(): vscode.TestRunProfile {
+		return this.coverageProfile;
+	}
+
+	/**
+	 * What the last coverage run drew, for the reason `runProfile` is exposed.
+	 *
+	 * A `TestRun`'s coverage goes into the workbench and does not come back, and
+	 * the client's end-to-end suite is the only thing on either side that checks
+	 * the `regelspraak/coverage` contract — the server repository holds the other
+	 * half and nothing at build time compares the two. So the answer is kept where
+	 * a test reaches it, and it is **cleared when a coverage run begins**: a fetch
+	 * that failed would otherwise leave the previous run's picture standing, which
+	 * is the one way this could pass while the contract was broken.
+	 */
+	get coverageDrawn(): readonly DrawnCoverage[] {
+		return this.drawn;
 	}
 
 	/** Re-pointed on every (re)start, and cleared when the server stops. */
@@ -788,6 +891,17 @@ export class TestExplorer {
 	): Promise<void> {
 		const client = this.client;
 		const run = this.controller.createTestRun(request);
+		// **Read from the request, not from a parameter.** VS Code names the profile
+		// the user pressed, so the two handlers stay one function and there is no
+		// flag for a caller to get wrong. Any profile of the Coverage kind counts —
+		// the kind is the question being asked, and matching on the profile object
+		// would quietly stop working if a second coverage profile were ever added.
+		const wantCoverage = request.profile?.kind === vscode.TestRunProfileKind.Coverage;
+		const fired = new Set<string>();
+		let ran = false;
+		if (wantCoverage) {
+			this.drawn = [];
+		}
 		try {
 			for (const item of this.casesOf(request)) {
 				if (token.isCancellationRequested) {
@@ -806,17 +920,65 @@ export class TestExplorer {
 				try {
 					outcome = await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
 						textDocument: { uri },
-						case: name
+						case: name,
+						...(wantCoverage ? { coverage: true } : {})
 					}, token);
 				} catch (error) {
 					run.errored(item, new vscode.TestMessage(String(error)));
 					continue;
 				}
+				ran = true;
+				for (const one of outcome.coverage ?? []) {
+					fired.add(one);
+				}
 				this.report(run, item, outcome, Date.now() - started);
+			}
+			if (wantCoverage && ran && client) {
+				await this.addCoverage(run, client, fired, token);
 			}
 		} finally {
 			run.end();
 		}
+	}
+
+	/**
+	 * What the model declares, marked with what these runs fired.
+	 *
+	 * **Asked once, after every case**, because coverage is about the run as a
+	 * whole: §W7 runs one testgeval per request, so asking per case would answer
+	 * the same question about the model N times and leave this side to merge N
+	 * denominators. The handles go back exactly as they came ([T-22] — the join is
+	 * the server's, and a client marking versions off itself would be a second
+	 * answer to *which version was that*).
+	 *
+	 * A failure here is **not** a failed test run: the cases have already been
+	 * reported, and a coverage report that could not be fetched is a missing
+	 * picture rather than a wrong verdict. So it is swallowed to the output
+	 * channel's neighbour — the run's own output — where a reader looking for it
+	 * will find it, and the run still ends green or red on its own merits.
+	 */
+	private async addCoverage(
+		run: vscode.TestRun,
+		client: LanguageClient,
+		fired: ReadonlySet<string>,
+		token: vscode.CancellationToken
+	): Promise<void> {
+		let answer: CoverageAnswer;
+		try {
+			answer = await client.sendRequest<CoverageAnswer>(COVERAGE_REQUEST,
+				{ fired: [...fired] }, token);
+		} catch (error) {
+			run.appendOutput(`de dekking kon niet worden opgehaald: ${String(error)}\r\n`);
+			return;
+		}
+		const files = coverageOf(answer);
+		const details = new Map<string, vscode.FileCoverageDetail[]>();
+		for (const file of files) {
+			details.set(file.uri.toString(), file.details);
+			run.addCoverage(vscode.FileCoverage.fromDetails(file.uri, file.details));
+		}
+		this.coverageDetails.set(run, details);
+		this.drawn = files;
 	}
 
 	/**
