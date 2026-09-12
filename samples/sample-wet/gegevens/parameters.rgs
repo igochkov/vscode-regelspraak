@@ -1,0 +1,61 @@
+// Parameters (§13.3.8): waarden die bij geen enkel object horen.
+//
+// Dit is de belangrijkste modelleerkeuze van het hele model, dus staat de reden
+// hier en niet in een artikelnotebook. De bedragen van artikel 8 lid 1 staan
+// *in* de wet, en toch zijn ze hier een parameter en geen literal. Dat komt
+// door artikel 14 lid 11: de krachtens artikel 14 herziene bedragen "treden in
+// de plaats van" de in artikel 8 genoemde bedragen. De wettekst houdt dus het
+// bedrag van 2024 (€ 10,60) en wat vandaag geldt staat in een ministeriële
+// regeling in de Staatscourant -- twee keer per jaar een andere.
+//
+// Een halfjaarbedrag in het model zetten zou betekenen dat het model ieder half
+// jaar verandert terwijl de wet dat niet doet. Dus draagt het model de *formule*
+// en niet het bedrag, en komt het bedrag uit een parameterset per halfjaar --
+// `tests/parameterwaarden.test.rgs`, waarvan de `geldig`-regel controleert dat
+// een testset het halfjaar noemt waarop haar rekendatum valt (RS965).
+
+// Het bedrag van artikel 8 lid 1 onder a, zoals het krachtens artikel 14 lid 10
+// en 11 laatstelijk is vastgesteld.
+// Bron: [art. 8 lid 1 onder a](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Parameter het wettelijk minimumuurloon : Uurbedrag
+
+// Het bedrag van artikel 8 lid 1 onder b. Sinds 1 januari 2024 is dit geen loon
+// dat iemand krijgt maar een rekengrootheid: het is er voor wetten die voor hun
+// uitkeringen naar deze wet verwijzen, en het is de A uit de formule van
+// artikel 14 lid 10.
+// Bron: [art. 8 lid 1 onder b](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Parameter het referentiemaandloon : Bedrag
+
+// De C uit de formule van artikel 14 lid 10, en de werkweek waarmee artikel 8
+// lid 1 onder c naar evenredigheid rekent. Eén grootheid, twee bepalingen.
+// Bron: [art. 8 lid 1 onder c](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+// Bron: [art. 14 lid 10](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=14&lid=10&g=2026-07-01&z=2026-07-01)
+Parameter de normale werkweek : Uren
+
+// De B uit die formule: "het aantal weken per maand dat wordt gesteld op 4 1/3".
+// Geen getal met decimalen maar een *rationaal*: 4 1/3 is exact en 4,3333 is het
+// niet, en het verschil haalt de eindafronding van het uurloon (§13.2 #5).
+// Artikel 15 lid 2 stelt hetzelfde getal nog een keer, voor een
+// uitbetalingstermijn van een week.
+// Bron: [art. 14 lid 10](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=14&lid=10&g=2026-07-01&z=2026-07-01)
+Parameter het wekental per maand : Numeriek (niet-negatief getal)
+
+// "waarbij een maand wordt gesteld op 21,67 werkdagen" -- artikel 15 lid 2, voor
+// een uitbetalingstermijn die noch een maand noch een week is.
+// Bron: [art. 15 lid 2](jci1.3:c:BWBR0002638&hoofdstuk=III&artikel=15&lid=2&g=2026-07-01&z=2026-07-01)
+Parameter het werkdagental per maand : Numeriek (niet-negatief getal met 2 decimalen)
+
+// "afgerond op het dichtstbijzijnde veelvoud van € 0,60" -- artikel 14 lid 9.
+// Bron: [art. 14 lid 9](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=14&lid=9&g=2026-07-01&z=2026-07-01)
+Parameter de afrondingseenheid van het maandloon : Bedrag
+
+// Het bedrag van de vijfde categorie van artikel 23 lid 4 van het Wetboek van
+// Strafrecht, waar artikel 18f lid 1 de boete op afkapt. Het staat in een andere
+// wet en wordt daar tweejaarlijks bijgesteld, dus hoort het hier niet als
+// literal maar als waarde die van buiten komt.
+// Bron: [art. 18f lid 1](jci1.3:c:BWBR0002638&hoofdstuk=IV&artikel=18f&lid=1&g=2026-07-01&z=2026-07-01)
+Parameter het boetemaximum : Bedrag
+
+// "verjaart na verloop van vijf jaren" -- artikel 20.
+// Bron: [art. 20](jci1.3:c:BWBR0002638&hoofdstuk=V&artikel=20&g=2026-07-01&z=2026-07-01)
+Parameter de verjaringstermijn : Jaren

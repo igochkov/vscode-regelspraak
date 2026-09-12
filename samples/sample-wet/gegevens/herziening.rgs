@@ -1,0 +1,32 @@
+// De Herziening: één halfjaarlijkse aanpassing van de bedragen van artikel 8
+// lid 1.
+//
+// Waarom dit een objecttype is: artikel 14 rekent, en een regel heeft een
+// universeel onderwerp nodig (RS603) -- een zin moet ergens over gaan. Waar
+// artikel 14 over gaat is niet een werknemer en niet een tijdvak maar een
+// *herziening*: het besluit van de minister waarmee een nieuw bedrag in de
+// plaats treedt van het vorige.
+//
+// Zo draagt het model ook de historie: elke herziening is een instantie, en
+// wat `het herziene uurloon` van januari 2026 was is naast dat van juli 2026 na
+// te rekenen zonder het model te veranderen.
+//
+// Wat hier *niet* wordt uitgerekend is de herzieningsfactor zelf. Artikel 14
+// lid 3 definieert de contractloonontwikkeling als "het gemiddelde van de
+// procentuele ontwikkeling van de contractlonen … zoals deze door het Centraal
+// Planbureau wordt bekend gemaakt" -- een publicatie van een ander, en per lid
+// 1 en 2 een combinatie van MEV- en CEP-ramingen. Dat is invoer. Wat de wet
+// zelf rekent zijn lid 4 (niet verlagen), lid 9 (afronden op € 0,60) en lid 10
+// (het uurloon uit het maandloon), en dat staat in
+// `h2-minimumloon/art-14-herziening.rgs.md`.
+
+// Bron: [art. 14 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=14&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype de Herziening (mv: Herzieningen) (bezield)
+	de ingangsdatum          Datum in dagen;
+	--- wat de minister vaststelt (artikel 14 lid 1 tot en met 3)
+	het vorige maandloon     Bedrag;
+	de herzieningsfactor     Rekenfactor;
+	--- wat de wet erover rekent (artikel 14 lid 4, 9 en 10)
+	het ongeronde maandloon  Bedrag;
+	het herziene maandloon   Bedrag;
+	het herziene uurloon     Uurbedrag;

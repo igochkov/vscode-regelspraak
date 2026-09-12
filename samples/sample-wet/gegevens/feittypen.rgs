@@ -1,0 +1,61 @@
+// Feittypen (§13.3.9): de relaties waarlangs een onderwerpketen loopt. De
+// kardinaliteitsregel onderaan elk blok is vrije tekst op de rolnamen na.
+//
+// De rolnamen zijn met opzet geen van alle gelijk aan een objecttypenaam: een
+// rol die `de werkgever` heet naast `Objecttype de Werkgever` is één sleutel,
+// en dan is elk gebruik van het woord dubbelzinnig (RS115). Vandaar
+// `de wederpartij` -- het woord dat artikel 5 lid 2 zelf gebruikt voor de
+// andere kant van de overeenkomst.
+
+// Artikel 4 lid 1: werknemer is wie "in dienstbetrekking staat". Deze relatie is
+// de "staat in" van die zin.
+// Bron: [art. 4 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=4&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype arbeidsverhouding van de werkende
+	de werkende                       Natuurlijke persoon
+	de betrekking (mv: betrekkingen)  Arbeidsverhouding
+	Eén werkende staat in één betrekking
+
+// Artikel 5 lid 1: "de persoon, tot wie een werknemer in dienstbetrekking
+// staat". Artikel 5 rekent niets uit -- het wijst aan, en dat is precies wat een
+// feittype doet.
+// Bron: [art. 5 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=5&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype arbeidsverhouding met de wederpartij
+	de wederpartij                      Werkgever
+	de aanstelling (mv: aanstellingen)  Arbeidsverhouding
+	Eén wederpartij is partij bij meerdere aanstellingen
+
+// Artikel 8 lid 1 onder c rekent per uitbetalingstermijn, en het minimumuurloon
+// dat daarbij hoort is dat van de werknemer. Deze relatie is de weg van het
+// tijdvak naar de persoon.
+// Bron: [art. 8 lid 1 onder c](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype beloning van de werknemer
+	de beloonde werknemer         Natuurlijke persoon
+	het tijdvak (mv: tijdvakken)  Uitbetalingstijdvak
+	Eén beloonde werknemer wordt beloond over meerdere tijdvakken
+
+// Artikel 15 lid 1: "8% van zijn ten laste van de werkgever komende loon".
+// Welk loon dat is, is het loon van artikel 6 over de termijnen die in het
+// bijslagtijdvak vallen -- en welke termijnen dat zijn is de administratie van
+// de werkgever en geen rekensom. Dus is het een feittype: de relatie zelf is
+// de selectie.
+// Bron: [art. 15 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=III&artikel=15&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype opbouw in het vakantiejaar
+	het opbouwjaar                                        Vakantiejaar
+	het meetellende tijdvak (mv: meetellende tijdvakken)  Uitbetalingstijdvak
+	Eén opbouwjaar bouwt op over meerdere meetellende tijdvakken
+
+// Artikel 15 lid 1 geeft het recht aan "de werknemer", dus moet een vakantiejaar
+// kunnen zeggen wie dat is.
+// Bron: [art. 15 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=III&artikel=15&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype vakantiebijslag van de werknemer
+	de bijslaggerechtigde               Natuurlijke persoon
+	het bijslagjaar (mv: bijslagjaren)  Vakantiejaar
+	Eén bijslaggerechtigde bouwt op in meerdere bijslagjaren
+
+// Artikel 18c lid 1 legt de boete op aan "degene op wie de verplichtingen
+// rusten" -- de werkgever van artikel 5.
+// Bron: [art. 18c lid 1](jci1.3:c:BWBR0002638&hoofdstuk=IV&artikel=18c&lid=1&g=2026-07-01&z=2026-07-01)
+Feittype beboeting van de werkgever
+	de overtreder                         Werkgever
+	de constatering (mv: constateringen)  Overtreding
+	Eén overtreder wordt beboet voor meerdere constateringen

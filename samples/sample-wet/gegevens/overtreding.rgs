@@ -1,0 +1,31 @@
+// De Overtreding: één door een toezichthouder geconstateerde overtreding.
+//
+// Waarom dit een objecttype is en niet iets dat het model zelf maakt: artikel
+// 18b zegt wat als overtreding wordt *aangemerkt*, en dat leest het model af
+// (de kenmerken op het uitbetalingstijdvak en het vakantiejaar). Maar artikel
+// 18c legt de boete op "namens Onze Minister" door een aangewezen ambtenaar, en
+// artikel 18e wil daarvoor een rapport. Het bestaan van een overtreding is dus
+// een bestuurlijke handeling en geen rekenuitkomst -- een instantie komt van
+// buiten, en het model rekent er alleen de hoogte bij.
+//
+// Bezield, zodat artikel 18f met `zijn` en `hij` over haar kan schrijven.
+//
+// Het overtredingsnummer is de letter van artikel 18b lid 1:
+//   1 = onder a, girale voldoening van het minimumloon (artikel 7, 7a)
+//   2 = onder b, voldoening van de minimumvakantiebijslag (artikel 15, 16)
+//   3 = onder c, inhouding op of verrekening met het minimumloon (artikel 13)
+//   4 = onder d, schriftelijk overeenkomen van stukloonwerk (artikel 12b)
+//   5 = onder e, compenseren of betalen van langere arbeidsduur (artikel 13a)
+
+// Bron: [art. 18b lid 1](jci1.3:c:BWBR0002638&hoofdstuk=IV&artikel=18b&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype de Overtreding (mv: Overtredingen) (bezield)
+	de constateringsdatum            Datum in dagen;
+	het overtredingsnummer           Numeriek (positief geheel getal);
+	--- recidive (artikel 18f lid 2 tot en met 5)
+	het recidivegetal                Numeriek (niet-negatief geheel getal);
+	de ernstige overtreding          Boolean;
+	de eerdere ernstige overtreding  Boolean;
+	--- de hoogte (artikel 18f lid 1, 2 en 6)
+	het basisboetebedrag             Bedrag;
+	de verhogingsfactor              Numeriek (positief geheel getal);
+	de bestuurlijke boete            Bedrag;
