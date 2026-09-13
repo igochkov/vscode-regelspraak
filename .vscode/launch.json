@@ -35,6 +35,7 @@
 			// extension host with SIGABRT about a second into activation — see
 			// the comment at `serverOptions` in client/src/extension.ts.
 			"autoAttachChildProcesses": true,
+			"trace": true,
 			"preLaunchTask": {
 				"type": "npm",
 				"script": "watch"
