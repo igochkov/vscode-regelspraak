@@ -209,6 +209,60 @@ Images are relative paths resolved against the notebook file, so
 `![Figuur 1](media/staffel.png)` in a prose cell renders from a `media/` folder
 beside it. Pasting an image into a cell writes the file there for you.
 
+That is for a picture you drew. For a picture *of what the rule does*, write a
+`// Visualisatie:` block above a `Testgeval` instead and the cell draws it from
+the run:
+
+````markdown
+```testspraak
+// Visualisatie: staffel
+//   x:      leeftijd van de Natuurlijke persoon
+//   y:      staffelminimumuurloon van de Natuurlijke persoon
+//   reeks:  leerling in de beroepsbegeleidende leerweg
+Testgeval De staffel per 1 juli 2026
+	Gegeven een Natuurlijke persoon (R15) met
+		geboortedatum  01-01-2011
+	…
+	Verwacht R18 met
+		staffelminimumuurloon  7,50 EUR/uur
+```
+````
+
+Five rules of thumb, and the first is the one that makes the rest work.
+
+**Seat the sweep in the testgeval.** A testgeval may declare as many instances
+as it likes, and the run computes every one of them — so fourteen personen at
+fourteen geboortedata *is* the staffel, and nothing more is needed to draw it.
+Sweeping a **parameter** or the rekendatum is a different thing: a testgeval
+holds one of each, so that would be one run per value and there is no syntax for
+it.
+
+**Name model things**, and let completion write them. `x:` and `y:` take
+`<attribuut> van de <Objecttype>`;
+`reeks:` takes a kenmerk of that same object type and splits the points into two
+series. One object type per figure — the points of a series are one instance
+each, so two axes about two types have nothing to join on. `y:` may be repeated
+for several series over one x, and `uitkomst:` (in a `regime`) names the
+attribute that says which of them applies.
+
+**Pick the kind from the shape of the rule.** `staffel` for a value that is
+constant within a bracket — a beslistabel on a leeftijd, an inkomensstaffel.
+`lijn` for a value over a continuous axis. `regime` for two rules competing.
+`balk` for a value per instance with no scale under it. `tabel` for the numbers
+without a picture.
+
+**Keep the `Verwacht` lines.** The figure and its verification are one cell, so
+a figure that has gone stale is a red test rather than a wrong picture — assert
+the edges and the interesting steps rather than every point.
+
+**One figure per bepaling, about that bepaling.** A chart of this artikel's own
+rule projects the text. A dashboard over the whole model has stopped projecting
+and started being a second place to understand the law.
+
+The block is an ordinary comment, so the model has never heard of it: nothing is
+stored, the file is still the model, and a kind or a name it cannot read is a
+warning (RS127) on the line with the ordinary verdict underneath.
+
 ## Naming
 
 **Lowercase, hyphenated, Dutch, and named after the subject.** `boete.rgs`, not

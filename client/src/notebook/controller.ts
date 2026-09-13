@@ -54,8 +54,10 @@ import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 
 import { MODEL_LANGUAGE, TEST_LANGUAGE } from '../languages';
-import { TestRun } from '../testExplorer';
 
+import { RunChart, TestRun } from '../testExplorer';
+
+import { altTextOf, drawable, svgOf, tableOf, textOf } from './chart';
 import { NOTEBOOK_TYPE } from './serializer';
 import { RULE_CELL, asMarkdown, asText, verdictOf } from './verdict';
 
@@ -220,12 +222,19 @@ export class TestgevalController {
 				return;
 			}
 			const verdict = verdictOf(runs);
-			await execution.replaceOutput(new vscode.NotebookCellOutput([
-				vscode.NotebookCellOutputItem.text(asMarkdown(verdict), 'text/markdown'),
-				// The same content for copying into a ticket, as W3's text form
-				// exists to be — a rendered output cannot be selected out of.
-				vscode.NotebookCellOutputItem.text(asText(verdict), 'text/plain')
-			]));
+			await execution.replaceOutput([
+				// [V-1]: the figure leads and the verdict follows it. A chart
+				// *projects* what the run derived; the thing that says whether the
+				// model is right is still the `Verwacht` lines, so it is drawn
+				// above them and never instead of them.
+				...runs.flatMap(figureOf),
+				new vscode.NotebookCellOutput([
+					vscode.NotebookCellOutputItem.text(asMarkdown(verdict), 'text/markdown'),
+					// The same content for copying into a ticket, as W3's text form
+					// exists to be — a rendered output cannot be selected out of.
+					vscode.NotebookCellOutputItem.text(asText(verdict), 'text/plain')
+				])
+			]);
 			execution.end(verdict.passed, Date.now());
 		} finally {
 			this.running.delete(keyOf(cell));
@@ -258,7 +267,11 @@ export class TestgevalController {
 			// already uses, reached by handing over a token nobody had to invent.
 			runs.push(await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
 				textDocument: { uri },
-				case: name
+				case: name,
+				// [V-1]: only a notebook asks. The Test Explorer runs the same
+				// testgeval and wants pass or fail, and a cell is the one place a
+				// figure has to be drawn.
+				chart: true
 			}, token));
 		}
 		return runs;
@@ -312,6 +325,69 @@ function changesTheModel(event: vscode.NotebookDocumentChangeEvent): boolean {
 	return event.contentChanges.length > 0
 		|| event.cellChanges.some(one =>
 			one.document !== undefined && one.cell.kind === vscode.NotebookCellKind.Code);
+}
+
+/**
+ * What a run's figure becomes under the cell, or nothing ([V-1], [V-3]).
+ *
+ * **The trust decision is made here rather than left to the workbench**, and it
+ * is the one thing §4.1's measurement of this API found that [V-3a] did not
+ * predict. VS Code's built-in renderer does list `image/svg+xml` — the claim
+ * holds, in the manifest and in the implementation, in 1.101, 1.123 and 1.137 —
+ * but its code reads `if (!workspace.isTrusted) return`, so in an untrusted
+ * workspace it renders **nothing at all**: the mime is still supported, so the
+ * workbench still picks it, and the reader gets a blank output under a cell that
+ * ran perfectly. So the picture is offered only where it can be drawn, and the
+ * table is what an untrusted workspace gets — which is rung 1 doing the job it
+ * was kept for.
+ *
+ * **One item on the SVG output.** An output's items are alternative
+ * representations and the workbench picks one by an order this side does not
+ * control; the pair below is the one `verdict.ts` already proves (markdown wins
+ * over plain), and adding a `text/plain` beside a picture would be betting on an
+ * order nobody here has measured. The table form is where the copy-out text is.
+ */
+function figureOf(run: TestRun): vscode.NotebookCellOutput[] {
+	if (run.chartProblem) {
+		return [new vscode.NotebookCellOutput([
+			vscode.NotebookCellOutputItem.text(`*${run.chartProblem}*`, 'text/markdown'),
+			vscode.NotebookCellOutputItem.text(`${run.chartProblem}
+`, 'text/plain')
+		])];
+	}
+	const chart = run.chart;
+	if (!chart) {
+		return [];
+	}
+	if (drawable(chart) && vscode.workspace.isTrusted) {
+		return [new vscode.NotebookCellOutput(
+			[vscode.NotebookCellOutputItem.text(svgOf(chart), 'image/svg+xml')],
+			// Read by the built-in renderer, which prepends it as the picture's own
+			// `<title>` — so the alt text is on the element a screen reader reaches
+			// rather than only on the `<svg>` this side wrote.
+			{ vscode_altText: altTextOf(chart) })];
+	}
+	return [new vscode.NotebookCellOutput([
+		vscode.NotebookCellOutputItem.text(tableForm(chart), 'text/markdown'),
+		vscode.NotebookCellOutputItem.text(textOf(chart), 'text/plain')
+	])];
+}
+
+/**
+ * The table, with the one line that says why it is a table.
+ *
+ * Only where a picture was asked for and could not be drawn: a `tabel` asked for
+ * a table and gets one with nothing to explain, and a reader who wrote `staffel`
+ * and met a table would otherwise be left to guess at a silent downgrade.
+ */
+function tableForm(chart: RunChart): string {
+	const table = tableOf(chart);
+	if (chart.kind === 'tabel' || !drawable(chart)) {
+		return table;
+	}
+	return `${table}
+
+*In een niet-vertrouwde werkmap wordt geen tekening getoond.*`;
 }
 
 /** A cell is identified by its own document, which is what an execution is per. */

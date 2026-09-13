@@ -390,6 +390,79 @@ Testgeval Een bbl-leerling van 21 krijgt het volle minimumuurloon
 		minimumuurloon  14,99 EUR/uur
 ```
 
+### De staffel in één figuur
+
+De rekenvoorbeelden hierboven controleren elk één trede. Dit testgeval zet ze
+naast elkaar: zestien personen op acht geboortedata, één reeks per staffel. De
+`// Visualisatie:`-regels zijn gewoon commentaar — het model kent ze niet, en het
+notebook leest ze om te weten wat het naast het oordeel tekent ([V-1]).
+
+Wat de figuur laat zien en de wettekst niet: dat de treden naar boven toe
+grotere stappen maken, en dat één dag geboortedatum tussen 20 en 21 drie euro
+per uur scheelt. De verwachtingen eronder zijn de randgevallen — de halve cent
+bij 18, het grootste verschil tussen de twee staffels bij 20, en de terugval op
+het volle uurloon bij 21.
+
+```testspraak
+// Visualisatie: staffel
+//   x:      leeftijd van de Natuurlijke persoon
+//   y:      staffelminimumuurloon van de Natuurlijke persoon
+//   reeks:  leerling in de beroepsbegeleidende leerweg
+Testgeval De staffel per 1 juli 2026
+	Gegeven een Natuurlijke persoon (R15) met
+		geboortedatum  01-01-2011
+	Gegeven een Natuurlijke persoon (R16) met
+		geboortedatum  01-01-2010
+	Gegeven een Natuurlijke persoon (R17) met
+		geboortedatum  01-01-2009
+	Gegeven een Natuurlijke persoon (R18) met
+		geboortedatum  01-01-2008
+	Gegeven een Natuurlijke persoon (R19) met
+		geboortedatum  01-01-2007
+	Gegeven een Natuurlijke persoon (R20) met
+		geboortedatum  01-01-2006
+	Gegeven een Natuurlijke persoon (R21) met
+		geboortedatum  01-01-2005
+	Gegeven een Natuurlijke persoon (R22) met
+		geboortedatum  01-01-2004
+	Gegeven een Natuurlijke persoon (L15) met
+		geboortedatum  01-01-2011
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L16) met
+		geboortedatum  01-01-2010
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L17) met
+		geboortedatum  01-01-2009
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L18) met
+		geboortedatum  01-01-2008
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L19) met
+		geboortedatum  01-01-2007
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L20) met
+		geboortedatum  01-01-2006
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L21) met
+		geboortedatum  01-01-2005
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven een Natuurlijke persoon (L22) met
+		geboortedatum  01-01-2004
+		is leerling in de beroepsbegeleidende leerweg
+	Verwacht R18 met
+		staffelminimumuurloon  7,50 EUR/uur
+	Verwacht L18 met
+		staffelminimumuurloon  6,82 EUR/uur
+	Verwacht R20 met
+		staffelminimumuurloon  11,99 EUR/uur
+	Verwacht L20 met
+		staffelminimumuurloon  9,22 EUR/uur
+	Verwacht R21 met
+		staffelminimumuurloon  14,99 EUR/uur
+	Verwacht L21 met
+		staffelminimumuurloon  14,99 EUR/uur
+```
+
 ### Het vorige halfjaar staat in `tests/`
 
 De bedragen van 1 januari 2026 horen bij een andere parameterset, en een

@@ -60,6 +60,49 @@ in the Testing view, under the notebook, and it is one request either way.
 Editing any code cell clears every output, the run having been against a model
 that no longer exists.
 
+**And a `// Visualisatie:` comment draws what the rule does, beside the rule.**
+A jurist reading artikel 8 of the Wet minimumloon can see the staffel written
+out and cannot see that its risers grow towards the top, or that one day of
+geboortedatum between 20 and 21 is € 3,00 an hour. Four comment lines above a
+`Testgeval` close that, and nothing was missing from the language to do it — a
+testgeval that seats sixteen personen on eight geboortedata *is* the staffel, and
+the run already computes every one of those values:
+
+```testspraak
+// Visualisatie: staffel
+//   x:      leeftijd van de Natuurlijke persoon
+//   y:      staffelminimumuurloon van de Natuurlijke persoon
+//   reeks:  leerling in de beroepsbegeleidende leerweg
+Testgeval De staffel per 1 juli 2026
+```
+
+The cell answers with the figure above its verdict. The axes name an
+**attribuut** and the reeks a **kenmerk** — things the model declares, not
+colours or scales, and completion offers them by name: the kinds after
+`Visualisatie:`, the keys on a fresh line, and each axis as the whole phrase with
+the article its declaration was written with, so `van het Lid` rather than `van
+de Lid`. Once one line has named an object type the others are offered that
+type's members alone. There are five kinds: `staffel` (a step, which is what a
+beslistabel on a leeftijd draws), `lijn`, `regime` (several rules competing over
+one axis, with `uitkomst:` naming the one that applies), `balk` and `tabel`.
+
+It is a **comment**, so the language has never heard of it: no grammar change,
+nothing stored in the file, and the file is still the model. The testgeval keeps
+its `Verwacht` lines, which is what makes a figure that has gone stale a **red
+test** rather than a wrong picture, and **RS127** reports a directive that cannot
+be drawn — an unknown kind, an axis naming no attribuut of an objecttype, a reeks
+that is no kenmerk of it, or a directive written above a rule, where there is
+nothing to draw. A warning and never an error: the model is correct and its
+annotation is wrong, so a mistyped chart does not refuse a run, and the cell
+prints the ordinary verdict underneath.
+
+Colours come from the theme's own chart palette, and the group a `reeks` leaves
+over — `overig` — is drawn in the neutral ink rather than in a colour of its own,
+so the kenmerk you asked about is the one that stands out. Where two lines hold
+the same value they are still two lines: the one on top is dashed, so the one
+underneath shows through. In a workspace you have not trusted, VS Code's own
+renderer draws no SVG at all, so the cell shows the table instead and says why.
+
 **And a workspace folder is now one model.** The server held one index for the
 whole window, so two reglementen open at once shared a namespace: every
 `Deelnemer` collided with every other, a duplicated rule name was `RS607` on two

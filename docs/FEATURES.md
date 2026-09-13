@@ -88,6 +88,32 @@ happened. Laying out either is [AUTHORING.md](AUTHORING.md).
   it does from a file; drawing the trace under the cell would print forty lines
   under every expectation. Breakpoints, the Test Explorer and **Leg uit** all
   reach into a cell, a cell being a document like any other.
+- **A `// Visualisatie:` comment draws the effect of a rule beside the rule.**
+  A testgeval that seats fourteen personen at fourteen geboortedata *is* the
+  staffel, and the run already computes all fourteen values — so four comment
+  lines above a `Testgeval` say what to draw with them, and the cell answers with
+  a figure above its verdict:
+
+  ```
+  // Visualisatie: staffel
+  //   x:      leeftijd van de Natuurlijke persoon
+  //   y:      staffelminimumuurloon van de Natuurlijke persoon
+  //   reeks:  leerling in de beroepsbegeleidende leerweg
+  Testgeval De staffel per 1 juli 2026
+  ```
+
+  The axes name an **attribuut** and the reeks a **kenmerk** — things the model
+  declares, not colours or scales — and completion offers them: the kinds after
+  `Visualisatie:`, the keys on a fresh line, and each axis as the whole phrase
+  with the article the declaration was written with. Once one line names an
+  object type the others are offered its members alone. Five kinds: `staffel` (a step, which is what a
+  beslistabel on a leeftijd draws), `lijn`, `regime` (several rules competing
+  over one axis, with `uitkomst:` naming the one that applies), `balk` and
+  `tabel`. It is a *comment*, so the language has never heard of it: the file is
+  still the model, nothing is stored, and an unknown kind or a misspelled name is
+  a warning on the line with the ordinary verdict underneath. The testgeval keeps
+  its `Verwacht` lines, which is what makes a figure that has gone stale a red
+  test rather than a wrong picture.
 - **A figure goes beside the notebook.** Images in a prose cell are relative
   paths resolved against the file, and pasting one into a cell writes it into a
   `media/` folder named after the notebook rather than loose in the model root.

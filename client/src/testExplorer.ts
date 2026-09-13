@@ -384,6 +384,61 @@ export interface TestRun {
 	 * rather than empty: nothing ran, which is not the same as nothing firing.
 	 */
 	coverage?: string[];
+	/**
+	 * The figure a `// Visualisatie:` directive describes ([V-1]), when the run
+	 * was asked for one — see the server's `protocol.ts`.
+	 *
+	 * Only the notebook asks: a cell is where a figure is drawn, and the Testing
+	 * view running the same testgeval wants pass or fail.
+	 */
+	chart?: RunChart;
+	/** Why there is no figure, where a directive was written and could not be drawn. */
+	chartProblem?: string;
+}
+
+/**
+ * A figure over one run ([V-2], [V-10]) — see the server's `protocol.ts`.
+ *
+ * Declared here because it crosses this wire: a field the client's own types do
+ * not name is a field nothing on this side can read, which is how `RunDetail.
+ * skipped` shipped on every detailed run and was invisible to every reader of it
+ * until UX-2 went looking.
+ */
+export interface RunChart {
+	kind: 'staffel' | 'lijn' | 'regime' | 'balk' | 'tabel';
+	title: string;
+	subject: string;
+	x?: ChartAxis;
+	value: ChartAxis;
+	series: ChartSeries[];
+	/** Instances the run holds no place for, counted rather than quietly dropped. */
+	missing?: number;
+}
+
+export interface ChartAxis {
+	label: string;
+	unit?: string;
+	scale: 'getal' | 'datum' | 'tekst';
+}
+
+export interface ChartSeries {
+	label: string;
+	/** `regime`'s `uitkomst`: the series that says which of the others applies. */
+	outcome?: true;
+	/** The instances a `reeks` leaves over — see the server's `protocol.ts`. */
+	complement?: true;
+	points: ChartPoint[];
+}
+
+export interface ChartPoint {
+	instance: string;
+	/** Where it sits on the x scale; absent where the value is leeg or categorical. */
+	x?: number;
+	/** The same x as the language writes it. */
+	xLabel: string;
+	y?: number;
+	/** A RegelSpraak literal, `leeg` where there is no value — never parsed here. */
+	yLabel: string;
 }
 
 /** The server's answer about the model's regelversies — see its `protocol.ts`. */
