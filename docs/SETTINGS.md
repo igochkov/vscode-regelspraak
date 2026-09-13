@@ -19,6 +19,23 @@ Every setting the extension contributes, and the editor defaults it sets for
 | `regelspraak.server.path` | *(empty)* | Path to a language server build. Empty uses the bundled server. |
 | `regelspraakLanguageServer.trace.server` | `off` | Traces LSP communication into the output channel. |
 
+## Notebooks
+
+**A notebook adds no setting, and that is deliberate.** Juridische modus is the
+kind of document you open rather than a mode to switch on, so there is nothing
+to configure: every setting above applies to a `.rgs.md` notebook exactly as it
+does to the `.rgs` files beside it, and asks about the notebook's own file — so
+`format.enable` off leaves a cell's layout alone, `validation.scope: workspace`
+sweeps a notebook nobody has open, and `execution.blockOnErrors` counts an error
+in a cell like any other.
+
+Two of VS Code's own settings are worth knowing. The extension sets
+`markdown.copyFiles.destination` for `**/*.rgs.md`, so an image pasted into a
+prose cell lands in a `media/` folder beside the notebook rather than loose in
+the model root. And `notebook.outline.showCodeCells` — off by default, and VS
+Code's rather than ours — puts the declarations and rules of the code cells in
+the outline beside the document's headings.
+
 `strictPrecision` and `emptyValueHazards` quiet whole families rather than filter
 their output: a family that is off is never run. They exist because `RS4xx` and
 `RS5xx` report a *judgement* — that a precision is unclear, that a value might be
@@ -29,21 +46,27 @@ empty — rather than an error of fact.
 A RegelSpraak sentence cannot be broken across lines. The specification makes the
 newline significant (§13.1.8) and gives it a job — it ends a rule's name,
 separates versions, bullets and variables — so a result sentence stays on one
-line however long it grows. The extension therefore turns **soft** wrapping on
-for `.rgs` files, which changes the display and never the file:
+line however long it grows. Soft wrapping would therefore be the obvious kindness,
+and the extension shipped it until `1.0.0`. It is **off** now, and the reason is
+the one thing on the other side of the trade:
 
 | Setting | Default here | What it does |
 | --- | --- | --- |
-| `editor.wordWrap` | `bounded` | Wraps at the column below, or the width of the editor, whichever is narrower. |
-| `editor.wordWrapColumn` | `100` | Around a tenth of the lines in a typical model reach it. |
-| `editor.wrappingIndent` | `deepIndent` | Indents a continuation two levels, so it reads as part of the sentence above rather than a new one. |
+| `editor.wordWrap` | `off` | Nothing wraps. A sentence longer than the window runs past the right edge. |
+| `editor.wordWrapColumn` | `100` | Inert while the wrap is off; the width to bound it at if you turn it on. |
+| `editor.wrappingIndent` | `deepIndent` | Likewise inert; it indents a continuation two levels, so it reads as part of the sentence above rather than as a new one. |
 
-Override any of them for yourself in user or workspace settings, and they win
-over these:
+**An aligned decision table is wider than any wrap column worth having** — 112 to
+124 columns in the samples — so under a bounded wrap the rows the formatter has
+just lined up are exactly the ones that fold, and the pipes stop lining up. On the
+old default, formatting a table made it *look* worse. A sentence that runs off the edge,
+by contrast, is visibly incomplete and one keystroke from being read.
+
+Turn it back on for yourself in user or workspace settings, which win over these:
 
 ```json
 "[regelspraak]": {
-	"editor.wordWrap": "off"
+	"editor.wordWrap": "bounded"
 }
 ```
 

@@ -19,4 +19,20 @@ syntaxes/*.json text eol=lf
 # binds the table is *refused* — which is what the E2E suite reports, and what CI
 # never sees, being Linux. Unlike the two rules above this one is not about a
 # file showing as modified: the content is the contract.
-samples/externe-tabellen/*.csv text eol=lf
+samples/workspace/single-folder/externe-tabellen/*.csv text eol=lf
+samples/sample-wet/externe-tabellen/*.csv text eol=lf
+
+# A `.rgs.md` notebook, whose cells the editor writes back through
+# `notebook/serializer.ts` — and that serializer normalises every line it writes
+# to LF, deliberately: a cell's text comes from a TextDocument the workbench
+# owns, which on Windows is CRLF, so without it a notebook read from an LF file
+# came back with a CR on every line inside the fences and none on the blank lines
+# between the cells.
+#
+# That fixes what is *written* and not what is *checked out*. With core.autocrlf
+# on — the Windows default — git hands out CRLF, and the first save of any
+# notebook then rewrites every line of the file: a one-word change reviews as a
+# whole-document diff, on a document whose whole point is that it diffs as prose.
+# Pinning is what keeps the working copy and the blob the same thing, and it is
+# `eol=lf` rather than `-text` for the reason the rule above it gives.
+*.rgs.md text eol=lf

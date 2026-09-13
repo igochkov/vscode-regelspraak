@@ -7,14 +7,314 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
+
+**A model can now be written as the document it renders.** Until now the text
+came first and the rules rendered it afterwards, from a folder of `.rgs` files
+with a `// Bron:` line back to each provision. That is the right shape for a
+converted PTPO and the wrong one for a jurist writing a regulation: the sentence
+and the rule that computes it are written together, by the person who means
+both, and a folder cannot hold them in one place. So the extension now offers
+**two ways to write one model**, and the mode is the kind of document you open
+rather than a setting:
+
+- **Technische modus** — everything that was here before: `.rgs` and
+  `*.test.rgs` files in `gegevens/`, `regels/` and `tests/`, over a source
+  document under `bron/`.
+- **Juridische modus** — a **notebook**: an `.rgs.md` document in which the
+  regulation's text and its RegelSpraak alternate, in the order the text has,
+  with the worked example under the provision it checks.
+
+**The file is Markdown.** A fenced block whose language is `regelspraak` or
+`testspraak` is a code cell and everything between two of them is prose; no
+outputs, no execution counters and no cell metadata are stored, so the document
+is readable and diffable as what it is — a regulation in review is a pull request
+over prose. *Openen met → Teksteditor* shows the same file as text, and
+**Reglement bekijken** renders the whole of it in VS Code's Markdown preview,
+fences and all.
+
+**A notebook is one file to the model**, exactly as a `.rgs` file is: its
+`regelspraak` cells in order are one rule group and its `testspraak` cells in
+order are one test set. Everything the language server does in a file, it does in
+a cell — colour, the whole diagnostics catalogue, completion, hover, the
+outline, folding, definition, references, rename, formatting, quick fixes,
+signature help, the decision-table preview, the Model Explorer, the hierarchies
+and **Leg uit** — with a diagnostic landing in the cell it is about.
+
+**One notebook is one article**, and the folders above it are the levels the
+document itself has. An amendment amends an article, so a legal change is then
+the diff of one file, and a rule's citation is the lid it stands under rather
+than the chapter. Declarations stay in `gegevens/` beside the notebooks.
+
+**A rule's citation is its position.** Hovering a rule in a notebook names the
+nearest heading above its cell and lists the source links in the prose between
+them, a Juriconnect reference to Dutch law included, read back in words. An
+explicit `// Bron:` line in the cell wins where a rule renders something else.
+
+**You run the rekenvoorbeeld, not the regel.** A `testspraak` cell's run button
+runs its test cases, and a `regelspraak` cell's says to press that one
+instead: a run evaluates the whole model against a situation, so *running a
+rule* was always *running a test case and looking at one rule*. Under the cell each `Verwacht` line gets its verdict, with
+the expected and the actual value where they differ; the same test cases are
+in the Testing view, under the notebook, and it is one request either way.
+Editing any code cell clears every output, the run having been against a model
+that no longer exists.
+
+**And a `// Visualisatie:` comment draws what the rule does, beside the rule.**
+A jurist reading article 8 of the Minimum Wage Act can see the scale written
+out and cannot see that its risers grow towards the top, or that one day of
+birth date between 20 and 21 is € 3,00 an hour. Four comment lines above a
+`Testgeval` close that, and nothing was missing from the language to do it — a
+test case that seats sixteen people on eight birth dates *is* the scale, and
+the run already computes every one of those values:
+
+```testspraak
+// Visualisatie: staffel
+//   x:      leeftijd van de Natuurlijke persoon
+//   y:      staffelminimumuurloon van de Natuurlijke persoon
+//   reeks:  leerling in de beroepsbegeleidende leerweg
+Testgeval De staffel per 1 juli 2026
+```
+
+The cell answers with the figure above its verdict. The axes name an
+**attribute** and the reeks a **characteristic** — things the model declares, not
+colours or scales, and completion offers them by name: the kinds after
+`Visualisatie:`, the keys on a fresh line, and each axis as the whole phrase with
+the article its declaration was written with, so `van het Lid` rather than `van
+de Lid`. Once one line has named an object type the others are offered that
+type's members alone. There are five kinds: `staffel` (a step, which is what a
+decision table on a leeftijd draws), `lijn`, `regime` (several rules competing over
+one axis, with `uitkomst:` naming the one that applies), `balk` and `tabel`.
+`balk` and `tabel` need no `x:` at all, and are the two kinds whose x may name a
+**Tekst** attribute — one bar per afdeling, which is the ordinary bar chart. The
+lines under the opener need not be indented: what makes a line part of the figure
+is that it begins with one of the four keys, which is also what keeps a
+`// Bron:` line in the same comment block out of it.
+
+It is a **comment**, so the language has never heard of it: no grammar change,
+nothing stored in the file, and the file is still the model. The test case keeps
+its `Verwacht` lines, which is what makes a figure that has gone stale a **red
+test** rather than a wrong picture, and **RS127** reports a directive that cannot
+be drawn — an unknown kind or key, a key stated twice where one is meant, an axis
+naming no attribute of an object type, a reeks that is no characteristic of it, a second
+figure under the first, or a directive written above a rule, where there is
+nothing to draw. A warning and never an error: the model is correct and its
+annotation is wrong, so a mistyped chart does not refuse a run, and the cell
+prints the ordinary verdict underneath. Where the directive reads but the
+test case seats no instance of the type it is about, the cell says so in a
+sentence rather than drawing an empty table.
+
+Colours come from the theme's own chart palette, and the group a `reeks` leaves
+over — `overig` — is drawn in the neutral ink rather than in a colour of its own,
+so the characteristic you asked about is the one that stands out. Where two lines hold
+the same value they are still two lines: the one on top is dashed, so the one
+underneath shows through. Both axes are named, with their unit; the ticks are the
+run's own values, spelled the way the model spells them — including the zero a
+bar is measured from, which is why a bar chart of negative amounts hangs its bars
+from that line and why an axis of **dates** is drawn over the dates it holds
+rather than from day zero. In a workspace you have not trusted, VS Code's own
+renderer draws no SVG at all, so the cell shows the table instead and says why.
+
+**And a workspace folder is now one model.** The server held one index for the
+whole window, so two regulations open at once shared a namespace: every
+`Deelnemer` collided with every other, a duplicated rule name was `RS607` on two
+files whose authors each wrote something correct, and a duplicated **object
+type** was no report at all — just a reference with two answers, resolved by
+whichever file happened to be indexed first. Each workspace folder now has its
+own model. Workspace symbol search still spans them and says which folder a hit
+is in; the Model Explorer groups by folder where there is more than one; a run
+sees its own folder's documents and no others.
+
+**`.test.rgs` files have their own language id**, `testspraak`, which a cell
+needs — a cell has no suffix to decide its grammar by — and which would have been
+a wrinkle to explain for ever if files and cells had answered to different
+names. Nothing changes about what a test set is or how it behaves.
+
+No new setting. VS Code's own `notebook.outline.showCodeCells` puts a cell's
+declarations in the outline beside the document's headings, and the extension
+points `markdown.copyFiles.destination` at a `media/` folder beside the notebook
+so a pasted figure lands there.
+
+[samples/workspace/sample-notebook/](samples/workspace/sample-notebook) is the
+worked example: chapter 10 of the Boekerij regulation, one notebook per
+article, over the declarations an engineer wrote beside it.
+
+### Which of your model the tests actually run
+
+**The Testing view has a `Dekking` profile beside `Uitvoeren`.** It runs the
+test cases you pick and then marks the model: green in the gutter for every
+rule version a run fired, red for every one nothing reached, and the Test Coverage
+view lists them by name — `bepaal boete · geldig altijd` — with a percentage per
+file and per folder. Open a file and the versions nothing ran are the red blocks
+down its left edge.
+
+**The unit is the rule version and not the rule**, and that is the whole point of
+it. A calculation date selects at most one version of a rule (§4.2, and RS601 forbids
+two from overlapping), so a test set that reckons in 2027 can never reach a
+`geldig t/m 2026` beside it — and a count over rules would call such a model
+fully tested. The sample workspace had exactly that gap: all six of its test sets
+reckon in 2027, so `bepaal oude contributie · geldig t/m 2026` had never been run
+by anything. A decision table has versions the same way and is measured the same
+way.
+
+**Gevuurd is the strict reading, and it is the language's own word** — §8.1.9 and
+a `Verwacht Regelversie … gevuurd is` line already ask exactly this question. So
+a version whose condition never held in any test case counts as uncovered: its
+derivation has never run. Files nothing touched are in the report as well, since
+a file with no coverage at all is exactly the file you are looking for. A
+notebook is measured per cell where you have it open and per file otherwise, so
+juridische modus is covered like anything else.
+
+`npm run model -- tested <map…>` is the same figure from the command line, for a
+build or for a look without the editor. It names every version nothing fires and
+the line it is written on, and it does **not** fail over them — which half of a
+two-version pair deserves a test case is yours to decide. A test case that could
+*not run* does fail it, since a coverage figure computed over fewer runs than the
+folder has is a figure about a broken test set rather than about the model.
+
+### Arithmetic with the numbers a real model carries
+
+**A factor with ten or more decimals would not compute, and now does.** Reported
+from a production model: `het te gebruiken pensioenvermogen gedeeld door de
+contantewaardefactor`, with a present-value factor as the administration
+delivers it — `1,6802319798572` — produced **no** value at all and reported *het
+getal is te groot om exact mee te rekenen* at run time, about an operand smaller
+than two and an answer of roughly 59,515. The threshold sat between eight and
+ten decimals, and the declared domain made no difference: `Numeriek (getal)`
+failed identically.
+
+**The limit was not in the number but in the division.** RegelSpraak computes
+exactly, with fractions, and a division is precisely where such a fraction earns
+its denominator: 100,000 over that factor is a fraction with a numerator of
+2,5·10^17, and the numerator was not allowed to be larger than what an ordinary
+number holds exactly. That is no longer a limit. The answer is `€ 59.515,59`,
+and the factor may carry the fourteen decimals the chain delivers it with, and
+far beyond.
+
+**There is still a limit, and it is now in the error message.** A value is a
+fraction of two integers of at most **a thousand digits** each; where a
+computation runs past that, the message says how many significant digits it
+needed instead of calling the number "too large". A thousand is far beyond what
+a model writes: the factor from that report has fourteen, and every division in
+a row adds up. What does *not* happen is silent rounding to the declared
+precision — better no answer than an answer that is a cent short.
+
+**A rounding beyond fifteen decimals works now too.** `afgerond op 20 decimalen`
+used to be refused because the number could not be represented; that was a limit
+of the representation and not of §6.1.3, and it no longer holds.
+
+**And nor does a product of two fractional powers.** Reported separately, as a
+new limit: one `tot de macht` with a fractional exponent computed at ten
+decimals, but two such powers multiplied refused from nine — and only where both
+answers were irrational. It is the same limit one operator over: two values of
+nine decimals ask together for eighteen digits in the denominator. It went with
+the above, and the model from that report now computes at any number of decimals
+it writes.
+
+**Why no diagnostic appeared on the literal.** The report asked for one first,
+and there is nothing to report: `1,6802319798572` is a perfectly good value that
+adds, multiplies and compares — what overflowed was the *quotient*, and how
+large that is depends on the other operand, which arrives from a `Gegeven` line
+or a `Gegevensbron`. A report on the literal would have been a guess about a
+sentence that is correct. That the limit was not a property of anything the
+editor can see is exactly why you met it only at run time — and that is what has
+been taken away here rather than reported.
+
+**Two things lying quietly underneath came with it.** A `Gegevensbron` key and a
+year as a period bound both asked whether the *denominator* was 1, and a
+test case writes `2025,00` — where the value is whole and the spelling is not,
+so such a key addressed no cell. And a written number with fourteen decimals was
+put through a rounding for display, so it could stand in a trace differently
+from the way it was written.
+
+**Two sentences the editor and the engine read differently.** Both reported by a
+team writing legislative rules with it, both reproduced, both the same fault in
+two guises: one layer read the words, the other read the tree.
+
+**`hij heeft de actieve reservering` fell over at run time and the editor said
+nothing.** The article belongs to a characteristic's *declaration* (§13.3.2
+writes `de actieve reservering  kenmerk (bezittelijk)`) and not to its name;
+naming it afterwards is `een <kenmerknaam>` or nothing at all. Because `de` and
+`het` are ordinary name words too — `het jaar uit omloop` — the greedy name
+swallowed the article, the rule parsed, the sentence coloured, F12 and rename
+worked, and only the run fell over, with *is geen characteristic of rol die de engine
+kent*. The engine now reads the article the way every other layer does, and
+**RS126** says the sentence is wrong nonetheless: a model written that way is
+rejected by ALEF and by every other v2.3.0 implementation. It is reported only
+where the name *without* the article does resolve, and the quick fix takes away
+exactly that word.
+
+**And a sibling bullet after a nested group was evaluated inside that group.**
+Bullet nesting is carried by the number of `•` (§8.3.2), and a grammar cannot
+count: once a nested head had been entered, every following bullet line
+disappeared into it, however shallow. So
+
+    indien hij aan alle van de volgende voorwaarden voldoet:
+        • hij voldoet aan geen van de volgende voorwaarden:
+            •• hij is jeugdlid
+        • zijn leeftijd is kleiner dan 0.
+
+read as `alle( geen(jeugdlid, leeftijd < 0) )` instead of `alle( geen(jeugdlid),
+leeftijd < 0 )` — `waar` where the sentence says `onwaar`, with a clean parse,
+clean diagnostics and a rule that fired. The depth is read now. A model written
+entirely at one depth means what it always meant: a group always takes the item
+after its head, and only a bullet shallower than that first member closes the
+group. There is no diagnostic with it — the sentence was simply correct.
+
+**And a `die` subselection was applied only where it wrapped the whole chain.**
+§13.4.2 #8 lets `… die <predicaat>` stand anywhere in a chain, and the ordinary
+place is in the middle: in `de som van de bedragen van alle bijdragen van de Pot
+die een grote storting zijn` the predicate selects the contributions and
+`bedragen` then reads off what is left. That filter was dropped — the sum added
+everything up, with no report, no fault and a clean parse. Over three deposits
+of € 50, € 60 and € 500 of which only the last carries the characteristic:
+€ 610,00 where the model says € 500,00. All three filter forms, with and without
+a role chain, now compute what is written.
+
+**And it was dropped in three other places as well**, two of them worse than a
+sum that runs high: a **distribution** (§9.7) gave an equal share to recipients the
+subselection excludes, a variable under **`Daarbij geldt:`** summed the
+unfiltered set, and a **consistency rule** (§9.5) reported an inconsistency on a
+model that is correct, the requirement having been checked against elements the
+sentence is not about. And in a fifth: the **target** of an assignment (`Het
+merk van alle bijdragen van de Pot die een grote storting zijn moet gesteld
+worden op 7 EUR`), where a rule writes per instance. There the filter chose the
+wrong instance or none at all — it was ignored, so the sentence wrote to a
+contribution it excludes. All five now compute what is written, and none of
+these places quietly produces a wrong number any more.
+
+### How many rules a model has
+
+**The Model Explorer counted rule groups, not the rules in them.** A model that
+uses `Regelgroep` everywhere has no flat list of rules left — every rule hangs
+under its group — so the row *Regelgroepen 12* counted groups and the number a
+reader is looking for was stated nowhere. Behind that count now stands what
+those groups hold: **Regelgroepen  12 (98 regels, 7 beslistabellen)**. Each rule
+group says it of itself as well — *contributie  8 regels* — so which group is
+the big one is visible, and in a window with more than one workspace folder the
+folder row counts *every* rule in that folder, including the ones that stand
+outside a group.
+
+### Word wrap is off by default
+
+**A `.rgs` file wrapped at column 100 by default, and that made formatting
+visibly worse.** An aligned `Beslistabel` is 112 to 124 columns wide, so under a
+bounded wrap the rows that folded were precisely the ones **Document opmaken**
+had just aligned: the pipes stood less neatly under one another after formatting
+than before. Wrapping is now off for `.rgs` and `*.test.rgs` — a sentence longer
+than the window runs off the right edge, which is visible and breaks nothing.
+<kbd>Alt</kbd>+<kbd>Z</kbd> turns it on for the file in front of you, and
+`"[regelspraak]": { "editor.wordWrap": "bounded" }` in your own settings beats
+this default.
+
 ## [0.9.5] — Recursion, shared parameter values, and what real models asked for
 
-**Parameter values that several testsets share can be declared once, as a
-`Parameterset`.** A testset states one rekendatum and one set of parameter
-values; where the values are about the *model* rather than about that testset — a
-tariff table, the thresholds of a scheme — writing them out per testset is as
+**Parameter values that several test sets share can be declared once, as a
+`Parameterset`.** A test set states one calculation date and one set of parameter
+values; where the values are about the *model* rather than about that test set — a
+tariff table, the thresholds of a scheme — writing them out per test set is as
 many places for one table to drift. Declare it once instead, in a `*.test.rgs`
-file that holds no testset:
+file that holds no test set:
 
 ```
 Parameterset Tarieven 2027
@@ -24,7 +324,7 @@ geldig vanaf 2027 t/m 2027
 	het verhoogde boetetarief  0,40 EUR/dag
 ```
 
-and name it beside the rekendatum of every testset that runs on it:
+and name it beside the calculation date of every test set that runs on it:
 
 ```
 Testset Aflossing van een boete in termijnen
@@ -32,18 +332,18 @@ Rekendatum 15-06-2027
 Parameterset Tarieven 2027
 ```
 
-The set is the **bottom of three layers**: a testset's own `Parameters` block
-overrides it by name, and a testgeval's overrides both, each replacing only the
+The set is the **bottom of three layers**: a test set's own `Parameters` block
+overrides it by name, and a test case's overrides both, each replacing only the
 lines it states. So one case can take another tariff in one line and keep the
 rest of the set.
 
 **The `geldig` line is required, and it is what the construct is for.** It does
-not choose the set — the testset names the one it wants — it is the check that
-the set you named is the set your rekendatum belongs to. Naming the 2027 tariffs
-in a testset that reckons on 2028 is the one mistake nothing else here can see:
+not choose the set — the test set names the one it wants — it is the check that
+the set you named is the set your calculation date belongs to. Naming the 2027 tariffs
+in a test set that reckons on 2028 is the one mistake nothing else here can see:
 every value is type-correct, every name resolves, the run is green, and the
 numbers are a year out. That is **RS965** now, on the line that states the date —
-the testgeval's own where it overrides the testset's, so a testset of forty cases
+the test case's own where it overrides the test set's, so a test set of forty cases
 inheriting one date says it once. Where the values genuinely do not depend on a
 period, `geldig altijd` says so in the language's own word.
 
@@ -56,11 +356,11 @@ declares is RS964, and the run refuses on the same finding the editor shows, as
 every RS95x already does.
 
 `samples/tests/parameterwaarden.test.rgs` is the example, and it is where five of
-the six sample testsets used to repeat the same seven lines.
+the six sample test sets used to repeat the same seven lines.
 
-**A kenmerk check is about the subject the sentence names.** `indien zijn reis
+**A characteristic check is about the subject the sentence names.** `indien zijn reis
 een onbelaste reis is` is about the reis — and RS116 judged it against the rule's
-subject, so a kenmerk the model plainly declares was reported as one the subject
+subject, so a characteristic the model plainly declares was reported as one the subject
 had not got. Three declarations are enough to see it and no example model wrote
 the sentence, which is why it stood this long; a converted model wrote it twelve
 times. The rule reads and runs as it always did — what changes is that the editor
@@ -72,7 +372,7 @@ found by converting a real project and reading the result. A percentage kept its
 value in the middle of it — *"Vanaf «de luchthaven van vertrek van de vlucht»
 zijn geen klimaatneutrale vluchten mogelijk."* — converts now: it had been
 declining as something the language cannot say, and the language says it. An
-input ALEF leaves empty is left empty rather than costing the whole testgeval. A
+input ALEF leaves empty is left empty rather than costing the whole test case. A
 rule outcome beside an expectation the language cannot write survives instead of
 going with it. And ALEF's **flow layer is not converted at all**, that
 functionality being deprecated: the flows and the flow tests are skipped and the
@@ -87,11 +387,11 @@ Where two models would land on the same name the second is numbered and the
 report says so, instead of quietly replacing the first.
 
 **And importing from ALEF writes them.** ALEF holds a parameterset as a model of
-its own and stores no reference from a testset to one — which set applies is
+its own and stores no reference from a test set to one — which set applies is
 worked out from the validities — so the import writes each set as its own library
-file and names, in every testset, the set whose period covers that testset's
-rekendatum. Where two sets cover it the second one's values are written into the
-testset, and where none does, no set is named: the conversion report says which
+file and names, in every test set, the set whose period covers that test set's
+calculation date. Where two sets cover it the second one's values are written into the
+test set, and where none does, no set is named: the conversion report says which
 happened, because a set named against the wrong year is exactly the mistake
 RS965 exists to catch. It also fixes a period ALEF states as a bare year, which
 was being converted to 1 January at both ends — at the `t/m` end that ended the
@@ -132,7 +432,7 @@ to bound something. `RS620` is the reverse and the one worth knowing about: a
 mark under which nothing actually recurses is a licence lying about for a loop
 somebody adds by accident later.
 
-**The Boekerij example shows it.** Article 8 of the reglement gained the
+**The Boekerij example shows it.** Article 8 of the regulation gained the
 instalment scheme, `gegevens/boeteschuld.rgs` the two object types and the
 self-relating fact type that is the chain, and
 `regels/h4-uitlening/art-08-boete-in-termijnen.rgs` the recursive group — its own
@@ -142,7 +442,7 @@ it is worth one extra file. `tests/boetetermijnen.test.rgs` runs both bounds.
 
 **A run says which round a value came from.** The panel writes `herhaling 3`
 beside the rule, on a write, on a skipped rule and on a fault; the debugger's
-Variables pane states it beside the rekendatum, which is what tells sixty stops
+Variables pane states it beside the calculation date, which is what tells sixty stops
 on one rule apart. And a group whose bound does not work is not a hang: after a
 thousand rounds the run reports a *modelfout* naming the group and the creation
 rule, and then carries on deriving everything else.
@@ -165,7 +465,7 @@ a negative exponent inverts, and a fractional power of a negative number is
 refused for the reason a square root of one is.
 
 **A whole number written with decimals is a whole number.** This is what made
-the above visible on a testgeval where the year fraction is exactly one: a
+the above visible on a test case where the year fraction is exactly one: a
 `Gegeven` line writes `1,000000` and the value is stored as it was written, so
 the check for a whole exponent — which looked at the written form rather than at
 the value — called a plain 1 a fraction. Two more places asked the same question
@@ -188,7 +488,7 @@ the figure produced a general parse error naming a place rather than a cause
 all** — the cell parses as free text and is only read per column afterwards, so
 the condition column quietly contributed no condition, every row's conditions
 then held for every case, and the top row fired regardless of the value: on a
-two-row staffel, no diagnostic, no fault, and 500 where the model says 0. That
+two-row scale, no diagnostic, no fault, and 500 where the model says 0. That
 is the one this release is really about.
 
 It reports the Dutch grouping and nothing wider — a leading group of one to three
@@ -196,8 +496,8 @@ digits, then groups of exactly three, decimals only on the last, all of it writt
 without spaces — so a sentence that ends in a number (`… op 500.`) and a date
 written with dots (`01.01.2027`, which is a different mistake) are left alone, as
 are numbers inside comments, text values, enumeration values and file paths. It
-is offered in a `*.test.rgs` testset as readily as in a model, since a worked
-example is copied into a testgeval as readily as into a rule. A model carrying one
+is offered in a `*.test.rgs` test set as readily as in a model, since a worked
+example is copied into a test case as readily as into a rule. A model carrying one
 does not run: the run refuses with the file and the line named, which is what
 makes the decision-table case safe.
 
@@ -208,8 +508,8 @@ admits — RegelSpraak has no thousands separator and `RS005` reports one writte
 into a model — and the grouping is a display, exactly as ALEF shows a grouped
 number over a value it stores ungrouped. That is what a projectional editor
 does, and there was no reason this one could not answer the same question when
-asked. It works in a testset as readily as in a rule, and in a decision table's
-cells, where a staffel of amounts actually lives.
+asked. It works in a test set as readily as in a rule, and in a decision table's
+cells, where a scale of amounts actually lives.
 
 Numbers of four digits with no decimals stay silent: that is the shape of a year,
 and `2026` grouped as `2.026` is no spelling anybody writes. `1000,00` answers,
@@ -217,7 +517,7 @@ which is the currency case this is for.
 
 **A `// Bron:` line can cite a provision in Dutch law, by the Juriconnect
 standard.** Until now a citation had to be a Markdown link to a document in the
-workspace, which is right for a reglement or a contract and has nothing to offer
+workspace, which is right for a regulation or a contract and has nothing to offer
 a model derived from a *regeling*: the provision lives at `wetten.overheid.nl`
 and there is no file to point at. So the other form the Dutch legal world already
 uses is read as a citation too —
@@ -234,7 +534,7 @@ reference in a Markdown link where you would rather name the article yourself.
 
 **The editor reads it back to you**, because ninety characters of `&key=value` is
 not something anybody parses: the hover states the provision in words —
-*Hoofdstuk 2, artikel 13 — BWBR0035878* — and the same words are the tooltip of
+*Chapter 2, article 13 — BWBR0035878* — and the same words are the tooltip of
 the link in the text. A `&g=`/`&z=` date pair comes out as *(geldig op
 24-04-2026)*, in the date order a model writes, and the zichtdatum is named only
 where it differs from the geldigheidsdatum. Nothing is written back; the document
@@ -286,9 +586,9 @@ A model can now declare a table it does not contain. **`Gegevensbron`** is a
 GegevensSpraak declaration for an externally supplied table — its key columns
 marked `(sleutel)`, one value column — and a rule reads from it with
 `<waarde> uit <bron> bij <sleutel>, <sleutel> en <sleutel>`. The model states the
-*shape* and never the content: what the table holds is bound in a testset,
-either as a miniature inside a testgeval (`Gegeven de tarieftabel met de rijen`)
-or for the whole testset from a delivery on disk (`Gegevensbronnen` /
+*shape* and never the content: what the table holds is bound in a test set,
+either as a miniature inside a test case (`Gegeven de tarieftabel met de rijen`)
+or for the whole test set from a delivery on disk (`Gegevensbronnen` /
 `de tarieftabel  uit "externe-tabellen/tarieftabel.json"`), where the path names a
 manifest saying how the file is written. A run says which delivery it read. A
 lookup on a key the content does not carry is a `modelfout`, never `leeg`.
@@ -301,10 +601,10 @@ and changes nothing for a model that does not use it. `docs/FEATURES.md`
 describes it in full; the decision record is the server repository's [D-58].
 
 Also new: a **parameter with a timeline** (`Parameter … voor elke maand;`, §3.8)
-now takes several period lines in a testset and evaluates as the timeline it
+now takes several period lines in a test set and evaluates as the timeline it
 declares; `RS705` reports a time-dependent value written to an attribute the
 model keeps once; `RS960` reports overlapping periods while you type; and a
-testgeval without `Verwacht` lines — a scenario — is reported as *skipped*
+test case without `Verwacht` lines — a scenario — is reported as *skipped*
 rather than passed, and its run lens says `scenario uitvoeren`.
 
 **Rules that derive their values from each other are now reported while you
@@ -324,19 +624,19 @@ naming a value the table does not have; `RS123` — the wrong number of keys;
 `RS124` — a table no rule anywhere reads (a warning, as an unused declaration is
 elsewhere); `RS125` — a key whose datatype or unit does not fit the axis it
 addresses, exact rather than convertible, because a key addresses a cell. In a
-testset, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
+test set, `RS961`–`RS963` — a table nothing declares, a row with the wrong number
 of keys, a key stated twice. A lookup expression is typed as the table's value
 column is declared, so the existing datatype, unit and precision checks reason
 about `het tarief uit de tarieftabel bij …` exactly as about the attribute
 `het tarief`. Completion offers the declared tables after `uit`.
 
-**Smaller things.** A kenmerk may carry a **timeline**, as §13.3.2 admits
+**Smaller things.** A characteristic may carry a **timeline**, as §13.3.2 admits
 (`is verzekerd voor elke dag;`): the model reads it now, so the Tijdlijn it names
 gets colour, navigation and rename, and `RS117` where it names none — the engine
-still refuses a time-dependent kenmerk with a fault. Formatting indents a
+still refuses a time-dependent characteristic with a fault. Formatting indents a
 `Gegevensbron`, a `Gegevensbronnen` block and the rows of a miniature. The sample
 workspace gained `externe-tabellen/` with a tariff table, its manifest, the
-declaration that describes it and a testset that binds it. A delivery a testset
+declaration that describes it and a test set that binds it. A delivery a test set
 binds is kept parsed under `.regelspraak/cache/` so a later run need not read it
 again; **`regelspraak.execution.cacheExternalData`** switches that off for anyone
 who would rather nothing were written into the workspace, and a cache file for a
@@ -361,68 +661,66 @@ just failed, beside the run links you already have; the editor's context menu on
 a value; and **RegelSpraak: Leg uit** in the palette. The link appears when a run
 leaves a failure and is gone again the moment the expectation passes or you edit
 the line. In a
-testset the explanation is about the instance the `Verwacht`/`Gegeven` block
+test set the explanation is about the instance the `Verwacht`/`Gegeven` block
 names; in a rule file it is about every instance the run has. Where no rule wrote
 the value, the panel states which of the recorded facts holds instead of guessing
 why. The editor entry appears only where there is an answer.
 
-**De trace komt op afroep.** Een uitgebreide uitvoering noemt nu elke schrijving
-maar draagt de binnenkant van geen enkele mee — de rekenstappen en de operanden
-zijn het grootste deel van een trace en tellen voor de ene schrijving die je aan
-het najagen bent. Ze komen op de klik die de rij opent, uit de uitvoering die het
-paneel al tekende. Je merkt er weinig van: een rij vouwt open zoals altijd en
-zegt heel even *ophalen…*. Wat het wél verandert is dat een klik in het paneel
-over **die** uitvoering gaat en niet over een verse — tot nu toe voerde elk
-gebaar het model opnieuw uit, dus een klik antwoordde over het model zoals je het
-intussen had getypt. Op de modellen die hier draaien scheelt het 33 tot 52% aan
-overdracht per uitvoering; op een model met duizenden instanties is het het
-verschil tussen megabytes en niet. **Als tekst openen** haalt eerst alles op, want
-een tekstdocument kan niet nahalen terwijl je leest — de tekstvorm blijft dus
-compleet, en blijft wat je in een ticket plakt. Is een uitvoering niet meer
-beschikbaar, dan zegt de rij dat en biedt aan het testgeval opnieuw uit te voeren.
+**The trace comes on demand.** A detailed run now names every write but carries
+the inside of none of them — the computation steps and the operands are the
+largest part of a trace, and they count for the one write you are chasing. They
+arrive on the click that opens the row, out of the run the panel already drew.
+You notice little of it: a row unfolds as always and says *ophalen…* for a
+moment. What it does change is that a click in the panel is about **that** run
+and not about a fresh one — until now every gesture ran the model again, so a
+click answered about the model as you had since typed it. On the models that run
+here it saves 33 to 52% of the transfer per run; on a model with thousands of
+instances it is the difference between megabytes and not. **Als tekst openen**
+fetches everything first, because a text document cannot catch up while you read
+it — so the text form stays complete, and stays what you paste into a ticket.
+Where a run is no longer available, the row says so and offers to run the
+test case again.
 
-**Een verzameling uitklappen.** `de som van de premies van alle deelnemers`
-over vijfhonderd instanties, een klein beetje verkeerd, is de bug waar je een
-middag mee kwijt bent: de som staat in de trace en het element dat de
-uitschieter is staat nergens. Een aggregatie in de trace draagt nu een
-**uitklappen**-knop, en die opent de elementen erachter — één rij per element,
-met de instantie waar het bij hoort en zijn waarde, **grootste eerst**, omdat je
-op een uitschieter jaagt. De kop *instantie* geeft je de eigen volgorde van het
-model terug en *waarde* de gesorteerde; een lange lijst toont er twintig met
-**toon alle …** eronder. Waar de waarden niet met elkaar te vergelijken zijn —
-tekst, of twee eenheden — blijft de volgorde van het model staan in plaats van
-dat er een verzonnen wordt. Er wordt niets extra's vastgelegd tijdens een
-uitvoering, dus een gewone run wordt er geen byte zwaarder van: uitklappen voert
-het testgeval opnieuw uit en rekent de zin daar uit. Dat is het ene gebaar in het
-paneel dat nog over een verse uitvoering gaat en niet over de uitvoering die het
-paneel tekende — de elementen komen uit de situatie van een run, en die bestaat
-alleen zolang die run loopt. Klap je iets uit nadat je het model hebt getypt, dan
-zie je de elementen van het model zoals het er nu staat. In de **debugger** doet
-hetzelfde zich voor waar het al hoorde: een Watch-antwoord dat een verzameling is krijgt
-het uitklappijltje van de Variabelen-lade, en een verzameling schrijft zich daar
-nu als *512 waarden* in plaats van als een regel van vijfhonderd getallen.
+**Expanding a collection.** `de som van de premies van alle deelnemers` over five
+hundred instances, a little bit wrong, is the bug that costs you an afternoon:
+the sum is in the trace and the element that is the outlier is nowhere. An
+aggregation in the trace now carries an **uitklappen** button, and it opens the
+elements behind it — one row per element, with the instance it belongs to and
+its value, **largest first**, because you are hunting an outlier. The
+*instantie* header gives you the model's own order back and *waarde* the sorted
+one; a long list shows twenty with **toon alle …** under it. Where the values
+cannot be compared with one another — text, or two units — the model's own order
+stays rather than one being invented. Nothing extra is recorded during a run, so
+an ordinary run gets not a byte heavier: expanding runs the test case again and
+computes the sentence there. That is the one gesture in the panel that is still
+about a fresh run rather than about the run the panel drew — the elements come
+out of a run's situation, and that exists only while the run lasts. Expand
+something after you have typed at the model and you see the elements of the
+model as it now stands. In the **debugger** the same happens where it already
+belonged: a Watch answer that is a collection gets the expand arrow of the
+Variabelen pane, and a collection writes itself there as *512 waarden* instead
+of as a line of five hundred numbers.
 
-**Vergelijk met vorige uitvoering.** De tweede vraag na *waarom* is *wat is er
-veranderd*, en tot nu toe moest je daarvoor twee panelen naast elkaar houden.
-**RegelSpraak: Vergelijk met vorige uitvoering** — in het palet, in het
-Test Results-menu op een mislukte verwachting, en als knop in het uitkomstpaneel
-— voert het testgeval uit en zet er een afdeling **Veranderd (n)** boven: één rij
-per waarde die verschoven is (`25 euro → 30 euro`), per kenmerk dat erbij kwam of
-wegging, per regel die nu wel of niet meer vuurt of vaker vuurde, en per fout die
-verscheen of verdween. Klik een verschoven waarde en je krijgt de afleiding
-ervan, over dezelfde uitvoering — dus zonder opnieuw te draaien. Is er niets
-verschoven, dan zegt het dat ook. En **Als tekst openen** geeft je in een
-vergelijking de twee uitvoeringen naast elkaar in VS Code's eigen diff-venster,
-compleet, met elk verschil rood en groen gemarkeerd. De vorige uitvoering is de
-vorige *volledige* uitvoering van dat testgeval — die uit de Testing-weergave
-telt niet mee, want daar wordt geen detail opgehaald.
+**Compare with the previous run.** The second question after *why* is *what
+changed*, and until now that meant holding two panels side by side.
+**RegelSpraak: Vergelijk met vorige uitvoering** — in the palette, in the Test
+Results menu on a failed expectation, and as a button in the outcome panel —
+runs the test case and puts a **Veranderd (n)** section above it: one row per
+value that moved (`25 euro → 30 euro`), per characteristic that arrived or went,
+per rule that now fires or no longer fires or fired more often, and per fault
+that appeared or disappeared. Click a moved value and you get its derivation,
+over that same run — so without running again. Where nothing moved, it says so
+too. And **Als tekst openen** gives you, in a comparison, the two runs side by
+side in VS Code's own diff window, complete, with every difference marked red
+and green. The previous run is the previous *detailed* run of that test case —
+the one from the Testing view does not count, since no detail is fetched there.
 
 **Time-dependent values are drawn as a track.** A period list is faithful and
 unreadable the moment a knip lands one day off, so the panel now draws them above the
 list as a dated timeline: blocks in proportion to their length with their values
 on them, **an axis with the date of every knip beneath it**, an empty stretch
 shaded as the gap it is, an open period running off the edge, and the
-**rekendatum as a labelled cursor** — because *which period is the run actually
+**calculation date as a labelled cursor** — because *which period is the run actually
 standing in* is what most timeline bugs reduce to. Hovering a block gives the
 whole period and value; a label that will not fit is left out rather than drawn
 over its neighbour, and the list below has all of them. Every colour is a chart variable, so your theme owns it,
@@ -445,7 +743,7 @@ one case a run alone could never diagnose. The fifth cause, an operand that was
 leeg, leaves a write behind and is answered by the derivation, which shows that
 operand.
 
-A rule that has **no regelversie covering the rekendatum** used to be indis-
+A rule that has **no rule version covering the calculation date** used to be indis-
 tinguishable from a rule that simply fired nowhere; the run records it now, with
 the periods the rule does have.
 
@@ -483,7 +781,7 @@ previously cached reading in place, so rules went on getting the numbers from th
 outlived the editor so restarting did not help. A cached table is now used only
 where the delivery and the manifest that read it are both unchanged.
 
-**Running a testgeval while the debugger is paused says so.** The engine runs one
+**Running a test case while the debugger is paused says so.** The engine runs one
 thing at a time, and a debug session holds it for as long as you are stopped at a
 breakpoint — so **Testgeval uitvoeren**, **Regel uitvoeren**, **Leg uit** and
 opening a collection queued behind it and looked frozen, with the stop button
@@ -499,7 +797,7 @@ so a delivery no longer leaves an untracked binary for you to find in
 
 A model that already exists in **ALEF** — the Belastingdienst's MPS-based
 modelling environment — no longer has to be re-typed by hand. The extension
-reads such a project and writes its declarations, its rules and its testsets as
+reads such a project and writes its declarations, its rules and its test sets as
 RegelSpraak text, into the folders a model is laid out in, with a report of
 everything it could not translate.
 
@@ -515,14 +813,14 @@ it renders**, and the editor follows that citation to the article. A name may
 contain an **apostrophe**, so `euro's` and `cd's` are finally spellable, and it
 may contain words the editor used to keep to itself, so `de afstand tot
 bestemming` parses. A declaration need not spell out its **plural** — the
-editor works the form out, and says which one it worked out. And a testgeval
-may state a fact from one of its ends, without naming the feittype at all.
+editor works the form out, and says which one it worked out. And a test case
+may state a fact from one of its ends, without naming the fact type at all.
 
-### Importeren uit ALEF
+### Importing from ALEF
 
-Point it at an ALEF project folder and it reads the models, then writes
-RegelSpraak text: the GegevensSpraak declarations, the rules, and the testsets,
-laid out the way **Document opmaken** would lay them out.
+Point **Importeren uit ALEF** at an ALEF project folder and it reads the models,
+then writes RegelSpraak text: the GegevensSpraak declarations, the rules, and the
+test sets, laid out the way **Document opmaken** would lay them out.
 
 **It is a one-shot migration, on purpose.** From the moment the files land the
 text is the model — there is no link back to the ALEF project, no re-import
@@ -542,7 +840,7 @@ authored, and an import that kept a second source of truth alive would undo that
   silence, and an ALEF construct with no RegelSpraak equivalent stops its own rule
   rather than producing a sentence that means something else.
 - **It writes the layout `docs/AUTHORING.md` describes**, into the folder you
-  have open: declarations in `gegevens/`, rules in `regels/`, the testsets in
+  have open: declarations in `gegevens/`, rules in `regels/`, the test sets in
   `tests/`, each created if it is not there yet, with the conversion report at
   the root. So an import lands as a model somebody can read rather than a heap
   somebody has to sort, and a model that already has those folders simply gains
@@ -640,7 +938,7 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
   specification puts **no word outside a name**, so each one that is reserved
   here is a limitation of this editor rather than of RegelSpraak, and the list is
   shrinking a word at a time.
-- **A feittype's relation description is free text, as the language says it is.**
+- **A fact type's relation description is free text, as the language says it is.**
   `één te verdelen ov-tegoed wordt verdeeld over één passagier` used to be
   rejected on `wordt verdeeld over` — a phrase RegelSpraak uses elsewhere, but
   the description between the two `één`/`meerdere` is prose and may say anything.
@@ -674,7 +972,7 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
 
 ### A fact stated from one end
 
-- **A testgeval may relate two instances without naming the feittype.** Writing a
+- **A test case may relate two instances without naming the fact type.** Writing a
   fact used to mean naming four things where two identify it:
 
   ```
@@ -687,56 +985,57 @@ ALEF, writes text, and hands nothing back, so from the moment the files land the
   Gegeven Centrum heeft Noor, Sam als ingeschreven lid
   ```
 
-  A feittype relates exactly two parties, so naming one end and one role names
-  the whole fact — the editor works out which feittype it is and which role the
+  A fact type relates exactly two parties, so naming one end and one role names
+  the whole fact — the editor works out which fact type it is and which role the
   subject plays. `Gegeven Noor heeft Sam als leespartner` works for a
   `Wederkerig feittype` for the same reason, with no separate form.
 
-  **It is derived only where exactly one feittype fits.** Where none does, or
+  **It is derived only where exactly one fact type fits.** Where none does, or
   where two do, the editor says so (**RS959**) and names the candidates; the long
   form is what to write there, and it is unchanged. That is the same rule the
   derived plurals follow: a form the editor works out never quietly overrides
   what a model actually says.
 
-  Completion follows: after `heeft` it offers the instances of the testgeval, and
+  Completion follows: after `heeft` it offers the instances of the test case, and
   after `als` the roles that instance's object type can actually stand opposite.
   One fact per line — `en` joins two roles of one fact in the long form, so it is
   not accepted in the short one — and lines accumulate rather than replace, so a
-  `Testinitialisatie` can seat the regulars and a testgeval add one.
+  `Testinitialisatie` can seat the regulars and a test case add one.
 
 ### A name that hides another name
 
-- **RS119 — een losse naam die het objecttype vóór het lid leest.** Heet een
-  attribuut net zo als een objecttype, dan las een kale verwijzing in een regel
-  altijd het **objecttype**: een losse naam wordt eerst tussen de globale namen
-  gezocht, en daar staat een objecttype wel en een attribuut niet. Niets was
-  onopgelost en niets was dubbelzinnig, dus de editor zweeg — en de uitvoering
-  eindigde met *geen instantie van dit objecttype in bereik* en een lege waarde.
+- **RS119 — a bare name that reads the object type before the member.** Where an
+  attribute is named the same as an object type, a bare reference in a rule
+  always read the **object type**: a bare name is looked up among the global
+  names first, and an object type is there while an attribute is not. Nothing
+  was unresolved and nothing was ambiguous, so the editor stayed silent — and
+  the run ended with *geen instantie van dit objecttype in bereik* and an empty
+  value.
 
-  De editor meldt die zin nu, met beide manieren om hem te schrijven erbij
-  (`zijn <naam>`, of `<naam> van <onderwerp>`), en biedt de eerste als snelle
-  oplossing aan waar het onderwerp bezield is. Hij spreekt **alleen** waar het
-  model het lid werkelijk kent, dus een objecttype als wortel van een keten
-  noemen blijft gewoon RegelSpraak — en `zijn <naam>` en `<naam> van <onderwerp>`
-  waren en blijven goed.
+  The editor now reports that sentence, with both ways of writing it beside it
+  (`zijn <naam>`, or `<naam> van <onderwerp>`), and offers the first as a quick
+  fix where the subject is animate. It speaks **only** where the model really
+  knows the member, so naming an object type as the root of a chain stays
+  ordinary RegelSpraak — and `zijn <naam>` and `<naam> van <onderwerp>` were and
+  remain correct.
 
-  RS115 waarschuwde al dát de twee namen bestaan, op de declaraties; dat blijft
-  een waarschuwing, want twee legale declaraties zijn geen fout. RS119 gaat over
-  de zin die er staat, en is daarom een fout.
+  RS115 already warned *that* the two names exist, on the declarations; that
+  stays a warning, since two legal declarations are not an error. RS119 is about
+  the sentence in front of you, and is therefore an error.
 
-- **Een uitvoering start niet meer op een model met een fout.** **Testgeval
-  uitvoeren**, **Regel uitvoeren** en <kbd>F5</kbd> weigeren zolang het venster
-  **Problemen** een fout toont, en noemen bestand, regel en code van elke fout in
-  de weigering. Een model met een fout kan niet betekenen wat er staat, en een
-  uitvoering erover leidt dan een verkéérd getal af in plaats van geen enkel.
+- **A run no longer starts on a model with an error.** **Testgeval uitvoeren**,
+  **Regel uitvoeren** and <kbd>F5</kbd> refuse for as long as the **Problemen**
+  panel shows an error, and name the file, the line and the code of every error
+  in the refusal. A model with an error cannot mean what it says, and a run over
+  it derives a *wrong* number rather than none at all.
 
-  De controle geldt voor het hele model, want een uitvoering leest alle regels:
-  een fout in een bestand dat u niet open hebt, blokkeert de uitvoering ook.
-  Waarschuwingen en hints tellen niet mee, en met `regelspraak.validation.enable`
-  uit blokkeert er niets — dan is het venster Problemen leeg op uw eigen verzoek.
-  Zet **`regelspraak.execution.blockOnErrors`** uit om toch uit te voeren.
+  The check covers the whole model, because a run reads every rule: an error in
+  a file you do not have open blocks the run too. Warnings and hints do not
+  count, and with `regelspraak.validation.enable` off nothing blocks — the
+  Problems panel is then empty at your own request. Turn
+  **`regelspraak.execution.blockOnErrors`** off to run anyway.
 
-### Waar een getal vandaan komt
+### Where a number comes from
 
 `0.7.0` made a run say which rule wrote a value and out of which other values.
 What it still could not say is what the arithmetic **in between** was worth: a
@@ -755,7 +1054,7 @@ about the sum in the middle, which is usually the one you are looking for.
   fault beside it already names the operation.
 
 - **The outcome panel has a keystroke.** `Alt+R` in a `.rgs` or `.test.rgs`
-  file opens the outcome of the testgeval the cursor is in, beside `Alt+B`
+  file opens the outcome of the test case the cursor is in, beside `Alt+B`
   and `Alt+Q` for the two characters the language needs. On Windows `Alt+R`
   is also the menu bar’s mnemonic for the Run menu; the binding is scoped to
   a focused RegelSpraak editor so it claims the key there and nowhere else.
@@ -776,7 +1075,7 @@ about the sum in the middle, which is usually the one you are looking for.
   matters because a rule fires once per instance and stepping every calculation
   of every one of them is not something anybody wants twice.
 
-  Two places deliberately do not step: a **beslistabel**, whose cells are
+  Two places deliberately do not step: a **decision table**, whose cells are
   sentences composed from a header and a value and so cannot be pointed at
   precisely, and a Watch expression, which must not be able to stop the run it is
   asking about. In a decision table `F11` behaves as `F10`.
@@ -790,7 +1089,7 @@ about the sum in the middle, which is usually the one you are looking for.
   trust would let any of them run anything.
 - **The example model shows the whole convention.** `samples/` is laid out by the
   document it renders now — a folder per chapter and a file per article under
-  `regels/`, with the (invented) reglement itself under `samples/bron/` — and
+  `regels/`, with the (invented) regulation itself under `samples/bron/` — and
   every declaration and rule in it carries a citation. `docs/AUTHORING.md`
   explains the layout, and why `gegevens/` is deliberately *not* organized that
   way.
@@ -813,7 +1112,7 @@ model, teaching one, asking what happens if.
 
 ### Added
 
-- **Step through a run.** Press <kbd>F5</kbd> in a testset and the model runs one
+- **Step through a run.** Press <kbd>F5</kbd> in a test set and the model runs one
   rule at a time. It stops **before** each rule fires, so what you see is the
   situation the rule is about to act on; **Continue** and **Step Over** move to
   the next rule × instance.
@@ -824,7 +1123,7 @@ model, teaching one, asking what happens if.
   derivation chain would show something that runs backwards in time as though it
   nested. That view is the run panel's and stays there.
 
-  **Variables** shows the rekendatum, the parameters, the rule's `Daarbij geldt`
+  **Variables** shows the calculation date, the parameters, the rule's `Daarbij geldt`
   variables and then the situation itself: every instance's attributes and
   characteristics, with `(invoer)` marking what you gave rather than what the
   model derived. The variables read *nog niet berekend* — the stop is before the
@@ -832,11 +1131,11 @@ model, teaching one, asking what happens if.
   value would mean inventing one.
 
 - **Breakpoints, including on a `Verwacht` line.** In a rule file a breakpoint
-  marks that rule. In a **testset** it marks *the rules that derive whatever the
+  marks that rule. In a **test set** it marks *the rules that derive whatever the
   line names*, because an expectation has no moment during a run: the useful
   reading of a mark there is not "stop at this assertion" but **"stop where this
   value comes from"**. A value line marks every rule that writes it; a block
-  header marks every rule behind any line beneath it; `Verwacht regelversie
+  header marks every rule behind any line beneath it; `Verwacht rule version
   <naam> is gevuurd` marks that rule outright.
 
   A mark taken from a `Verwacht <instantie> met` block **stops only for that
@@ -933,7 +1232,7 @@ model, teaching one, asking what happens if.
   plain text — `indien`, `moet gesteld worden op`, `kleiner is dan`, `n.v.t.`,
   the amounts, even the pipes. Only names showed, which made it look like a few
   missing keywords rather than a table with no highlighting at all.
-- **A testset's and testgeval's name reads as one name.** The label had no colour
+- **A test set's and test case's name reads as one name.** The label had no colour
   of its own, so whichever words inside it happened to be keywords lit up on
   their own — `Testgeval Een pasnummer **dat** de elfproef **niet** haalt`. It now
   gets the same treatment a rule name has always had.
@@ -957,27 +1256,27 @@ model, teaching one, asking what happens if.
 
 ### Fixed
 
-- Renaming a role left a `Feittype`'s cardinality line stale, and the feittype
+- Renaming a role left a `Feittype`'s cardinality line stale, and the fact type
   then recorded no cardinality at all — so the check that reads it went quiet.
   Rename covers that line now.
 - A run-time ambiguity message repeated everything the two readings agreed about
   instead of stating the choice between them.
 - `regelversie <naam> (<geldigheid>) gevuurd is` ignored the version qualifier and
-  answered about whichever version the rekendatum had selected.
+  answered about whichever version the calculation date had selected.
 
 ## [0.6.0] — The test language, and running it
 
 A second kind of file: `*.test.rgs`, where you write what a model is supposed to
-produce. A **testset** states the instances, the parameters and the rekendatum a
-run starts from; a **testgeval** says what it expects to come out of them. The
+produce. A **test set** states the instances, the parameters and the calculation date a
+run starts from; a **test case** says what it expects to come out of them. The
 editor treats it as part of the language rather than as a data file lying beside
 it, because every name in it is a name your GegevensSpraak declarations have
 already given a meaning — and the Test Explorer runs them.
 
 ### Added
 
-- **Testsets run, from the Test Explorer.** Every `*.test.rgs` file in the
-  workspace appears in VS Code's Testing view as a testset with its testgevallen
+- **Test sets run, from the Test Explorer.** Every `*.test.rgs` file in the
+  workspace appears in VS Code's Testing view as a test set with its test cases
   under it; running one evaluates the whole model against the situation it
   describes and checks its `Verwacht` lines. A failure is shown as a diff —
   expected against actual, in RegelSpraak's own notation, with the rule that
@@ -985,12 +1284,12 @@ already given a meaning — and the Test Explorer runs them.
   Values are compared by *value*, so `1,00 EUR`, `1 EUR` and `1,000 euro` all
   match one amount.
 
-  Three states rather than two, because they mean different things. A testgeval
-  that **cannot be composed** — an id nothing declares, no rekendatum — carries
+  Three states rather than two, because they mean different things. A test case
+  that **cannot be composed** — an id nothing declares, no calculation date — carries
   that finding on the item before you press anything, with the same code the
   editor underlines it with. A run that **could not proceed** is reported as an
   error rather than a failure: the model produced no answer, which is not the
-  same as producing a wrong one. And a testgeval with no `Verwacht` lines is
+  same as producing a wrong one. And a test case with no `Verwacht` lines is
   labelled *alleen uitvoeren*: it is a legitimate thing to write and running it
   proves the model does not fault on that situation, but a pass means less.
 - **`Regelgroep <naam>`** gives the rules of a file a name, which the outline and
@@ -1007,51 +1306,51 @@ already given a meaning — and the Test Explorer runs them.
   implements v2.3.0 strictly, so it is worth knowing you are opting in. (`//`
   comments are the other thing the specification does not define, and have been
   accepted since the first release — a file convention rather than a construct.)
-- **Testsets are written in the model's own vocabulary, and checked against it.**
+- **Test sets are written in the model's own vocabulary, and checked against it.**
   A `Gegeven` line names an object type and gives its attributes values; a
-  `Verwacht` line names those same attributes, or a kenmerk, or a rule whose
+  `Verwacht` line names those same attributes, or a characteristic, or a rule whose
   firing it expects. All of it resolves against the declarations in your `.rgs`
   files, so a name you get wrong is reported where you wrote it rather than when
   something eventually runs.
 - **Colour, outline, breadcrumbs and folding**, as for a model. Every name is
   coloured by what your declarations say it is; an instance id and a
   testinitialisatie name are local to their file and coloured as such. The
-  outline gives you the testset with each testgeval and each block beneath it,
+  outline gives you the test set with each test case and each block beneath it,
   and folding follows the same shape.
 - **Formatting** (<kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd>) that lines up the
   value column of every `Gegeven`, `Verwacht` and `Parameters` block — on the
   same terms as everywhere else, which is that only whitespace ever changes.
 - **Completion that knows which position you are in**: attribute names and
-  kenmerk forms inside a `met` block, instance ids after `Verwacht` and in the
+  characteristic forms inside a `met` block, instance ids after `Verwacht` and in the
   role list of a `Gegeven het feit` line, parameter names in a `Parameters`
-  block, and testinitialisatie names after `Gegeven testinitialisatie`. A kenmerk
+  block, and testinitialisatie names after `Gegeven testinitialisatie`. A characteristic
   completes in the form its own declaration prescribes — `is jeugdlid` where it
   is bijvoeglijk, `heeft het recht op verlenging` where it is bezittelijk.
 - **Hover**: an instance id hovers as the object type it stands for, and a name
   from the model hovers in a test file exactly as it does in the model.
-- **Navigation and rename cross between a testset and the model it tests.**
-  <kbd>F12</kbd> on a name in a testset goes to its declaration. Renaming an
+- **Navigation and rename cross between a test set and the model it tests.**
+  <kbd>F12</kbd> on a name in a test set goes to its declaration. Renaming an
   attribute (<kbd>F2</kbd>) in the model rewrites the `Verwacht` lines that name
-  it, in every testset — a rename that stopped at the model's own files would
-  leave a testgeval expecting something nobody declares any more. An instance id
+  it, in every test set — a rename that stopped at the model's own files would
+  leave a test case expecting something nobody declares any more. An instance id
   renames within its own file, which is the only place it means anything.
 
-  A testset **reads** the model and never derives anything in it. So a testgeval
+  A test set **reads** the model and never derives anything in it. So a test case
   is never an answer to *"which rule derives this?"*, and expecting a value does
-  not make a testset the thing that produces it.
+  not make a test set the thing that produces it.
 - **Eight checks of its own**, in Dutch and with stable codes, beside the
   reference codes `RS101`, `RS102`, `RS106` and `RS107`, which keep their
   meanings here:
 
   | Code | | What it reports |
   | --- | --- | --- |
-  | `RS951` | Error | The same instance id twice in one testgeval. |
+  | `RS951` | Error | The same instance id twice in one test case. |
   | `RS952` | Error | An id nothing declares — in a role, a `Verwacht` block or an include. |
   | `RS953` | Error | A value the attribute's declaration cannot hold: another datatype, another unit, or a period on an attribute that has no timeline. |
   | `RS954` | Warning | A `Verwacht` on something no rule derives — the expectation is testing your input against itself. |
   | `RS955` | Error | A `Gegeven` value on something a rule derives, which a run would overwrite. |
-  | `RS956` | Error | An unknown or duplicated testinitialisatie, two testgevallen with one name, or an include cycle. |
-  | `RS957` | Error | No rekendatum, in neither the testset nor the testgeval — and no run is defined without one. |
+  | `RS956` | Error | An unknown or duplicated testinitialisatie, two test cases with one name, or an include cycle. |
+  | `RS957` | Error | No calculation date, in neither the test set nor the test case — and no run is defined without one. |
   | `RS958` | Error | `leeg` or an `is geen …` under `Gegeven` instead of under `Verwacht`. Both are assertions; there is no such thing as handing an attribute the value “empty”. |
 
   Units are compared by meaning rather than by spelling here too, so `1,00 EUR`,
@@ -1062,16 +1361,16 @@ already given a meaning — and the Test Explorer runs them.
   `gegeven-feit` and `verwacht-regelversie` — each body validated against the
   test grammar on every build, as the model snippets are against the model
   grammar.
-- **Run from the text.** Above every testset there is an **alle testgevallen
-  uitvoeren** link and above every testgeval an **uitvoeren** link. They hand the
+- **Run from the text.** Above every test set there is an **alle testgevallen
+  uitvoeren** link and above every test case an **uitvoeren** link. They hand the
   work to the same Test Explorer the Testing view drives, so a run started in the
   text and a run started in the view are one run with one result — the item turns
-  green or red either way. A testgeval that cannot be composed keeps its link:
+  green or red either way. A test case that cannot be composed keeps its link:
   pressing it reports the finding with the code that caused it, which is worth
   more than a missing link.
 - **What a run computed, as a panel.** **Uitkomst van dit testgeval tonen**
-  opens a read-only view beside the testset for the testgeval your cursor is in:
-  every expectation with what it actually got, the rekendatum, the values you
+  opens a read-only view beside the test set for the test case your cursor is in:
+  every expectation with what it actually got, the calculation date, the values you
   gave and the values the model derived, the characteristics it concluded, the
   faults and the inconsistencies, and the **derivation trace** — one line per
   write, in the order the writes happened, naming the rule that made it and the
@@ -1106,9 +1405,9 @@ already given a meaning — and the Test Explorer runs them.
   that criterion is the last one listed — and the ones after it are genuinely not
   evaluated, which is why they are not shown. A rule with a single criterion lists
   none: it *is* its criterion, and the rule already says it.
-- **Run a rule against a testgeval.** Above every `Regel` and every
+- **Run a rule against a test case.** Above every `Regel` and every
   `Beslistabel` there is now an **uitvoeren** link, which runs the *active
-  testgeval* and opens the same view focused on that rule: what it wrote, for
+  test case* and opens the same view focused on that rule: what it wrote, for
   which instances, out of which operands — and, when it did not fire, that it did
   not fire, which is an answer rather than an empty screen.
 
@@ -1117,7 +1416,7 @@ already given a meaning — and the Test Explorer runs them.
   a rule evaluated in isolation is not a defined thing. "Run this rule" therefore
   means run the model and show what this rule did.
 
-  Which testgeval is *active* has two layers.
+  Which test case is *active* has two layers.
   `regelspraak.execution.defaultScenario` is the shared default — written as
   `tests/lidmaatschap.test.rgs#Een kort lidmaatschap`, meant to be committed, so
   a team shares the scenario its model is usually demonstrated against — and
@@ -1126,19 +1425,19 @@ already given a meaning — and the Test Explorer runs them.
   again, which puts you back to being asked on the next run. Pressing
   **uitvoeren** with nothing chosen asks rather than refusing.
 - **Both status items are in the status bar**, beside a `.rgs` file and nowhere
-  else: which testgeval a run will use, and whether the language server is up.
+  else: which test case a run will use, and whether the language server is up.
   They were language status items — folded behind the `{}` icon, invisible until
-  hovered — which for the active testgeval defeated the point of showing it at
+  hovered — which for the active test case defeated the point of showing it at
   all: a run made against a scenario you chose days ago is the mistake it exists
-  to prevent. Click the first to choose or clear a testgeval, the second to open
-  the server's log. Both are coloured when they need you: no testgeval chosen,
+  to prevent. Click the first to choose or clear a test case, the second to open
+  the server's log. Both are coloured when they need you: no test case chosen,
   or a server that is not running.
 
 ### Fixed
 
 - **A decision table may have more than one `geldig` period.** §12 gives a
   `Beslistabel` the same version pattern as a `Regel` — one *or more* versions,
-  each with its own validity period, the periods not overlapping, the rekendatum
+  each with its own validity period, the periods not overlapping, the calculation date
   choosing which applies — and only one was accepted. A table with two of them was
   reported as a syntax error, and a file with a syntax error in it gets no colour,
   outline, folding, checks or formatting at all, so the workaround was to write two
@@ -1147,9 +1446,9 @@ already given a meaning — and the Test Explorer runs them.
   Now each `geldig` line carries its own grid, and the two need not look alike: a
   new version may weigh a condition the old one never mentioned, or state a
   different conclusion. Everything that was true of a rule's versions is true of a
-  table's — overlapping periods are reported (`RS601`), `regelversie <naam>
+  table's — overlapping periods are reported (`RS601`), `rule version <naam>
   (<geldigheid>) gevuurd is` can ask about a particular one, and running against a
-  rekendatum evaluates the version that covers it. The Beslistabel preview draws
+  calculation date evaluates the version that covers it. The Decision table preview draws
   every version as its own grid under its own `geldig …`, and each version folds on
   its own where a table has more than one.
 
@@ -1168,9 +1467,9 @@ already given a meaning — and the Test Explorer runs them.
 
 ### Notes
 
-- **What running does not yet include.** Every run starts from a testgeval —
+- **What running does not yet include.** Every run starts from a test case —
   there is no way to run a model against a situation you have not written down,
-  because the situation *is* the testset and writing it is the point. And a run
+  because the situation *is* the test set and writing it is the point. And a run
   is a run of the whole model: firing order follows the dependencies between
   rules, so a rule evaluated on its own is not a defined thing and no gesture
   offers it.
@@ -1182,7 +1481,7 @@ already given a meaning — and the Test Explorer runs them.
 - **A test file gets what is about names, not what is about rules.** Quick fixes,
   signature help, the CodeLens counts, links in comments, inlay hints and the
   decision-table preview each answer a question about declarations and rules, and
-  a testset has neither — so in a test file they are absent rather than empty.
+  a test set has neither — so in a test file they are absent rather than empty.
 - **`*.test.rgs` is the same language as `.rgs`**, and is recognised as such
   because it ends in it.
   Your `[regelspraak]` editor settings, the soft wrapping, `//` comment toggling

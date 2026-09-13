@@ -16,16 +16,23 @@ import {
 	TreeItem, TreeItemCollapsibleState, Uri
 } from 'vscode';
 
-import { ModelGroup, ModelNode, ModelSource, WirePosition, WireRange } from './model';
+import { ModelGroup, ModelNode, ModelRoot, ModelSource, WirePosition, WireRange } from './model';
 
 /**
- * A row of the tree: a heading, or a declaration.
+ * A row of the tree: a workspace folder, a heading, or a declaration.
  *
  * The wire records are the elements themselves rather than a wrapper class,
  * because they are replaced wholesale on every refresh — VS Code re-asks for
  * children from the root, so nothing needs to survive that.
+ *
+ * The folder row exists only where the window has more than one ([N-10]), and
+ * whether it does is the server's answer and not a count taken here: a scope is
+ * a workspace folder, and which folder a model belongs to is what `indexFor`
+ * decided. So this side draws `roots` when the answer carries them and `groups`
+ * when it does not.
  */
 export type ModelEntry =
+	| { row: 'root'; root: ModelRoot }
 	| { row: 'group'; group: ModelGroup }
 	| { row: 'declaration'; node: ModelNode };
 
@@ -90,10 +97,16 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
 	}
 
 	getTreeItem(entry: ModelEntry): TreeItem {
+		if (entry.row === 'root') {
+			return rootItem(entry.root);
+		}
 		return entry.row === 'group' ? groupItem(entry.group) : declarationItem(entry.node);
 	}
 
 	async getChildren(entry?: ModelEntry): Promise<ModelEntry[]> {
+		if (entry?.row === 'root') {
+			return entry.root.groups.map(group => ({ row: 'group', group }));
+		}
 		if (entry?.row === 'group') {
 			return entry.group.nodes.map(node => ({ row: 'declaration', node }));
 		}
@@ -101,15 +114,54 @@ export class ModelExplorer implements TreeDataProvider<ModelEntry>, Disposable {
 			return entry.node.children.map(node => ({ row: 'declaration', node }));
 		}
 		const tree = await this.source.workspace();
-		return tree.groups.map(group => ({ row: 'group', group }));
+		// `roots` and `groups` are one answer in two shapes, never both: the
+		// server leaves `groups` empty where it sends folders.
+		return tree.roots
+			? tree.roots.map(root => ({ row: 'root', root }))
+			: tree.groups.map(group => ({ row: 'group', group }));
 	}
+}
+
+/**
+ * One workspace folder.
+ *
+ * `folder-library` rather than a plain `folder`: it is not a directory the
+ * reader can open but the model held in one, and the row beneath it is a group
+ * of declarations. Expanded, because a folder collapsed by default hides the
+ * whole tree behind two clicks — and the description counts the groups, which
+ * is what the top level used to count for the window as a whole, followed by
+ * what the folder's model holds: "how big is this model" is the question a
+ * reader brings to a row that stands for a whole reglement.
+ */
+function rootItem(root: ModelRoot): TreeItem {
+	const item = new TreeItem(root.label, TreeItemCollapsibleState.Expanded);
+	item.contextValue = 'regelspraakRoot';
+	item.iconPath = new ThemeIcon('folder-library');
+	item.resourceUri = Uri.parse(root.uri);
+	// The folder's own path, which is what tells two folders of one name apart —
+	// and a reader supporting several jurists has exactly that.
+	item.tooltip = Uri.parse(root.uri).fsPath;
+	item.description = counted(root.groups.length, root.contents);
+	return item;
 }
 
 function groupItem(group: ModelGroup): TreeItem {
 	const item = new TreeItem(group.label, TreeItemCollapsibleState.Expanded);
 	item.contextValue = `regelspraakGroup.${group.kind}`;
-	item.description = `${group.nodes.length}`;
+	item.description = counted(group.nodes.length, group.contents);
 	return item;
+}
+
+/**
+ * How many rows, and — where the server said so — what they hold.
+ *
+ * The bare number keeps the position it has always had, so every row reads the
+ * same way and the extra fact is an addition rather than a second convention.
+ * It is the server's sentence verbatim: what the words are is the model's
+ * vocabulary and not this side's to compose (see `ModelGroup.contents`).
+ */
+function counted(rows: number, contents?: string): string {
+	return contents ? `${rows} (${contents})` : `${rows}`;
 }
 
 function declarationItem(node: ModelNode): TreeItem {
@@ -118,8 +170,12 @@ function declarationItem(node: ModelNode): TreeItem {
 		node.children.length > 0
 			? TreeItemCollapsibleState.Collapsed
 			: TreeItemCollapsibleState.None);
-	item.description = node.detail;
-	item.tooltip = node.detail ? `${node.label} — ${node.detail}` : node.label;
+	// What the declaration itself states where it states something, and what it
+	// holds where it does not: a Regelgroep declares a name and no members, so
+	// its row would otherwise be the only one in the tree with nothing to say.
+	const detail = node.detail ?? node.contents;
+	item.description = detail;
+	item.tooltip = detail ? `${node.label} — ${detail}` : node.label;
 	item.iconPath = new ThemeIcon(ICONS[node.kind] ?? 'symbol-misc');
 	// So a later action can be offered for one kind and not another (run a rule,
 	// Phase 5) without this side having to re-read what kind a row is.

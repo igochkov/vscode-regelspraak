@@ -1,0 +1,46 @@
+// De Natuurlijke persoon -- het objecttype waar dit model om draait.
+//
+// Waarom dit objecttype niet `de Werknemer` heet, terwijl de hele wet over de
+// werknemer gaat: artikel 4 lid 1 *definieert* wie werknemer is ("de natuurlijke
+// persoon, die … in dienstbetrekking staat"), dus is werknemer-zijn een kenmerk
+// en niet het objecttype. Een objecttype `de Werknemer` naast een kenmerk
+// `is werknemer` zou één sleutel zijn (RS119) en dan zou `hij is werknemer`
+// altijd naar het objecttype wijzen. Nu leest artikel 4 als de wet hem schrijft:
+// `Een Natuurlijke persoon is werknemer indien …`.
+//
+// Bezield, dus regels mogen hem met `hij` en `zijn` aanspreken (§13.4.17 #42) --
+// wat een wet die over mensen gaat overal doet.
+//
+// Declaraties staan niet in een artikelnotebook: een objecttype wordt over het
+// hele document heen samengesteld en hoort dus bij geen enkel artikel ([N-1b]).
+
+// Bron: [art. 4 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=4&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype de Natuurlijke persoon (mv: Natuurlijke personen) (bezield)
+	--- persoonsgegevens
+	de geboortedatum                                 Datum in dagen;
+	de leeftijd                                      Jaren;
+	--- werknemer of niet (artikel 4)
+	de woonplaats binnen het Rijk                    kenmerk (bezittelijk);
+	de binnenlandse dienstbetrekking                 kenmerk (bezittelijk);
+	de gelijkgestelde buitenlandse dienstbetrekking  kenmerk (bezittelijk);
+	is werknemer                                     kenmerk (bijvoeglijk);
+	// Artikel 7a lid 2 zondert de werknemer uit die "op minder dan vier dagen per
+	// week … diensten verricht ten behoeve van het huishouden van de natuurlijke
+	// persoon tot wie hij in dienstbetrekking staat". Dat is een eigenschap van
+	// de werknemer in díe dienstbetrekking, en omdat één persoon hier in één
+	// betrekking staat is dat dezelfde eigenschap.
+	//
+	// Bezittelijk, om de reden die `gegevens/werkgever.rgs` uitschrijft: dit
+	// kenmerk wordt gelezen aan het eind van een ketting, en `heeft` breekt de
+	// gulzige naamlezing waar `is` haar juist voortzet ([D-55]).
+	// Bron: [art. 7a lid 2](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=7a&lid=2&g=2026-07-01&z=2026-07-01)
+	de huishoudelijke dienstverlening                kenmerk (bezittelijk);
+	--- aanspraak op het minimumloon (artikel 7, Besluit minimumjeugdloon)
+	is leerling in de beroepsbegeleidende leerweg    kenmerk (bijvoeglijk);
+	het recht op minimumloon                         kenmerk (bezittelijk);
+	--- de hoogte van het minimumloon (artikel 8, 10)
+	het reguliere minimumuurloon                     Uurbedrag;
+	het leerwegminimumuurloon                        Uurbedrag;
+	het staffelminimumuurloon                        Uurbedrag;
+	het bij besluit verlaagde minimumuurloon         Uurbedrag;
+	het minimumuurloon                               Uurbedrag;

@@ -1,0 +1,30 @@
+// Het Vakantiejaar: één tijdvak waarover vakantiebijslag wordt opgebouwd.
+//
+// Artikel 17 lid 1 zegt welk tijdvak dat is -- "het tijdvak tot en met 31 mei
+// van het lopende jaar" -- en dat het in de maand juni wordt uitbetaald. Zo'n
+// tijdvak valt niet samen met een uitbetalingstermijn en niet met een
+// kalenderjaar, dus is het een objecttype van zichzelf.
+
+// Bron: [art. 17 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=III&artikel=17&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype het Vakantiejaar (mv: Vakantiejaren) (bezield)
+	de einddatum van het bijslagtijdvak    Datum in dagen;
+	het maandental van het bijslagtijdvak  Numeriek (positief geheel getal);
+	--- de grondslag (artikel 15)
+	het opgebouwde loon                    Bedrag;
+	de opgebouwde uitkeringen              Bedrag;
+	het drievoud van het maandminimum      Bedrag;
+	de grondslag voor de vakantiebijslag   Bedrag;
+	de minimumvakantiebijslag              Bedrag;
+	--- de aanvulling tot 108% (artikel 16)
+	het verworven minimumloon              Bedrag;
+	de voldane vakantiebijslag             Bedrag;
+	de honderdachtprocentnorm              Bedrag;
+	de aanvullende vakantiebijslag         Bedrag;
+	--- wat de werkgever moet overmaken, en wanneer (artikel 16, 17, 18, 20)
+	de verschuldigde vakantiebijslag       Bedrag;
+	is bij het einde van de dienstbetrekking verworven kenmerk (bijvoeglijk);
+	de ontoereikende vakantiebijslag       kenmerk (bezittelijk);
+	de uitbetalingsdatum                   Datum in dagen;
+	de verjaringsdatum                     Datum in dagen;
+	het fondsbedrag                        Bedrag;
+	is via het fonds voldaan               kenmerk (bijvoeglijk);

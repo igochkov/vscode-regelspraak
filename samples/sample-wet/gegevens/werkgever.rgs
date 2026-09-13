@@ -1,0 +1,24 @@
+// De Werkgever (artikel 5): "de persoon, tot wie een werknemer in
+// dienstbetrekking staat".
+//
+// Dit is wél een objecttype en geen kenmerk, anders dan de werknemer -- want de
+// werkgever hoeft geen natuurlijke persoon te zijn. Artikel 5 zegt "de persoon",
+// niet "de natuurlijke persoon", en een besloten vennootschap is werkgever.
+//
+// Artikel 5 rekent niets uit: wie werkgever is volgt uit de arbeidsverhouding,
+// en dat is een feittype en geen regel. Zie `feittypen.rgs`.
+
+// Bron: [art. 5 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=5&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype de Werkgever (mv: Werkgevers)
+	de handelsnaam                       Tekst;
+	--- waar hij woont of is gevestigd (artikel 4 lid 2)
+	//
+	// Bezittelijk, en dat is geen stijlkeuze. Artikel 4 lid 2 wordt gelezen in
+	// een genest criterium over een ketting: `de wederpartij van zijn betrekking
+	// … binnen het Rijk`. Een bijvoeglijk kenmerk zou daar `is binnen het Rijk
+	// gevestigd` schrijven, en `is` is sinds [D-55] een naamwoord -- dus slikt de
+	// gulzige naamlezing de hele staart op en vraagt het model naar een kenmerk
+	// `betrekking is binnen het Rijk gevestigd` (RS116). `heeft` is géén
+	// naamwoord en breekt de naam wél.
+	de vestiging binnen het Rijk         kenmerk (bezittelijk);
+	de vaste inrichting binnen het Rijk  kenmerk (bezittelijk);

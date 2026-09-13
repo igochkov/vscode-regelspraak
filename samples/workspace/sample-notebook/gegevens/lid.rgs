@@ -1,0 +1,22 @@
+// Het Lid van dit reglement.
+//
+// Declaraties staan niet in een artikelnotebook: een objecttype wordt over het
+// hele document heen samengesteld en hoort dus bij geen enkel artikel ([N-1b]).
+// Ze staan hier, in technische modus, naast de notebooks die ze gebruiken --
+// één model, twee manieren van schrijven.
+//
+// Deze map is een eigen werkmap en dus een eigen model ([N-10]). `samples/`
+// declareert ook een Lid, met heel andere leden; de twee weten niets van elkaar,
+// en dat is precies wat een werkmapgrens doet.
+
+// Bron: [art. 19 lid 1](h10-leeskringen/art-19-deelname.rgs.md#lid-1)
+Objecttype het Lid (mv: Leden) (bezield)
+	de geboortedatum                      Datum in dagen;
+	de leeftijd                           Numeriek (niet-negatief geheel getal) met eenheid jaar;
+	is jeugdlid                           kenmerk (bijvoeglijk);
+	is leeskringlid (mv: leeskringleden)  kenmerk (bijvoeglijk);
+	de trouwe deelnemer                   kenmerk;
+	het aantal bijgewoonde bijeenkomsten  Numeriek (niet-negatief geheel getal);
+	het aantal gemiste bijeenkomsten      Numeriek (geheel getal);
+	de leeskringkorting                   Bedrag;
+	de kortingsuitkering                  Bedrag;

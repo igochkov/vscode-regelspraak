@@ -13,7 +13,7 @@
 // parse it is narrowed to the case a regex can be trusted with, and the limit is
 // stated at the check.
 //
-//   node scripts/bron-coverage.mjs [--model samples] [--quiet]
+//   node scripts/bron-coverage.mjs [--model samples/workspace/single-folder] [--quiet]
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep, posix } from 'node:path';
@@ -25,7 +25,7 @@ import { argv, exit, stdout } from 'node:process';
 import { slug } from './anchor.mjs';
 
 const options = parse(argv.slice(2));
-const root = options.model ?? 'samples';
+const root = options.model ?? 'samples/workspace/single-folder';
 
 /** `--flag value` and `--flag`, which is the whole of the command line. */
 function parse(args) {

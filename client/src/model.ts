@@ -30,16 +30,53 @@ export interface ModelNode {
 	range: WireRange;
 	selectionRange: WireRange;
 	children: ModelNode[];
+	/** What it holds, where that is worth stating — see `ModelGroup.contents`. */
+	contents?: string;
 }
 
 export interface ModelGroup {
 	kind: string;
 	label: string;
 	nodes: ModelNode[];
+	/**
+	 * What the row holds that its own row-count does not say — `98 regels`.
+	 *
+	 * A `Regelgroep` adopts its file's rules, so the row labelled *Regelgroepen*
+	 * counts groups and every rule is a level down. The phrase is the server's
+	 * because the words are the model's own vocabulary, `label`'s reason: a
+	 * plural built here would be free to disagree with the one beside it.
+	 */
+	contents?: string;
 }
 
 export interface ModelTree {
+	/**
+	 * The top level in a window with one model, and **empty where `roots` is
+	 * present**: one shape per answer, so this side never has to decide which of
+	 * the two is the tree.
+	 */
 	groups: ModelGroup[];
+	/**
+	 * The folders, where the window has more than one ([N-10]).
+	 *
+	 * A scope is a workspace folder, so a two-folder window holds two models and
+	 * every `Lid` in one collides with every `Lid` in the other. Drawing them in
+	 * one flat tree would show that collision as though it were one model, so
+	 * each folder gets a row. Absent in the ordinary one-folder case rather than
+	 * present with a single entry: a row to expand before seeing anything
+	 * carries no fact.
+	 */
+	roots?: ModelRoot[];
+}
+
+/** One workspace folder's model (W2, multi-root only). */
+export interface ModelRoot {
+	/** The folder's own name — the server's, since it decided the boundary. */
+	label: string;
+	uri: string;
+	groups: ModelGroup[];
+	/** What the folder's model holds — see `ModelGroup.contents`. */
+	contents?: string;
 }
 
 export const EMPTY: ModelTree = { groups: [] };

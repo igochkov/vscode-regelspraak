@@ -1,0 +1,44 @@
+// De Arbeidsverhouding: de rechtsbetrekking waarin iemand tegen beloning werkt.
+//
+// Artikel 2 zegt niet wat een arbeidsverhouding *is* maar wanneer zij
+// dienstbetrekking is -- lid 1 voor de arbeidsovereenkomst naar burgerlijk
+// recht, lid 2 voor twee soorten overeenkomst van opdracht. Dus is
+// `is dienstbetrekking` een kenmerk dat het model afleidt, en zijn de
+// omstandigheden waaruit dat volgt de invoer eronder.
+//
+// Bezield, zodat de regels van artikel 2 met `hij` kunnen werken: dat houdt de
+// samengestelde voorwaarden leesbaar en breekt de gulzige naamlezing ([D-12]),
+// want `hij` is geen naamwoord.
+
+// Bron: [art. 2 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=2&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype de Arbeidsverhouding (mv: Arbeidsverhoudingen) (bezield)
+	de aanvangsdatum                              Datum in dagen;
+	--- waaruit zij voortkomt (artikel 2)
+	is arbeidsovereenkomst naar burgerlijk recht  kenmerk (bijvoeglijk);
+	is overeenkomst van opdracht                  kenmerk (bijvoeglijk);
+	de bemiddeling tegen beloning                 kenmerk (bezittelijk);
+	de arbeid tegen beloning                      kenmerk (bezittelijk);
+	de zelfstandige beroepsuitoefening            kenmerk (bezittelijk);
+	de arbeid tegen beloning buiten bedrijf       kenmerk (bezittelijk);
+	de gelijkstelling krachtens artikel 2         kenmerk (bezittelijk);
+	de uitzondering krachtens artikel 3           kenmerk (bezittelijk);
+	is dienstbetrekking                           kenmerk (bijvoeglijk);
+	--- waar zij wordt vervuld (artikel 4 lid 2)
+	de vervulling binnen het Rijk                 kenmerk (bezittelijk);
+	--- wat is overeengekomen (artikel 11, 13a)
+	is schriftelijk overeengekomen                kenmerk (bijvoeglijk);
+	de schriftelijke arbeidsduur per week         Uren;
+	de maximale arbeidsduur per week              Uren;
+	de arbeidsduur per week                       Uren;
+	de vaste maandbeloning                        Bedrag;
+	de jaarlijkse arbeidsduur                     Uren;
+	de gemiddelde maandelijkse arbeidsduur        Uren;
+	het maandloon naar evenredigheid              Bedrag;
+	--- hoe en wanneer wordt betaald (artikel 9, 11 lid 2)
+	de overeengekomen uitbetalingstermijn         Numeriek (positief geheel getal) met eenheid maand;
+	de uitbetalingstermijn                        Numeriek (positief geheel getal) met eenheid maand;
+	de periode van afrekening                     Numeriek (positief geheel getal) met eenheid maand;
+	--- stukloon (artikel 12a, 12b)
+	is stukloonwerk                               kenmerk (bijvoeglijk);
+	de schriftelijke stukloonovereenkomst         kenmerk (bezittelijk);
+	de ontbrekende stukloonovereenkomst           kenmerk (bezittelijk);

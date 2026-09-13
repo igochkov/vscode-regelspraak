@@ -1,0 +1,6 @@
+// De Leeskring zelf: hoe hij heet en hoe vaak hij in een jaar bijeenkomt.
+
+// Bron: [art. 19 lid 1](h10-leeskringen/art-19-deelname.rgs.md#lid-1)
+Objecttype de Leeskring (mv: Leeskringen)
+	de leeskringnaam          Tekst;
+	het aantal bijeenkomsten  Numeriek (niet-negatief geheel getal);

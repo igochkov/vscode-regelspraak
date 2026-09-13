@@ -1,0 +1,89 @@
+// De tweede vorm waarin een Gegevensbron inhoud krijgt: een `Gegevensbronnen`-
+// blok dat de hele testset bindt aan een levering op schijf.
+//
+// Het pad noemt het **manifest** en niet het databestand, en het wordt gezocht
+// vanaf de map van dít testbestand naar boven — precies zoals een
+// `// Bron:`-verwijzing naar een document in de werkmap. Het manifest zegt hoe
+// het bestand is geschreven (scheidingsteken, decimaalteken, kopregel, het
+// bereik van elke sleutel, het aantal decimalen van de waarde) en draagt de
+// sha256 van de bytes. Die hash is de enige autoriteit: klopt hij niet, dan
+// wordt de levering geweigerd en niet stilletjes half gelezen.
+//
+// Vandaar de regel in de `.gitattributes` van deze repository, naast die voor
+// de levering van `samples/workspace/single-folder`. Met `core.autocrlf` aan —
+// de standaard op Windows — zou git de CSV als CRLF uitchecken, en dan klopt de
+// hash niet meer met het manifest waarmee hij is gecommit. Een nieuwe
+// leveringsmap heeft dus een eigen regel nodig; ze staan bij elkaar, zodat er
+// één plaats is om te kijken.
+//
+// **Deze testset heeft de taalserver nodig.** `npm run model -- run` stelt een
+// testgeval samen en voert het uit, maar bindt geen leveringen: dat doet
+// `bindSources`, en dat zit op het pad van `regelspraak/runTest` — de Testing-
+// weergave in de editor, de `uitvoeren`-lens boven een testgeval, en
+// `scripts/check-model.mjs`. Draai je deze testset met de CLI, dan krijgt elk
+// testgeval de modelfout *aan gegevensbron 'boetebedragen' is geen levering
+// gekoppeld*, en dat is geen fout in het model maar het verschil tussen de twee
+// manieren om het uit te voeren.
+//
+// De rekenvoorbeelden van artikel 18f zelf gebruiken daarom een **miniatuur** —
+// een paar rijen in het testgeval — en die werken in beide.
+//
+// De bedragen in de levering zijn voorbeeldbedragen en geen echte beleidsregel;
+// dat staat ook in de metadata, en een run zegt welke levering hij heeft
+// gelezen met naam, manifest en hash.
+
+Testset Boetebedragen uit de geleverde beleidsregel
+Rekendatum 01-08-2026
+Parameterset Minimumloonbedragen per 1 juli 2026
+
+Gegevensbronnen
+	de boetebedragen  uit "externe-tabellen/boetebedragen.json"
+
+// Rij 1 van de levering: onderbetaling in 2026.
+Testgeval Onderbetaling in 2026 kost tweeduizend euro
+	Gegeven een Overtreding (Onderbetaling) met
+		constateringsdatum            15-07-2026
+		overtredingsnummer            1
+		recidivegetal                 0
+		ernstige overtreding          onwaar
+		eerdere ernstige overtreding  onwaar
+	Verwacht Onderbetaling met
+		basisboetebedrag    2000,00 EUR
+		bestuurlijke boete  2000,00 EUR
+
+// Rij 2: te weinig vakantiebijslag, een ander bedrag op dezelfde as.
+Testgeval Te weinig vakantiebijslag in 2026 kost twaalfhonderdvijftig euro
+	Gegeven een Overtreding (Vakantiebijslag) met
+		constateringsdatum            15-07-2026
+		overtredingsnummer            2
+		recidivegetal                 0
+		ernstige overtreding          onwaar
+		eerdere ernstige overtreding  onwaar
+	Verwacht Vakantiebijslag met
+		basisboetebedrag    1250,00 EUR
+		bestuurlijke boete  1250,00 EUR
+
+// De tweede as: hetzelfde soortnummer, een ander jaar.
+Testgeval De beleidsregel van 2027 geeft een ander bedrag
+	Gegeven een Overtreding (In 2027) met
+		constateringsdatum            15-03-2027
+		overtredingsnummer            1
+		recidivegetal                 0
+		ernstige overtreding          onwaar
+		eerdere ernstige overtreding  onwaar
+	Verwacht In 2027 met
+		basisboetebedrag    2100,00 EUR
+		bestuurlijke boete  2100,00 EUR
+
+// Beide assen, met recidive erover: rij 3 van 2027 maal twee.
+Testgeval Recidive werkt door op het geleverde bedrag
+	Gegeven een Overtreding (Herhaalde inhouding) met
+		constateringsdatum            15-03-2027
+		overtredingsnummer            3
+		recidivegetal                 1
+		ernstige overtreding          onwaar
+		eerdere ernstige overtreding  onwaar
+	Verwacht Herhaalde inhouding met
+		basisboetebedrag    1300,00 EUR
+		verhogingsfactor    2
+		bestuurlijke boete  2600,00 EUR

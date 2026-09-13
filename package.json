@@ -1,13 +1,13 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Semantic highlighting, live validation, completion and hover for RegelSpraak.",
+	"description": "Write, check and run RegelSpraak models, in files or in notebooks — with the editor support you expect from a programming language.",
 	"author": {
 		"name": "Ivaylo Gochkov",
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "0.9.5",
+	"version": "1.0.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -26,6 +26,7 @@
 		"Programming Languages",
 		"Linters",
 		"Testing",
+		"Notebooks",
 		"Debuggers"
 	],
 	"keywords": [
@@ -33,6 +34,7 @@
 		"rules as code",
 		"belastingdienst",
 		"rules engine",
+		"notebook",
 		"dutch",
 		"debugger"
 	],
@@ -41,7 +43,8 @@
 	},
 	"main": "./client/out/extension",
 	"activationEvents": [
-		"workspaceContains:**/*.rgs"
+		"workspaceContains:**/*.rgs",
+		"workspaceContains:**/*.rgs.md"
 	],
 	"contributes": {
 		"viewsContainers": {
@@ -134,15 +137,28 @@
 				"command": "regelspraak.invoegenInvulling",
 				"title": "Invulling invoegen (« »)",
 				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.nieuwNotebook",
+				"title": "Nieuw notebook",
+				"category": "RegelSpraak"
+			},
+			{
+				"command": "regelspraak.bekijkReglement",
+				"title": "Reglement bekijken",
+				"category": "RegelSpraak",
+				"icon": "$(open-preview)"
 			}
 		],
 		"menus": {
 			"commandPalette": [
 				{
+					"//": "Both ids, here and below, wherever the command is about a document of either language. A testset is `testspraak` since [N-5], and every one of these `when` clauses used to cover it by accident; the three that stay `regelspraak` alone do so on purpose, and each says why.",
 					"command": "regelspraak.formatDocument",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == regelspraak || editorLangId == testspraak"
 				},
 				{
+					"//": "The model view and the beslistabel preview describe declarations and rules, which a test document has none of ([T-26]) — so they are `regelspraak` alone, and after [N-5] they refuse a testset instead of opening an empty view of one.",
 					"command": "regelspraak.showAst",
 					"when": "editorLangId == regelspraak"
 				},
@@ -151,27 +167,33 @@
 					"when": "editorLangId == regelspraak"
 				},
 				{
+					"//": "A testgeval lives in a testset and nowhere else, so these two narrow to `testspraak` rather than widening.",
 					"command": "regelspraak.showUitkomst",
-					"when": "editorLangId == regelspraak"
-				},
-				{
-					"command": "regelspraak.legUit",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == testspraak"
 				},
 				{
 					"command": "regelspraak.vergelijkUitvoering",
-					"when": "editorLangId == regelspraak"
+					"when": "editorLangId == testspraak"
+				},
+				{
+					"command": "regelspraak.legUit",
+					"when": "editorLangId == regelspraak || editorLangId == testspraak"
+				},
+				{
+					"//": "[N-1a]. Only where a notebook of ours is in front of the reader: the preview is of the reglement, which is the notebook's own file.",
+					"command": "regelspraak.bekijkReglement",
+					"when": "notebookType == regelspraak-notebook"
 				}
 			],
 			"editor/context": [
 				{
 					"command": "regelspraak.formatDocument",
-					"when": "editorLangId == regelspraak",
+					"when": "editorLangId == regelspraak || editorLangId == testspraak",
 					"group": "1_modification"
 				},
 				{
 					"command": "regelspraak.legUit",
-					"when": "editorLangId == regelspraak && regelspraak.uitlegbaar",
+					"when": "(editorLangId == regelspraak || editorLangId == testspraak) && regelspraak.uitlegbaar",
 					"group": "navigation@9"
 				}
 			],
@@ -190,13 +212,21 @@
 					"command": "regelspraak.showAst",
 					"when": "editorLangId == regelspraak"
 				}
+			],
+			"notebook/toolbar": [
+				{
+					"//": "[N-1a]'s read-through, where a reader of the reglement is already looking. The command takes the notebook URI the toolbar hands it, so it is about the notebook the button sits on rather than about whatever is active.",
+					"command": "regelspraak.bekijkReglement",
+					"when": "notebookType == regelspraak-notebook",
+					"group": "navigation/execute@10"
+				}
 			]
 		},
 		"keybindings": [
 			{
 				"command": "regelspraak.formatDocument",
 				"key": "shift+alt+f",
-				"when": "editorLangId == regelspraak && editorTextFocus && !editorReadonly"
+				"when": "(editorLangId == regelspraak || editorLangId == testspraak) && editorTextFocus && !editorReadonly"
 			},
 			{
 				"command": "regelspraak.invoegenOpsommingsteken",
@@ -211,12 +241,12 @@
 			{
 				"command": "regelspraak.showUitkomst",
 				"key": "alt+r",
-				"when": "editorLangId == regelspraak && editorTextFocus"
+				"when": "editorLangId == testspraak && editorTextFocus"
 			},
 			{
 				"command": "regelspraak.legUit",
 				"key": "alt+e",
-				"when": "editorLangId == regelspraak && editorTextFocus && regelspraak.uitlegbaar"
+				"when": "(editorLangId == regelspraak || editorLangId == testspraak) && editorTextFocus && regelspraak.uitlegbaar"
 			}
 		],
 		"languages": [
@@ -230,6 +260,18 @@
 					".rgs"
 				],
 				"configuration": "./language-configuration.json"
+			},
+			{
+				"//": "[N-5]. A cell has no suffix, so the fence's info string is the discriminator and it is also the cell's language — which is why this id exists. The .test.rgs files take it too, in the same release: two ids for one language, one for files and another for cells, is a wrinkle that would be explained for ever. VS Code scores an extension association by its length, so the nine characters of .test.rgs beat the four of .rgs and a testset is never read as a model file.",
+				"id": "testspraak",
+				"aliases": [
+					"TestSpraak",
+					"testspraak"
+				],
+				"extensions": [
+					".test.rgs"
+				],
+				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [
@@ -237,12 +279,36 @@
 				"language": "regelspraak",
 				"scopeName": "source.regelspraak",
 				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			},
+			{
+				"//": "The same grammar: it already reads both lexers ([T-25]).",
+				"language": "testspraak",
+				"scopeName": "source.regelspraak",
+				"path": "./syntaxes/regelspraak.tmLanguage.json"
+			}
+		],
+		"notebooks": [
+			{
+				"//": "[N-1], [N-4]. `default` claims *.rgs.md and leaves every other .md to the Markdown editor; the text is one gesture away under Open With.",
+				"type": "regelspraak-notebook",
+				"displayName": "RegelSpraak-notebook",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "**/*.rgs.md"
+					}
+				]
 			}
 		],
 		"snippets": [
 			{
 				"language": "regelspraak",
 				"path": "./snippets/regelspraak.code-snippets"
+			},
+			{
+				"//": "[N-5]'s snippet split. The two languages accept different text ([T-1]), so a testgeval offered inside a rule file was always wrong; until the ids were one it could not be said. Both files are parser-validated by the server's snippets.test.ts, each through its own grammar.",
+				"language": "testspraak",
+				"path": "./snippets/testspraak.code-snippets"
 			}
 		],
 		"semanticTokenTypes": [
@@ -464,15 +530,29 @@
 			}
 		},
 		"configurationDefaults": {
+			"//[regelspraak]": "Wrapping is off. An aligned beslistabel is 112 to 124 columns wide, so under a bounded wrap the rows P17 has just lined up are exactly the ones that fold and the pipes stop lining up — formatting a table makes it look worse. Outside a table an over-long sentence runs past the right edge, which is visible and breaks nothing. The two settings below do nothing while the wrap is off and are the tuned values for a reader who turns it on (Alt+Z, or editor.wordWrap in their own settings).",
 			"[regelspraak]": {
-				"editor.wordWrap": "bounded",
+				"editor.wordWrap": "off",
 				"editor.wordWrapColumn": 100,
 				"editor.wrappingIndent": "deepIndent"
+			},
+			"[testspraak]": {
+				"editor.wordWrap": "off",
+				"editor.wordWrapColumn": 100,
+				"editor.wrappingIndent": "deepIndent"
+			},
+			"//markdown.copyFiles.destination": "[N-1a]. A figure pasted into a Markdown cell is written by the Markdown extension's own paste provider, which resolves a cell URI to the notebook it belongs to — so the variables below are computed from the .rgs.md file. ${documentBaseName} strips only the last extension, so the transform drops the .rgs that would otherwise name the folder.",
+			"markdown.copyFiles.destination": {
+				"**/*.rgs.md": "${documentDirName}/media/${documentBaseName/\\.rgs$//}/${fileName}"
 			}
 		},
 		"breakpoints": [
 			{
 				"language": "regelspraak"
+			},
+			{
+				"//": "A mark on a Verwacht line means \"stop where this value comes from\" (§X5), so a breakpoint belongs in a testset as much as in a rule file. It used to follow from .test.rgs being regelspraak; with [N-5] it has to be said.",
+				"language": "testspraak"
 			}
 		],
 		"debuggers": [
@@ -481,7 +561,8 @@
 				"label": "RegelSpraak",
 				"conditionDescription": "De naam van één instantie, bijvoorbeeld 'Alice' — de regel stopt dan alleen voor die instantie. Laat leeg om bij elke instantie te stoppen.",
 				"languages": [
-					"regelspraak"
+					"regelspraak",
+					"testspraak"
 				],
 				"configurationAttributes": {
 					"launch": {
@@ -528,8 +609,10 @@
 		"lint": "eslint",
 		"postinstall": "node scripts/install-nested.mjs client",
 		"test": "node ./client/out/test/runTest.js",
+		"test:multiroot": "node ./client/out/test/runTest.js --twee-werkmappen",
 		"build:icon": "node scripts/build-icon.mjs",
 		"source:coverage": "node scripts/source-coverage.mjs",
+		"check:contributions": "node scripts/check-contributions.mjs",
 		"bundle": "node scripts/bundle-client.mjs"
 	},
 	"devDependencies": {

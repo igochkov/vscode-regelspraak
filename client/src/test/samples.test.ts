@@ -1,7 +1,8 @@
 // The example model itself, checked against a running language server.
 //
-// `samples/` is this repository's demonstration of the language and the only
-// copy of it: the server repository keeps its conformance corpus instead. Three
+// `samples/workspace/single-folder/` is this repository's demonstration of the
+// language and the only copy of it: the server repository keeps its
+// conformance corpus instead. Three
 // properties travelled with it, and they are asserted here rather than nowhere.
 //
 //   - It reports nothing. Every construct RegelSpraak has is written here, so a

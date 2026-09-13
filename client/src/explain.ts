@@ -43,6 +43,7 @@ import { LanguageClient } from 'vscode-languageclient/node';
 import { ActiveScenario } from './activeScenario';
 import { caseAtCursor } from './runDocument';
 import { RunPanels } from './runPanel';
+import { isOurs } from './languages';
 import { FailedExpectation, TestExplorer, splitId } from './testExplorer';
 
 export const EXPLAIN_COMMAND = 'regelspraak.legUit';
@@ -51,8 +52,13 @@ export const EXPLAIN_COMMAND = 'regelspraak.legUit';
 const EXPLAIN_TARGET_REQUEST = 'regelspraak/explainTarget';
 const EXPLAINABLE_CONTEXT = 'regelspraak.uitlegbaar';
 
-/** The language both the gate and the menus are scoped to ([T-1]: one id). */
-const LANGUAGE = 'regelspraak';
+// **Which documents this feature is about: both languages, and a notebook cell
+// as much as a file.** Leg uit is asked of a value, and a value is named in a
+// rule and in a `Verwacht` line alike — which is why the gate below covered
+// `.test.rgs` for as long as those files were `regelspraak`, and why it has to
+// say so now that [N-5] has given them their own id. `languages.ts` is the one
+// answer; the menus' `when` clauses are its manifest half, and the two are
+// asserted against each other.
 
 /**
  * How long the gate waits after the caret moves.
@@ -247,7 +253,7 @@ export class Explain implements Disposable {
 			clearTimeout(this.timer);
 			this.timer = undefined;
 		}
-		if (!editor || editor.document.languageId !== LANGUAGE || !this.client) {
+		if (!editor || !isOurs(editor.document.languageId) || !this.client) {
 			this.asked = '';
 			void commands.executeCommand('setContext', EXPLAINABLE_CONTEXT, false);
 			return;
@@ -314,7 +320,7 @@ export function siteOf(
 
 function fromEditor(): { uri: Uri; position: Position } | undefined {
 	const editor = window.activeTextEditor;
-	return editor && editor.document.languageId === LANGUAGE
+	return editor && isOurs(editor.document.languageId)
 		? { uri: editor.document.uri, position: editor.selection.active }
 		: undefined;
 }
