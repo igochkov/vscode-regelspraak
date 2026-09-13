@@ -4,8 +4,6 @@ Write a regulation and the rules that compute it in **one document**, and let th
 
 [RegelSpraak](https://regelspraak.nl/) is the controlled natural language the Dutch Tax and Customs Administration (Belastingdienst) uses to specify legislation as executable rules. Further material is published on the [Wendbare wetsuitvoering](https://wendbarewetsuitvoering.pleio.nl/page/view/ba938b8f-0668-4451-a7e6-81de78bbe66a/regelspraak) community pages.
 
-**A note on the Dutch in this page.** RegelSpraak is a Dutch language and the extension's interface is Dutch throughout, so three kinds of word are left untranslated and are marked to tell them apart: **keywords you type** are in `code`, **commands and buttons you click** are in **bold** with the English in brackets on first use, and the two mode names are the product's own. Everything else is English.
-
 The extension activates on `.rgs` files — models, the `*.test.rgs` test sets that go with them, and the `.rgs.md` notebooks of the mode below. (`.rgs` rather than the more obvious `.rs`, which is already established for Rust.)
 
 ## Two ways to write one model
