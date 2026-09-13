@@ -59,7 +59,7 @@ import { RunChart, TestRun } from '../testExplorer';
 
 import { altTextOf, drawable, svgOf, tableOf, textOf } from './chart';
 import { NOTEBOOK_TYPE } from './serializer';
-import { RULE_CELL, asMarkdown, asText, verdictOf } from './verdict';
+import { RULE_CELL, asMarkdown, asText, escapeMarkdown, verdictOf } from './verdict';
 
 const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
@@ -346,11 +346,19 @@ function changesTheModel(event: vscode.NotebookDocumentChangeEvent): boolean {
  * control; the pair below is the one `verdict.ts` already proves (markdown wins
  * over plain), and adding a `text/plain` beside a picture would be betting on an
  * order nobody here has measured. The table form is where the copy-out text is.
+ *
+ * Exported for `casesInCell`'s reason: a notebook output cannot be driven from a
+ * test, so the half that decides anything — a picture, a table or a sentence,
+ * and what that sentence is made of — lives where a test reaches it.
  */
-function figureOf(run: TestRun): vscode.NotebookCellOutput[] {
+export function figureOf(run: TestRun): vscode.NotebookCellOutput[] {
 	if (run.chartProblem) {
+		// Escaped, because the sentence quotes the model's own names back —
+		// `Objecttype 'het_Lid' heeft geen kenmerk …` — and a `_` or a `*` inside
+		// one would restyle the line it is being reported in. The same escaper
+		// every other Markdown this cell prints goes through.
 		return [new vscode.NotebookCellOutput([
-			vscode.NotebookCellOutputItem.text(`*${run.chartProblem}*`, 'text/markdown'),
+			vscode.NotebookCellOutputItem.text(`*${escapeMarkdown(run.chartProblem)}*`, 'text/markdown'),
 			vscode.NotebookCellOutputItem.text(`${run.chartProblem}
 `, 'text/plain')
 		])];

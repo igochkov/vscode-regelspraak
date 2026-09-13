@@ -29,7 +29,8 @@
 // which points a series holds, what a cell of the table says — lives where a
 // test reaches it.
 
-import { RunChart, ChartPoint, ChartSeries } from '../testExplorer';
+import { ChartAxis, RunChart, ChartPoint, ChartSeries } from '../testExplorer';
+import { escapeMarkdown } from './verdict';
 
 /** The plot, in the units an SVG is written in. */
 const WIDTH = 680;
@@ -40,7 +41,9 @@ const RIGHT = 18;
 const LEFT_MIN = 44;
 /** What one character of a 10px label costs, measured against the faces VS Code ships. */
 const CHAR = 5.6;
+/** The band under the plot: one row of tick labels, and the axis' name under them. */
 const X_LABELS = 22;
+const X_AXIS_NAME = 12;
 const LEGEND_ROW = 17;
 const CAPTION = 18;
 
@@ -143,12 +146,17 @@ export function drawable(chart: RunChart): boolean {
  */
 export function svgOf(chart: RunChart): string {
 	const categorical = chart.x === undefined;
+	// **A `balk` writes its own labels under its bars, so it draws no x ticks.**
+	// Both were drawn at `bottom + 15` for a bar chart that named an x, which is
+	// two sets of labels on one line, on top of each other.
+	const placed = chart.kind !== 'balk' && !categorical;
 	const series = chart.series;
 	const legendRows = series.length;
-	const height = PLOT_TOP + PLOT_HEIGHT + X_LABELS + legendRows * LEGEND_ROW + CAPTION;
+	const xBand = X_LABELS + (chart.x ? X_AXIS_NAME : 0);
+	const height = PLOT_TOP + PLOT_HEIGHT + xBand + legendRows * LEGEND_ROW + CAPTION;
 	const bottom = PLOT_TOP + PLOT_HEIGHT;
 
-	const yTicks = valueTicks(series);
+	const yTicks = valueTicks(series, chart.value);
 	// The left margin is measured rather than fixed, because a tick label is a
 	// RegelSpraak literal and carries its unit: `14,99 EUR/uur` is twice as wide
 	// as `20`, and a fixed margin clips one or wastes half the plot on the other.
@@ -157,7 +165,7 @@ export function svgOf(chart: RunChart): string {
 	// generous costs nothing and being short clips a number.
 	const LEFT = Math.max(LEFT_MIN,
 		12 + Math.max(0, ...yTicks.map(one => one.label.length)) * CHAR);
-	const xTicks = categorical ? [] : placeTicks(series);
+	const xTicks = placed ? placeTicks(series) : [];
 	const domainY = extent(yTicks.map(one => one.at));
 	const domainX = categorical ? { min: 0, max: 1 } : xExtent(chart, series);
 
@@ -190,7 +198,13 @@ export function svgOf(chart: RunChart): string {
 
 	const ink = pens(series);
 	if (chart.kind === 'balk') {
-		parts.push(...bars(series, ink, LEFT, y, bottom));
+		// **A bar is measured from zero, not from the floor of the plot.** With
+		// every value above zero the two coincide, because `valueTicks` puts a
+		// baseline tick in — but as soon as one value is negative the baseline
+		// moves and drawing to the floor says the opposite of the data: a value
+		// of 0 came out three-quarters as tall as the largest bar, and the most
+		// negative value came out as a one-pixel nub at the bottom.
+		parts.push(...bars(chart, ink, LEFT, y, clamp(y(0), PLOT_TOP, bottom), bottom));
 	} else {
 		// A `regime`'s outcome is drawn **first**, so it lies underneath: it *is*
 		// one of the others over every stretch of the domain, by definition, and
@@ -205,7 +219,7 @@ export function svgOf(chart: RunChart): string {
 	}
 
 	// The x labels last among the marks: a bar chart writes its own.
-	if (!categorical) {
+	if (placed) {
 		xTicks.forEach((tick, at) => {
 			// The outermost labels are anchored inwards, which is UX-5's own ruling
 			// about a track's dates: a centred label on the plot's own edge is half
@@ -217,8 +231,19 @@ export function svgOf(chart: RunChart): string {
 		});
 	}
 
+	// **The x axis is named, and used not to be.** Only the value axis carried a
+	// name, on the reasoning that the x axis labels its own ticks — true of the
+	// *values* and not of the *name*: a reader met `18 jaar · 20 jaar · 21 jaar`
+	// with nothing anywhere saying those were leeftijden, and a dimensionless
+	// axis was worse still, `1 · 2 · 3` with nothing saying what was counted.
+	// Under the tick labels rather than beside them, mirroring the value axis at
+	// the top and out of the way of the outermost tick, which is anchored to the
+	// same edge.
+	if (chart.x) {
+		parts.push(`<text x="${WIDTH - RIGHT}" y="${bottom + X_LABELS + 5}" fill="${MUTED}" font-size="10.5" text-anchor="end">${escape(axisName(chart.x))}</text>`);
+	}
 
-	const legendTop = bottom + X_LABELS + 10;
+	const legendTop = bottom + xBand + 10;
 	for (const [at, one] of series.entries()) {
 		const row = legendTop + at * LEGEND_ROW;
 		// The legend's own stroke is the series' pen and not an approximation of
@@ -278,32 +303,81 @@ function stepPath(steps: readonly { x: number; y: number }[], edge: number): str
 	return parts.join(' ');
 }
 
-/** A `balk` chart: one group per instance, one bar per series. */
+/** A `balk` chart: one group per place, one bar per series, measured from zero. */
 function bars(
-	series: readonly ChartSeries[],
+	chart: RunChart,
 	ink: readonly Pen[],
 	left: number,
 	y: (value: number) => number,
-	bottom: number
+	zero: number,
+	foot: number
 ): string[] {
-	const labels = [...new Set(series.flatMap(one => one.points.map(point => point.xLabel)))];
-	const slot = (WIDTH - left - RIGHT) / Math.max(labels.length, 1);
+	const series = chart.series;
+	const places = placesOf(chart);
+	const slot = (WIDTH - left - RIGHT) / Math.max(places.length, 1);
 	const width = Math.max(2, (slot * 0.7) / Math.max(series.length, 1));
 	const parts: string[] = [];
-	labels.forEach((label, group) => {
+	places.forEach((place, group) => {
 		const centre = left + slot * (group + 0.5);
-		series.forEach((one, index) => {
-			const point = one.points.find(each => each.xLabel === label);
+		place.points.forEach((point, index) => {
 			if (!point || point.y === undefined) {
 				return;
 			}
-			const left = centre - (width * series.length) / 2 + width * index;
-			const top = Math.min(y(point.y), bottom);
-			parts.push(`<rect x="${round(left)}" y="${round(top)}" width="${round(width)}" height="${round(Math.max(bottom - top, 1))}" fill="${ink[index].colour}"/>`);
+			const at = y(point.y);
+			const bar = centre - (width * series.length) / 2 + width * index;
+			parts.push(`<rect x="${round(bar)}" y="${round(Math.min(at, zero))}" width="${round(width)}" height="${round(Math.max(Math.abs(at - zero), 1))}" fill="${ink[index].colour}"/>`);
 		});
-		parts.push(`<text x="${round(centre)}" y="${bottom + 15}" fill="${MUTED}" font-size="10" text-anchor="middle">${escape(label)}</text>`);
+		parts.push(`<text x="${round(centre)}" y="${foot + 15}" fill="${MUTED}" font-size="10" text-anchor="middle">${escape(place.label)}</text>`);
 	});
 	return parts;
+}
+
+/** One place on the x axis: its label, and the point each series has there. */
+interface Place {
+	label: string;
+	/** Aligned with `chart.series`; `undefined` where that series has no point here. */
+	points: (ChartPoint | undefined)[];
+}
+
+/**
+ * The places a chart has, in the order they are first met.
+ *
+ * **Two points that print the same label are two places, not one**, and that is
+ * the whole of why this exists. Both the table and the bar chart used to pair a
+ * series with a place by `points.find(one => one.xLabel === label)`, which finds
+ * the *first* — so two Leden of the same leeftijd in one series were drawn and
+ * tabulated once, in silence, under a caption that counted them twice. Slots are
+ * keyed by the label **and the ordinal of that label inside its own series**, so
+ * the k-th point at one label lines up across series and nothing is dropped.
+ *
+ * One implementation for the two readers, for the reason this codebase keeps
+ * relearning: a picture and a table that disagree about what the run produced
+ * are worse than either being absent.
+ */
+function placesOf(chart: RunChart): Place[] {
+	const order: string[] = [];
+	const byKey = new Map<string, Place>();
+	chart.series.forEach((series, column) => {
+		const seen = new Map<string, number>();
+		for (const point of series.points) {
+			const ordinal = seen.get(point.xLabel) ?? 0;
+			seen.set(point.xLabel, ordinal + 1);
+			const key = `${point.xLabel} ${ordinal}`;
+			let place = byKey.get(key);
+			if (!place) {
+				place = { label: point.xLabel, points: chart.series.map(() => undefined) };
+				byKey.set(key, place);
+				order.push(key);
+			}
+			place.points[column] = point;
+		}
+	});
+	return order.map(key => byKey.get(key)!);
+}
+
+/** Into the plot, for a baseline the domain does not reach. */
+function clamp(value: number, low: number, high: number): number {
+	return Math.min(Math.max(value, low), high);
 }
 
 /** Contiguous runs of points that have a value — the pieces a broken line is drawn in. */
@@ -332,8 +406,21 @@ function runsOf(points: readonly ChartPoint[]): ChartPoint[][] {
  * **Zero is added where the values do not reach it**, because a bar drawn from a
  * baseline the axis never names is a bar whose length means nothing — and for a
  * line it is the difference between "this grew by a tenth" and "this tripled".
+ *
+ * Two things decide whether there *is* such a tick, and both come from the
+ * server. **`scale`** says whether this axis has a zero worth reaching for: a
+ * `datum` axis places by day number, so baselining it at day 0 drew two dates a
+ * year apart on top of each other at the very top of the plot, under a gridline
+ * labelled `0`. And **`zero`** says how the axis spells it — `0 EUR/uur`, out of
+ * `showValue`, the one renderer — because writing the digit here put a bare `0`
+ * on an axis whose every other tick carried a unit, which is the second spelling
+ * of a value this side is not allowed to invent (§X4).
+ *
+ * It is added **below** the values as readily as above them: a bar chart of
+ * negative amounts hangs its bars from a zero line just as one of positive
+ * amounts stands them on it.
  */
-function valueTicks(series: readonly ChartSeries[]): Tick[] {
+function valueTicks(series: readonly ChartSeries[], axis: ChartAxis): Tick[] {
 	const seen = new Map<number, string>();
 	for (const one of series) {
 		for (const point of one.points) {
@@ -346,8 +433,11 @@ function valueTicks(series: readonly ChartSeries[]): Tick[] {
 	if (values.length === 0) {
 		return [];
 	}
-	if (values[0][0] > 0) {
-		values.unshift([0, '0']);
+	const zero = axis.scale === 'getal' ? axis.zero : undefined;
+	if (zero !== undefined && values[0][0] > 0) {
+		values.unshift([0, zero]);
+	} else if (zero !== undefined && values[values.length - 1][0] < 0) {
+		values.push([0, zero]);
 	}
 	return thin(values.map(([at, label]) => ({ at, label })));
 }
@@ -421,13 +511,21 @@ function axisName(axis: { label: string; unit?: string }): string {
 
 /** The line under the picture: what it is about, and what it could not draw. */
 function caption(chart: RunChart): string {
-	const points = chart.series.reduce((total, one) => total + one.points.length, 0);
-	// Not the axis names: the value axis is the subtitle and the x axis labels
-	// its own ticks, so repeating them here would be the third time a reader met
-	// the same two words.
+	// **Marks, not points the run happens to hold.** A point with no value is not
+	// drawn — a line steps over it and no bar is raised for it — so counting it
+	// here said "8 punten" over seven marks. What it is instead is one of the
+	// instances `missing` counts.
+	const points = chart.series.reduce(
+		(total, one) => total + one.points.filter(point => point.y !== undefined).length, 0);
+	// Not the axis names: the value axis is the subtitle and the x axis is named
+	// under its own ticks, so repeating them here would be the third time a
+	// reader met the same two words.
 	const parts = [`${chart.subject} · ${points} ${points === 1 ? 'punt' : 'punten'}`];
 	if (chart.missing) {
-		parts.push(`${chart.missing} zonder plaats op de x-as`);
+		// "niet getekend" and no longer "zonder plaats op de x-as": the server
+		// counts an instance with no *value* here too, and naming one of the two
+		// causes for both would be wrong about half of them.
+		parts.push(`${chart.missing} ${chart.missing === 1 ? 'instantie' : 'instanties'} niet getekend`);
 	}
 	return parts.join(' · ');
 }
@@ -479,22 +577,15 @@ export function textOf(chart: RunChart): string {
 /**
  * The points as rows: one per place, one column per series.
  *
- * Keyed by the **label** and not by the number, because that is what a row is
- * headed with — two places that print the same are one row to a reader, and
- * splitting them would put two identically-headed rows in the table.
+ * Through `placesOf`, which is also what the bar chart groups by — so the table
+ * and the picture hold the same number of things. Two points that print the same
+ * label are two rows with that label repeated, which reads oddly and is true;
+ * folding them into one dropped a value the run produced without saying so.
  */
 function rowsOf(chart: RunChart): string[][] {
-	const places: string[] = [];
-	for (const one of chart.series) {
-		for (const point of one.points) {
-			if (!places.includes(point.xLabel)) {
-				places.push(point.xLabel);
-			}
-		}
-	}
-	return places.map(place => [
-		place,
-		...chart.series.map(one => one.points.find(point => point.xLabel === place)?.yLabel ?? '')
+	return placesOf(chart).map(place => [
+		place.label,
+		...place.points.map(point => point?.yLabel ?? '')
 	]);
 }
 
@@ -511,13 +602,6 @@ function escape(text: string): string {
 		.replace(/"/gu, '&quot;');
 }
 
-/**
- * A cell of the table.
- *
- * `|` would end the cell and the characters that open an inline construct would
- * style it — a label is the model's own text and may hold any of them, exactly
- * as `verdict.ts` says of an assertion's label.
- */
-function escapeMarkdown(text: string): string {
-	return text.replace(/([\\`*_[\]|])/gu, '\\$1');
-}
+// A cell of the table is the model's own text and may hold a `|` or a `*`, so
+// it goes through the one escaper — `verdict.ts`'s, which every Markdown a cell
+// prints already uses. Two copies of that rule differ exactly where it is hard.

@@ -221,14 +221,25 @@ export function asText(verdict: CellVerdict): string {
 }
 
 /**
- * A label is the model's own text and may hold anything a `naamdeel` admits —
- * `*` and `_` among them, which Markdown reads as emphasis. So the characters
- * that open an inline construct are escaped and nothing else is: this is a
- * label, not a document.
+ * The one answer to "this is the model's own text, not Markdown".
+ *
+ * A label, a fault's sentence, a chart's series name and the line a cell prints
+ * under a directive it could not draw are all text somebody wrote in a `.rgs`
+ * file, and a `naamdeel` admits `*` and `_` — which Markdown reads as emphasis.
+ * So the characters that open an inline construct are escaped and nothing else
+ * is: these are labels, not documents. `|` is in the set because a chart's
+ * table puts them in cells, where an unescaped one ends the cell; outside a
+ * table a backslash before it is a valid escape and renders as itself.
+ *
+ * Exported and shared rather than spelled once per module: three copies of an
+ * escape rule differ exactly where it is hard, and the one that forgets a
+ * character is the one printing a name nobody expected.
  */
-function escape(text: string): string {
-	return text.replace(/([\\`*_[\]])/gu, '\\$1');
+export function escapeMarkdown(text: string): string {
+	return text.replace(/([\\`*_[\]|])/gu, '\\$1');
 }
+
+const escape = escapeMarkdown;
 
 /**
  * A diff's two values are literals and read as code; a fault's message and a

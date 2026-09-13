@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { altTextOf, drawable, svgOf, tableOf, textOf } from '../notebook/chart';
+import { figureOf } from '../notebook/controller';
 import { RunChart } from '../testExplorer';
 
 import { activate, getDocUri, waitUntil } from './helper';
@@ -38,8 +39,8 @@ function chart(over: Partial<RunChart> = {}): RunChart {
 		kind: 'staffel',
 		title: 'De staffel',
 		subject: 'Lid',
-		x: { label: 'leeftijd', unit: 'jaar', scale: 'getal' },
-		value: { label: 'contributie', unit: 'EUR', scale: 'getal' },
+		x: { label: 'leeftijd', unit: 'jaar', scale: 'getal', zero: '0 jaar' },
+		value: { label: 'contributie', unit: 'EUR', scale: 'getal', zero: '0 EUR' },
 		series: [{
 			label: 'contributie',
 			points: [
@@ -108,8 +109,8 @@ suite('Figuur bij een rekenvoorbeeld ([V-3] rung 2)', () => {
 
 		test('elke tik draagt een waarde die de figuur echt haalt', () => {
 			// The rule this file is written to: nothing here formats a number, so
-			// every label is a literal the server already rendered — and a `0` for
-			// the baseline, which is the one mark that is not a value.
+			// every label is a literal the server already rendered — the baseline
+			// included, which is the one mark that is not a point of the data.
 			const drawn = labels(svgOf(chart()));
 			assert.ok(drawn.includes('10 EUR'), drawn.join(' | '));
 			assert.ok(drawn.includes('20 EUR'), drawn.join(' | '));
@@ -119,14 +120,65 @@ suite('Figuur bij een rekenvoorbeeld ([V-3] rung 2)', () => {
 		test('een nulpunt komt erbij waar de waarden er niet aan raken', () => {
 			// A bar drawn from a baseline the axis never names is a bar whose
 			// length means nothing.
-			assert.ok(labels(svgOf(chart())).includes('0'));
+			assert.ok(labels(svgOf(chart())).includes('0 EUR'));
 		});
 
-		test('de assen worden één keer genoemd, met hun eenheid', () => {
+		test('en het is de server die nul spelt, niet deze kant', () => {
+			// A bare `0` used to be written here, beside ticks reading `10 EUR` on
+			// the same axis — the second spelling of a value §X4 forbids this side
+			// to invent. `ChartAxis.zero` is that number out of `showValue`, the
+			// one renderer, and the digit is now nowhere in the file.
+			const drawn = labels(svgOf(chart()));
+			assert.ok(!drawn.includes('0'), drawn.join(' | '));
+			assert.ok(drawn.includes('0 EUR'), drawn.join(' | '));
+		});
+
+		test('een as zonder nul krijgt geen nullijn', () => {
+			// A `datum` axis places by day number, so baselining it at day 0 drew
+			// two dates a year apart on top of each other at the very top of the
+			// plot, under a gridline labelled `0`. The server sends no `zero` for
+			// such an axis, and `scale` says so a second time.
+			const dates = chart({
+				value: { label: 'inschrijfdatum', scale: 'datum' },
+				series: [{
+					label: 'inschrijfdatum',
+					points: [
+						{ instance: 'A', x: 1, xLabel: '1 jaar', y: 2458850, yLabel: '01-01-2020' },
+						{ instance: 'B', x: 2, xLabel: '2 jaar', y: 2459216, yLabel: '01-01-2021' }
+					]
+				}]
+			});
+			const drawn = labels(svgOf(dates));
+			assert.ok(!drawn.includes('0'), drawn.join(' | '));
+			// One gridline per tick, so two rather than three — and the two dates
+			// are drawn a plot apart rather than on top of one another, which is
+			// what the baseline cost them.
+			const ys = [...svgOf(dates).matchAll(/<line x1="\d+(?:\.\d+)?" y1="([\d.]+)"[^>]*dasharray/gu)]
+				.map(one => Number(one[1]));
+			assert.equal(ys.length, 2, 'twee roosterlijnen en geen nullijn');
+			assert.ok(Math.abs(ys[0] - ys[1]) > 150, `${ys.join(' en ')} liggen te dicht op elkaar`);
+		});
+
+		test('beide assen worden één keer genoemd, met hun eenheid', () => {
+			// The x axis used to be named nowhere in the picture, on the reasoning
+			// that it labels its own ticks — true of the *values* and not of the
+			// *name*: a reader met `1 jaar · 2 jaar` with nothing saying those were
+			// leeftijden, and a dimensionless axis was worse still.
 			const drawn = labels(svgOf(chart()));
 			assert.equal(drawn.filter(one => one === 'contributie (EUR)').length, 1, drawn.join(' | '));
-			assert.ok(!drawn.some(one => one.includes('leeftijd (jaar)')),
-				'de x-as labelt zijn eigen tikken al');
+			assert.equal(drawn.filter(one => one === 'leeftijd (jaar)').length, 1, drawn.join(' | '));
+		});
+
+		test('en een figuur zonder x-as noemt er geen', () => {
+			const drawn = labels(svgOf(chart({
+				kind: 'balk',
+				x: undefined,
+				series: [{
+					label: 'contributie',
+					points: [{ instance: 'A', xLabel: 'A', y: 10, yLabel: '10 EUR' }]
+				}]
+			})));
+			assert.ok(!drawn.some(one => one.includes('leeftijd')), drawn.join(' | '));
 		});
 
 		test('een regime tekent zijn uitkomst dikker en noemt hem', () => {
@@ -157,6 +209,83 @@ suite('Figuur bij een rekenvoorbeeld ([V-3] rung 2)', () => {
 			assert.equal(paths(svg).length, 0);
 			assert.equal((svg.match(/<rect /gu) ?? []).length, 2);
 			assert.ok(labels(svg).includes('A') && labels(svg).includes('B'));
+		});
+
+		test('een staaf wordt vanaf nul gemeten en niet vanaf de vloer', () => {
+			// With every value above zero the two coincide, because the baseline
+			// tick is in — but as soon as one value is negative the baseline moves
+			// and drawing to the floor says the opposite of the data: a value of 0
+			// came out three-quarters as tall as the largest bar and the most
+			// negative value came out as a one-pixel nub at the bottom.
+			const svg = svgOf(chart({
+				kind: 'balk',
+				x: undefined,
+				value: { label: 'saldo', unit: 'EUR', scale: 'getal', zero: '0 EUR' },
+				series: [{
+					label: 'saldo',
+					points: [
+						{ instance: 'A', xLabel: 'A', y: -50, yLabel: '-50 EUR' },
+						{ instance: 'B', xLabel: 'B', y: 20, yLabel: '20 EUR' },
+						{ instance: 'C', xLabel: 'C', y: 0, yLabel: '0 EUR' }
+					]
+				}]
+			}));
+			const rects = [...svg.matchAll(/<rect [^>]*y="([\d.]+)"[^>]*height="([\d.]+)"/gu)]
+				.map(one => ({ top: Number(one[1]), height: Number(one[2]) }));
+			assert.equal(rects.length, 3);
+			// The zero bar is the short one, and it is the one that used to be tall.
+			assert.equal(rects[2].height, 1, JSON.stringify(rects));
+			// Negative hangs below the baseline, positive stands on it, and they
+			// meet at one line.
+			assert.equal(rects[0].top, rects[2].top, 'de negatieve staaf hangt aan de nullijn');
+			assert.equal(rects[1].top + rects[1].height, rects[2].top,
+				'de positieve staaf staat op de nullijn');
+			// And the negative value is the longest bar, which is the whole point.
+			assert.ok(rects[0].height > rects[1].height, JSON.stringify(rects));
+		});
+
+		test('een balk met een x-as tekent één rij bijschriften, niet twee', () => {
+			// Both `bars`' own labels and the numeric x ticks were drawn at the same
+			// y for a bar chart that named an x — two sets of labels on one line, on
+			// top of each other.
+			const svg = svgOf(chart({
+				kind: 'balk',
+				series: [{
+					label: 'contributie',
+					points: [
+						{ instance: 'A', x: 1, xLabel: '1 jaar', y: 10, yLabel: '10 EUR' },
+						{ instance: 'B', x: 2, xLabel: '2 jaar', y: 20, yLabel: '20 EUR' }
+					]
+				}]
+			}));
+			const drawn = labels(svg);
+			assert.equal(drawn.filter(one => one === '1 jaar').length, 1, drawn.join(' | '));
+			assert.equal(drawn.filter(one => one === '2 jaar').length, 1, drawn.join(' | '));
+		});
+
+		test('twee punten met hetzelfde bijschrift blijven twee punten', () => {
+			// Both the table and the bar chart used to pair a series with a place by
+			// `points.find(one => one.xLabel === label)`, which finds the *first* —
+			// so two Leden of the same leeftijd were drawn and tabulated once, in
+			// silence, under a caption that counted them twice.
+			const twins = chart({
+				kind: 'balk',
+				series: [{
+					label: 'contributie',
+					points: [
+						{ instance: 'A', x: 1, xLabel: '1 jaar', y: 10, yLabel: '10 EUR' },
+						{ instance: 'B', x: 1, xLabel: '1 jaar', y: 20, yLabel: '20 EUR' },
+						{ instance: 'C', x: 2, xLabel: '2 jaar', y: 30, yLabel: '30 EUR' }
+					]
+				}]
+			});
+			assert.equal((svgOf(twins).match(/<rect /gu) ?? []).length, 3);
+			const rows = tableOf(twins).split('\n').filter(one => one.startsWith('| '));
+			assert.deepEqual(rows.slice(2), [
+				'| 1 jaar | 10 EUR |',
+				'| 1 jaar | 20 EUR |',
+				'| 2 jaar | 30 EUR |'
+			]);
 		});
 
 		test('de reeks die overblijft krijgt de inkt, geen kleur', () => {
@@ -289,6 +418,48 @@ suite('Figuur bij een rekenvoorbeeld ([V-3] rung 2)', () => {
 			const alt = altTextOf(chart());
 			assert.match(alt, /contributie \(EUR\) naar leeftijd \(jaar\)/u);
 			assert.ok(!alt.includes('10 EUR'), alt);
+		});
+
+		test('het bijschrift telt de merktekens en noemt wat niet getekend is', () => {
+			// A point with no value is not drawn — a line steps over it and no bar
+			// is raised for it — so counting it said "2 punten" over one mark. What
+			// it is instead is one of the instances `missing` counts.
+			const table = tableOf(chart({
+				missing: 2,
+				series: [{
+					label: 'contributie',
+					points: [
+						{ instance: 'A', x: 1, xLabel: '1 jaar', y: 10, yLabel: '10 EUR' },
+						{ instance: 'B', x: 2, xLabel: '2 jaar', yLabel: 'leeg' }
+					]
+				}]
+			}));
+			assert.match(table, /Lid · 1 punt · 2 instanties niet getekend/u);
+			// One and two are not the same word, in either column.
+			assert.match(tableOf(chart({ missing: 1 })), /1 instantie niet getekend/u);
+		});
+
+		test('de zin onder een richtlijn die niets tekent is de naam die het model schreef', () => {
+			// It quotes the model's own names back — `Objecttype 'het_Lid' heeft
+			// geen kenmerk …` — and a `_` or a `*` inside one restyled the line it
+			// was being reported in. The plain-text item beside it is not escaped,
+			// being what somebody pastes into a ticket.
+			const items = figureOf({
+				case: 'x', outcome: 'uitgevoerd', assertions: [], faults: [],
+				chartProblem: "Objecttype 'het_Lid' heeft geen kenmerk 'jeugd*lid'."
+			})[0].items;
+			const markdown = new TextDecoder().decode(
+				items.find(one => one.mime === 'text/markdown')!.data);
+			assert.match(markdown, /het\\_Lid/u);
+			assert.match(markdown, /jeugd\\\*lid/u);
+			const plain = new TextDecoder().decode(
+				items.find(one => one.mime === 'text/plain')!.data);
+			assert.ok(!plain.includes('\\'), plain);
+		});
+
+		test('en een richtlijn die niets oplevert levert ook geen uitvoer op', () => {
+			assert.deepEqual(
+				figureOf({ case: 'x', outcome: 'uitgevoerd', assertions: [], faults: [] }), []);
 		});
 	});
 

@@ -419,6 +419,8 @@ export interface ChartAxis {
 	label: string;
 	unit?: string;
 	scale: 'getal' | 'datum' | 'tekst';
+	/** Zero on this axis, spelled by the server — the baseline; see its `protocol.ts`. */
+	zero?: string;
 }
 
 export interface ChartSeries {

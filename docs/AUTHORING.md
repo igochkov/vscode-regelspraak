@@ -241,15 +241,26 @@ it.
 `<attribuut> van de <Objecttype>`;
 `reeks:` takes a kenmerk of that same object type and splits the points into two
 series. One object type per figure — the points of a series are one instance
-each, so two axes about two types have nothing to join on. `y:` may be repeated
-for several series over one x, and `uitkomst:` (in a `regime`) names the
-attribute that says which of them applies.
+each, so two axes about two types have nothing to join on. `y:` is the one key
+you may write more than once, for several series over one x; `x:`, `reeks:` and
+`uitkomst:` answer a question with one answer, and a second line of one of them
+is reported rather than quietly ignored. `uitkomst:` (in a `regime`) names the
+attribute that says which of the others applies.
+
+The lines under the opener are indented above for readability and need not be:
+what makes a line part of the figure is that it begins with one of the four keys.
+So a `// Bron:` line may sit in the same comment block without being read as part
+of it, and the block ends at the first line that is neither. **One figure per
+testgeval** — a second one under the first is reported and draws nothing.
 
 **Pick the kind from the shape of the rule.** `staffel` for a value that is
 constant within a bracket — a beslistabel on a leeftijd, an inkomensstaffel.
 `lijn` for a value over a continuous axis. `regime` for two rules competing.
 `balk` for a value per instance with no scale under it. `tabel` for the numbers
-without a picture.
+without a picture. `balk` and `tabel` need no `x:` at all — without one the
+instances themselves head the bars and the rows — and they are the two kinds
+whose `x:` may name a **Tekst** attribute, which is the ordinary bar chart: one
+bar per afdeling, per soort, per regime.
 
 **Keep the `Verwacht` lines.** The figure and its verification are one cell, so
 a figure that has gone stale is a red test rather than a wrong picture — assert

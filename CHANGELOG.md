@@ -85,22 +85,34 @@ de Lid`. Once one line has named an object type the others are offered that
 type's members alone. There are five kinds: `staffel` (a step, which is what a
 beslistabel on a leeftijd draws), `lijn`, `regime` (several rules competing over
 one axis, with `uitkomst:` naming the one that applies), `balk` and `tabel`.
+`balk` and `tabel` need no `x:` at all, and are the two kinds whose x may name a
+**Tekst** attribute — one bar per afdeling, which is the ordinary bar chart. The
+lines under the opener need not be indented: what makes a line part of the figure
+is that it begins with one of the four keys, which is also what keeps a
+`// Bron:` line in the same comment block out of it.
 
 It is a **comment**, so the language has never heard of it: no grammar change,
 nothing stored in the file, and the file is still the model. The testgeval keeps
 its `Verwacht` lines, which is what makes a figure that has gone stale a **red
 test** rather than a wrong picture, and **RS127** reports a directive that cannot
-be drawn — an unknown kind, an axis naming no attribuut of an objecttype, a reeks
-that is no kenmerk of it, or a directive written above a rule, where there is
+be drawn — an unknown kind or key, a key stated twice where one is meant, an axis
+naming no attribuut of an objecttype, a reeks that is no kenmerk of it, a second
+figure under the first, or a directive written above a rule, where there is
 nothing to draw. A warning and never an error: the model is correct and its
 annotation is wrong, so a mistyped chart does not refuse a run, and the cell
-prints the ordinary verdict underneath.
+prints the ordinary verdict underneath. Where the directive reads but the
+testgeval seats no instance of the type it is about, the cell says so in a
+sentence rather than drawing an empty table.
 
 Colours come from the theme's own chart palette, and the group a `reeks` leaves
 over — `overig` — is drawn in the neutral ink rather than in a colour of its own,
 so the kenmerk you asked about is the one that stands out. Where two lines hold
 the same value they are still two lines: the one on top is dashed, so the one
-underneath shows through. In a workspace you have not trusted, VS Code's own
+underneath shows through. Both axes are named, with their unit; the ticks are the
+run's own values, spelled the way the model spells them — including the zero a
+bar is measured from, which is why a bar chart of negative amounts hangs its bars
+from that line and why an axis of **dates** is drawn over the dates it holds
+rather than from day zero. In a workspace you have not trusted, VS Code's own
 renderer draws no SVG at all, so the cell shows the table instead and says why.
 
 **And a workspace folder is now one model.** The server held one index for the
