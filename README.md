@@ -24,9 +24,9 @@ with Dutch captions.
 
 ### Film 1 · *Rules as Code* — a law and its rules in one document
 
-[![A RegelSpraak notebook on article 8 of the Dutch Minimum Wage Act: explanatory text above, the rule that computes the provision in the middle with its Juriconnect source citation, and more text below](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-juridisch.png)](PLACEHOLDER_FILM_JURIDISCH)
+[![A RegelSpraak notebook on article 8 of the Dutch Minimum Wage Act: explanatory text above, the rule that computes the provision in the middle with its Juriconnect source citation, and more text below](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-juridisch.png)](https://github.com/user-attachments/assets/9a608492-3cc1-4c18-bfef-6f5716c27857)
 
-**[58 seconds.](PLACEHOLDER_FILM_JURIDISCH)** Article 8 of the Minimum Wage Act,
+**[58 seconds.](https://github.com/user-attachments/assets/9a608492-3cc1-4c18-bfef-6f5716c27857)** Article 8 of the Minimum Wage Act,
 first on `wetten.overheid.nl` and then as a notebook: the statutory text and the
 rule that computes it under one another, the rule naming the paragraph it
 renders, the worked example that checks the provision — and turns red the moment
@@ -35,9 +35,9 @@ whole age scale. Over [samples/sample-wet/](samples/sample-wet).
 
 ### Film 2 · The language and its tooling
 
-[![Completion proposing "recht op verlenging" with "kenmerk (bezittelijk)" beside it, after four letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](PLACEHOLDER_FILM_TECHNISCH)
+[![Completion proposing "recht op verlenging" with "kenmerk (bezittelijk)" beside it, after four letters were typed](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-demo.png)](https://github.com/user-attachments/assets/e1b73a7b-1f01-46b1-918f-ace9d3efe62a)
 
-**[1 minute 31.](PLACEHOLDER_FILM_TECHNISCH)** Writing with completion, two kinds
+**[1 minute 31.](https://github.com/user-attachments/assets/e1b73a7b-1f01-46b1-918f-ace9d3efe62a)** Writing with completion, two kinds
 of mistake the model catches, a test set going red, **Leg uit** *(explain)*
 opening the whole derivation behind it, the coverage of the rule versions down
 to the gutter, navigation and rename across file boundaries, and the formatter.
