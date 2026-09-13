@@ -89,8 +89,8 @@ happened. Laying out either is [AUTHORING.md](AUTHORING.md).
   under every expectation. Breakpoints, the Test Explorer and **Leg uit** all
   reach into a cell, a cell being a document like any other.
 - **A `// Visualisatie:` comment draws the effect of a rule beside the rule.**
-  A testgeval that seats fourteen personen at fourteen geboortedata *is* the
-  staffel, and the run already computes all fourteen values — so four comment
+  A testgeval that seats sixteen personen on eight geboortedata *is* the
+  staffel, and the run already computes every one of those values — so four comment
   lines above a `Testgeval` say what to draw with them, and the cell answers with
   a figure above its verdict:
 

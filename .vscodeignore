@@ -19,11 +19,14 @@ scripts/**
 docs/**
 samples/**
 images/icon.svg
-# The demo still, which the README shows by URL and not out of the package: the
-# Marketplace resolves a README image over https, so shipping it would be weight
-# nothing in here reads. The film itself is a release asset and was never in the
-# tree. Named on its own — images/ also holds the icons, and those must ship.
+# The demo stills, which the README shows by URL and not out of the package: the
+# Marketplace resolves a README image over https, so shipping them would be
+# weight nothing in here reads. The films themselves are comment attachments and
+# were never in the tree. Named one by one — images/ also holds the icons, and
+# those must ship, so a blanket images/*.png would break the Marketplace listing.
+# A third film means a third line here.
 images/regelspraak-demo.png
+images/regelspraak-juridisch.png
 
 # --- Dependencies -----------------------------------------------------------
 # Neither tree ships. Both halves are bundled with their dependencies inlined:
