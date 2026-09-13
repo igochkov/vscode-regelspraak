@@ -24,7 +24,7 @@ with Dutch captions.
 
 ### Film 1 · *Rules as Code* — a law and its rules in one document
 
-[![A step chart of the minimum hourly wage by age, from 15 to 22, drawn out of a worked example in a RegelSpraak notebook, with the passing verdict under it](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-juridisch.png)](PLACEHOLDER_FILM_JURIDISCH)
+[![A RegelSpraak notebook on artikel 8 of the Wet minimumloon: explanatory text above, the rule that computes the provision in the middle with its Juriconnect source citation, and more text below](https://raw.githubusercontent.com/igochkov/vscode-regelspraak/main/images/regelspraak-juridisch.png)](PLACEHOLDER_FILM_JURIDISCH)
 
 **[58 seconds.](PLACEHOLDER_FILM_JURIDISCH)** Artikel 8 of the Wet minimumloon,
 first on `wetten.overheid.nl` and then as a notebook: the wettekst and the rule
