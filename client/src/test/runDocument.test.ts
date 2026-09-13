@@ -291,6 +291,24 @@ suite('Uitkomst van een run (X4, W3)', () => {
 			assert.equal(rows[0].ruleAt, undefined, 'de regel wordt hier niet getoond');
 		});
 
+		/**
+		 * En in een notebook springt ze naar de cel waar ze in staat ([N-3]).
+		 *
+		 * A notebook's testset is written across cells and the run is asked about
+		 * the notebook, so an expectation's line is a line of *its own* cell.
+		 * Without the document beside the range the panel would jump into the run's
+		 * source at that line number — a confident wrong answer, not a missing one.
+		 */
+		test('een verwachting uit een notebookcel springt naar die cel', () => {
+			const range = { start: { line: 3, character: 1 }, end: { line: 3, character: 8 } };
+			const uri = 'vscode-notebook-cell:/artikel-8.rgs.md#c3';
+			const rows = view(ran({}, [
+				{ label: 'G1 — toeslag', passed: false, range, uri,
+					expected: '10,00 EUR', actual: '5 EUR' }
+			])).get('Verwachtingen')!.rows;
+			assert.deepEqual(rows[0].link, { on: 'label', kind: 'reveal', range, uri });
+		});
+
 		test('een gevuurde regel springt naar de regel, met of zonder aantal', () => {
 			const rows = view(ran({
 				firedRules: [{ rule: 'bepaal boete', count: 2 }, { rule: 'Jeugdlid', count: 1 }]

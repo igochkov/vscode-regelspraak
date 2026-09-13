@@ -29,6 +29,12 @@ import { EXPLAIN_COMMAND, Explain, ExplainArgs, FailureLenses, siteOf } from './
 import { recordServerBuild, ServerStatus, SHOW_LOG_COMMAND } from './serverStatus';
 import { OPEN_SOURCE_COMMAND, openSource } from './sourceDocument';
 import { IMPORT_ALEF_COMMAND, importFromAlef } from './alefImport';
+import { DOCUMENT_SELECTOR, TEST_EVERYWHERE, isOurs } from './languages';
+import { NOTEBOOK_TYPE, RegelSpraakNotebookSerializer } from './notebook/serializer';
+import {
+	NEW_NOTEBOOK_COMMAND, PREVIEW_REGLEMENT_COMMAND, newNotebook, previewReglement
+} from './notebook/commands';
+import { TestgevalController } from './notebook/controller';
 
 const SERVER_PATH_SETTING = 'regelspraak.server.path';
 const RESTART_COMMAND = 'regelspraak.restartServer';
@@ -219,6 +225,17 @@ const explain = new Explain(testExplorer, runPanels, () => activeScenario);
  */
 const failureLenses = new FailureLenses(testExplorer);
 
+/**
+ * [N-7]. The run button of a notebook, on the worked example and on nothing
+ * else — which is what `supportedLanguages: ['testspraak']` comes to.
+ *
+ * Beside the Test Explorer rather than inside it: both ask the same two custom
+ * methods, and one verdict comes back whichever surface asked, but a
+ * `TestController` and a `NotebookController` are two workbench objects with
+ * two lifetimes and neither is a projection of the other.
+ */
+const testgevalController = new TestgevalController();
+
 /** X2b's, and the only one of these that needs the extension context. */
 let activeScenario: ActiveScenario | undefined;
 
@@ -268,6 +285,12 @@ export interface RegelSpraakApi {
 	modelSource: ModelSource;
 	testExplorer: TestExplorer;
 	activeScenario: ActiveScenario;
+	/**
+	 * [N-7]'s controller, for the one thing about it that cannot be asserted any
+	 * other way: a run button is drawn by the workbench, so what the suite reads
+	 * is the language list that decides whether one appears at all.
+	 */
+	testgevalController: TestgevalController;
 }
 
 export async function activate(context: ExtensionContext): Promise<RegelSpraakApi> {
@@ -305,6 +328,28 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		commands.registerCommand(SHOW_MODEL_EXPLORER_COMMAND,
 			() => commands.executeCommand(`${MODEL_EXPLORER_VIEW}.focus`)));
 
+	// [N-1]. A notebook is a Markdown file and this is the view of it: the cells
+	// are regions of the text, and what is written back is the text. Outputs are
+	// transient because a run is a fact about a model and a scenario at one
+	// moment, and a stored one goes stale the way UX-3's *gone* state already
+	// handles.
+	context.subscriptions.push(
+		workspace.registerNotebookSerializer(
+			NOTEBOOK_TYPE, new RegelSpraakNotebookSerializer(),
+			{
+				transientOutputs: true,
+				transientCellMetadata: { executionOrder: true },
+				transientDocumentMetadata: {}
+			}),
+		// The two gestures a notebook needs that VS Code has no default for: one
+		// that makes the first one, and one that reads the whole of it as the
+		// document it is ([N-1a]).
+		commands.registerCommand(NEW_NOTEBOOK_COMMAND, newNotebook),
+		commands.registerCommand(PREVIEW_REGLEMENT_COMMAND, previewReglement),
+		// And the gesture a notebook has that a `.rgs` file does not: the run
+		// button on a worked example ([N-7]).
+		testgevalController);
+
 	context.subscriptions.push(
 		workspace.registerTextDocumentContentProvider(MODEL_SCHEME, modelDocuments),
 		commands.registerCommand(SHOW_MODEL_COMMAND, showModel));
@@ -332,8 +377,11 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 		// `explain`, which is also what keeps the gate's context key in step.
 		explain,
 		failureLenses,
-		languages.registerCodeLensProvider(
-			{ language: 'regelspraak' }, failureLenses),
+		// [N-9]. A failure lens sits on a `Verwacht` line, which is only ever in a
+		// testset — so it follows the test language rather than both, in a file
+		// and in a notebook cell alike. It covered `.test.rgs` by accident until
+		// [N-5] gave those files their own id.
+		languages.registerCodeLensProvider(TEST_EVERYWHERE, failureLenses),
 		// A recorded line is a fact about the text that produced it, so an edit
 		// retires it: after one the lens would sit on whatever moved into that
 		// line, which is a confident wrong answer rather than a missing one.
@@ -428,7 +476,10 @@ export async function activate(context: ExtensionContext): Promise<RegelSpraakAp
 	);
 
 	await inSuccession(() => startClient(context));
-	return { modelExplorer, serverStatus, modelSource, testExplorer, activeScenario };
+	return {
+		modelExplorer, serverStatus, modelSource, testExplorer, activeScenario,
+		testgevalController
+	};
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -578,7 +629,9 @@ async function insertGuillemets(): Promise<void> {
 
 async function formatDocument(): Promise<void> {
 	const editor = window.activeTextEditor;
-	if (!editor || editor.document.languageId !== 'regelspraak') {
+	// Both languages: the layout engine reads a testset as it reads a model file,
+	// and the round-trip gate runs over both corpora.
+	if (!editor || !isOurs(editor.document.languageId)) {
 		return;
 	}
 	// The message is this half's — it knows what the user pressed — and the
@@ -722,15 +775,27 @@ async function startClient(context: ExtensionContext): Promise<void> {
 		}
 	};
 
-	// The server indexes every .rgs file in the workspace into one model
-	// (FSD §3.5); watched-file events keep unopened files fresh. Held in a
-	// variable because the client hooks it but never owns it — see stopClient.
-	watcher = workspace.createFileSystemWatcher('**/*.rgs');
+	// The server indexes every model file in the workspace into one model per
+	// workspace folder ([N-10], FSD §3.5); watched-file events keep unopened
+	// files fresh. Held in a variable because the client hooks it but never owns
+	// it — see stopClient.
+	//
+	// **Both suffixes, and they are two**: a `.rgs.md` notebook ([N-1]) does not
+	// match `**/*.rgs`, and it is part of the model exactly as a `.rgs` file is —
+	// a declaration in a notebook cell is a declaration of the workspace. Left
+	// out, a notebook nobody has open would be indexed once by the scan and never
+	// re-read, so a `git pull` that changed it would leave every other file
+	// judged against the old one. `workspace/files.ts`'s `findRgsFiles` is the
+	// other half of this and collects the same two.
+	watcher = workspace.createFileSystemWatcher('**/*.{rgs,rgs.md}');
 
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
-		// Register the server for RegelSpraak documents
-		documentSelector: [{ scheme: 'file', language: 'regelspraak' }],
+		// Four entries, and which four is `languages.ts` — the file rule and the
+		// cell rule are one question ([N-5]) and answering it twice is how a
+		// provider comes to be registered for a document the menus think it
+		// covers.
+		documentSelector: DOCUMENT_SELECTOR,
 		synchronize: {
 			fileEvents: watcher
 		},
@@ -784,6 +849,7 @@ async function startClient(context: ExtensionContext): Promise<void> {
 	});
 	modelSource.setClient(client);
 	testExplorer.setClient(client);
+	testgevalController.setClient(client);
 	explain.setClient(client);
 	modelExplorer.refresh();
 }
@@ -795,6 +861,7 @@ async function stopClient(): Promise<void> {
 	watcher = undefined;
 	modelSource.setClient(undefined);
 	testExplorer.setClient(undefined);
+	testgevalController.setClient(undefined);
 	explain.setClient(undefined);
 	modelExplorer.refresh();
 	// Only where one was running: a failed start already said something more

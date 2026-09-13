@@ -1,0 +1,30 @@
+// Domeinen (§13.3.4): een eigen naam voor een datatype, zodat elk bedrag in dit
+// model hetzelfde bedrag is en elke urenmaat dezelfde urenmaat.
+//
+// Waarom de namen niet `Bedrag`/`Arbeidsduur`/`Leeftijd` heten waar een
+// attribuut dat ook doet: een globale naam schaduwt een lid met dezelfde naam
+// (RS119). Een `Domein Leeftijd` naast een attribuut `de leeftijd` is één
+// sleutel, en dan is `zijn leeftijd` niet meer de leeftijd van de persoon. Dus
+// heet het domein `Jaren` en het attribuut `de leeftijd`.
+
+// Bron: [art. 8 lid 1 onder b](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Domein Bedrag is van het type Numeriek (getal met 2 decimalen) met eenheid €
+
+// Sinds 1 januari 2024 is het minimumloon een *uur*loon, dus is het de eenheid
+// €/uur die het model overal draagt.
+// Bron: [art. 8 lid 1 onder a](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Domein Uurbedrag is van het type Numeriek (niet-negatief getal met 2 decimalen) met eenheid €/uur
+
+// Arbeidsduur is tijd, en artikel 5a meet haar in uren. Twee decimalen, want
+// een kwartier is 0,25 uur.
+// Bron: [art. 5a lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=5a&lid=1&g=2026-07-01&z=2026-07-01)
+Domein Uren is van het type Numeriek (niet-negatief getal met 2 decimalen) met eenheid uur
+
+// Bron: [art. 7 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=7&lid=1&g=2026-07-01&z=2026-07-01)
+Domein Jaren is van het type Numeriek (niet-negatief geheel getal) met eenheid jaar
+
+// Een rekenfactor is geen percentage: §6.4 laat een percentage geen operand van
+// `maal` zijn, en §13.4.17 #12 schrijft een percentage als *literal*. Een
+// ontwikkeling die van buiten komt is dus een getal, niet een `Percentage`.
+// Bron: [art. 14 lid 3](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=14&lid=3&g=2026-07-01&z=2026-07-01)
+Domein Rekenfactor is van het type Numeriek (niet-negatief getal met 6 decimalen)

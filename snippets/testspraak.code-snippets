@@ -1,0 +1,69 @@
+{
+	"Testset": {
+		"prefix": "testset",
+		"description": "Testset met rekendatum en een eerste testgeval",
+		"body": [
+			"Testset ${1:naam van de testset}",
+			"Rekendatum ${2:01-01-2026}",
+			"",
+			"Testgeval ${3:naam van het testgeval}",
+			"\tGegeven een ${4:Objecttypenaam} (${5:id}) met",
+			"\t\t${6:attribuutnaam}\t\t${7:0}",
+			"",
+			"\tVerwacht ${5:id} met",
+			"\t\t${8:attribuutnaam}\t\t${9:0}"
+		]
+	},
+	"Testgeval": {
+		"prefix": "testgeval",
+		"description": "Testgeval met een gegeven instantie en een verwachting",
+		"body": [
+			"Testgeval ${1:naam van het testgeval}",
+			"\tGegeven een ${2:Objecttypenaam} (${3:id}) met",
+			"\t\t${4:attribuutnaam}\t\t${5:0}",
+			"",
+			"\tVerwacht ${3:id} met",
+			"\t\t${6:attribuutnaam}\t\t${7:0}"
+		]
+	},
+	"Testinitialisatie": {
+		"prefix": "testinitialisatie",
+		"description": "Herbruikbaar Gegeven-blok, met de regel die het insluit",
+		"body": [
+			"Testinitialisatie ${1:naam}",
+			"\tGegeven een ${2:Objecttypenaam} (${3:id}) met",
+			"\t\t${4:attribuutnaam}\t\t${5:0}"
+		]
+	},
+	"Parameterset": {
+		"prefix": "parameterset",
+		"description": "Parameterset met geldigheid en parameterwaarden",
+		"body": [
+			"Parameterset ${1:naam van de set}",
+			"geldig ${2:altijd}",
+			"",
+			"\t${3:parameternaam}\t\t${4:0}"
+		]
+	},
+	"Gegeven feit": {
+		"prefix": "gegeven-feit",
+		"description": "Feit tussen twee instanties, per rol",
+		"body": [
+			"Gegeven het feit ${1:feittypenaam} met ${2:id} als ${3:rol} en ${4:id} als ${5:rol}"
+		]
+	},
+	"Gegeven rol": {
+		"prefix": "gegeven-rol",
+		"description": "Hetzelfde feit vanaf één kant: het feittype wordt afgeleid",
+		"body": [
+			"Gegeven ${1:id} heeft ${2:id} als ${3:rol}"
+		]
+	},
+	"Verwacht regelversie": {
+		"prefix": "verwacht-regelversie",
+		"description": "Verwachting over de uitkomst van een regel (§8.1.9)",
+		"body": [
+			"Verwacht regelversie ${1:naam van de regel} is gevuurd"
+		]
+	}
+}

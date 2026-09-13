@@ -22,8 +22,7 @@
 
 import { Disposable, StatusBarAlignment, StatusBarItem, window } from 'vscode';
 
-/** The language both items belong to; `*.test.rgs` is the same id ([T-1]). */
-const LANGUAGE = 'regelspraak';
+import { isOurs } from './languages';
 
 /**
  * A status-bar item that appears only beside a RegelSpraak document.
@@ -39,7 +38,10 @@ export function regelSpraakStatusItem(id: string, priority: number): {
 } {
 	const item = window.createStatusBarItem(id, StatusBarAlignment.Right, priority);
 	const follow = (): void => {
-		if (window.activeTextEditor?.document.languageId === LANGUAGE) {
+		// Both ids since [N-5]: the active testgeval is the input to every run, so
+		// the one place a reader most needs to see it is a testset — which used
+		// to be `regelspraak` and is `testspraak` now.
+		if (isOurs(window.activeTextEditor?.document.languageId ?? '')) {
 			item.show();
 		} else {
 			item.hide();

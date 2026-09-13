@@ -1,0 +1,40 @@
+// Het Uitbetalingstijdvak: één termijn waarover loon wordt betaald.
+//
+// Artikel 8 lid 1 onder c rekent "met inachtneming van een uitbetalingstermijn
+// van een dag, een week of een maand", en artikel 13a spreekt van de feitelijke
+// arbeidsduur "binnen een uitbetalingstermijn". De wet rekent het minimumloon
+// dus niet per persoon maar per termijn, en daarom is dit een objecttype.
+//
+// Bezield, zodat de rekenregels `zijn arbeidsduur` kunnen schrijven in plaats
+// van `de arbeidsduur van het Uitbetalingstijdvak` bij elke term.
+
+// Bron: [art. 8 lid 1 onder c](jci1.3:c:BWBR0002638&hoofdstuk=II&artikel=8&lid=1&g=2026-07-01&z=2026-07-01)
+Objecttype het Uitbetalingstijdvak (mv: Uitbetalingstijdvakken) (bezield)
+	de begindatum                                                   Datum in dagen;
+	de einddatum                                                    Datum in dagen;
+	--- de arbeidsduur (artikel 5a)
+	de verrichte arbeidstijd                                        Uren;
+	de tijd met recht op loon                                       Uren;
+	de arbeidsduur                                                  Uren;
+	--- het loon (artikel 6)
+	de geldelijke inkomsten                                         Bedrag;
+	de uitgezonderde inkomsten                                      Bedrag, gedimensioneerd met inkomstensoort;
+	het loon (mv: lonen)                                            Bedrag;
+	--- wat ten minste betaald moest worden (artikel 7, 8)
+	het verschuldigde minimumloon (mv: verschuldigde minimumlonen)  Bedrag;
+	de onderbetaling                                                Bedrag;
+	is onderbetaald                                                 kenmerk (bijvoeglijk);
+	--- hoe is betaald (artikel 7a, 13)
+	het giraal voldane loon                                         Bedrag;
+	de inhouding op het loon                                        Bedrag;
+	het verrekende voorschot                                        Bedrag;
+	de volmacht voor de inhouding                                   kenmerk (bezittelijk);
+	de vrije loonruimte                                             Bedrag;
+	de toegestane inhouding                                         Bedrag;
+	--- langere arbeidsduur (artikel 13a)
+	de overeengekomen arbeidsduur                                   Uren;
+	de langere arbeidsduur                                          Uren;
+	de gecompenseerde vrije tijd                                    Uren;
+	de uitbetaalde langere arbeidsduur                              Uren;
+	de openstaande langere arbeidsduur                              Uren;
+	de compensatiedeadline                                          Datum in dagen;

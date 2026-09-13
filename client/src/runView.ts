@@ -97,6 +97,16 @@ export interface RunRow {
 	/** Where this row is written in the testset, for the rows that are. */
 	range?: WireRange;
 	/**
+	 * Which document that range is in, where it is not the run's own ([N-3]).
+	 *
+	 * A notebook's testset is one testset written across several cells, so an
+	 * expectation's line belongs to the cell it was typed in rather than to the
+	 * file the run was asked about. Absent everywhere else, which is every
+	 * `*.test.rgs` file — so the panel's fallback is the run's source and there
+	 * is no notebook case to write anywhere but here.
+	 */
+	uri?: string;
+	/**
 	 * The period this row states, where it states one (UX-5).
 	 *
 	 * Day numbers, so a renderer that draws a track lays it out without doing
@@ -184,7 +194,7 @@ export interface RunNeeds {
 }
 
 export type RunLink =
-	| { on: 'label' | 'beside'; kind: 'reveal'; range: WireRange }
+	| { on: 'label' | 'beside'; kind: 'reveal'; range: WireRange; uri?: string }
 	| { on: 'label' | 'beside'; kind: 'revealRule'; rule: string }
 	/**
 	 * UX-6 → UX-1: this run, read as an answer about this slot.
@@ -347,6 +357,7 @@ export function buildView(
 				kind: one.passed ? 'pass' : 'fail',
 				label: one.label,
 				range: one.range,
+				...(one.uri === undefined ? {} : { uri: one.uri }),
 				note: one.passed
 					? one.actual
 					: `verwacht ${one.expected ?? 'leeg'}, werkelijk ${one.actual ?? 'leeg'}`
@@ -666,7 +677,10 @@ function linkOf(row: RunRow): RunLink | undefined {
 		return row.link;
 	}
 	if (row.range) {
-		return { on: 'label', kind: 'reveal', range: row.range };
+		return {
+			on: 'label', kind: 'reveal', range: row.range,
+			...(row.uri === undefined ? {} : { uri: row.uri })
+		};
 	}
 	return row.rule && row.ruleAt
 		? { on: row.ruleAt, kind: 'revealRule', rule: row.rule }

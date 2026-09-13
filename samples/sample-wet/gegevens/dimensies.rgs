@@ -1,0 +1,33 @@
+// Dimensies (§13.3.7): één attribuut met een as eronder.
+//
+// Artikel 6 lid 1 somt negen soorten inkomsten op die *geen* loon zijn. Dat is
+// één grootheid met negen coördinaten, en niet negen attributen: als het negen
+// attributen waren zou de regel van artikel 6 negen keer `verminderd met`
+// moeten schrijven op één regel, en zou er niets zijn dat zegt dat die negen
+// bij elkaar horen. Met een dimensie is het één as, telt `de som van … over
+// alle inkomstensoorten` ze op, en staat de opsomming van de wet één keer in
+// het model -- hier.
+//
+// De letters zijn die van artikel 6 lid 1 zelf, in dezelfde volgorde.
+// Een label is een gewone woordenreeks, dus `een` en `of` kunnen er niet in
+// staan: onderdeel d ("uitkeringen ingevolge aanspraken om … uitkeringen te
+// ontvangen") heet hier `aanspraakuitkering`.
+//
+// Het voorzetsel is `uit`, want §13.3.7 #2 kent er precies zeven -- `van`,
+// `in`, `voor`, `over`, `op`, `bij`, `uit` -- en van die zeven is dit de enige
+// die leest: `de uitgezonderde inkomsten uit vakantiebijslag`. Dat `uit` ook
+// het woord van een Gegevensbron-opzoeking is doet niets: waar de naam ertussen
+// geen aangegeven bron is, leest het model de hele zin weer als de naam die zij
+// altijd was ([D-58]).
+
+// Bron: [art. 6 lid 1](jci1.3:c:BWBR0002638&hoofdstuk=I&artikel=6&lid=1&g=2026-07-01&z=2026-07-01)
+Dimensie de inkomstensoort, bestaande uit de inkomstensoorten (na het attribuut met voorzetsel uit):
+	1. vakantiebijslag
+	2. winstuitkering
+	3. uitkering bij bijzondere gelegenheden
+	4. aanspraakuitkering
+	5. kostenvergoeding
+	6. transitievergoeding
+	7. spaarloonuitkering
+	8. eindejaarsuitkering
+	9. werkgeversbijdrage ziektekostenverzekering

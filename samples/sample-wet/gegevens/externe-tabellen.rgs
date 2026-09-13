@@ -1,0 +1,27 @@
+// Gegevensbronnen: tabellen die van buiten het model worden aangeleverd.
+//
+// EXTENSIE -- geen v2.3.0. §9.3 van de specificatie verklaart uitdrukkelijk
+// buiten haar scope hoe instanties hun waarden uit de invoer krijgen, en laat
+// dat aan de uitvoeringsomgeving. Deze extensie vult precies dat gat: het model
+// legt de *vorm* van een aangeleverde tabel vast, de omgeving levert de inhoud.
+// Zie [D-58] en §5a bis van de clean-roombrief.
+//
+// Waarom de boetebedragen hier staan en niet als parameter: artikel 18f lid 6
+// zegt het zelf -- "Onze Minister stelt beleidsregels vast waarin onder meer de
+// boetebedragen voor iedere overtreding worden vastgesteld". Het zijn dus vijf
+// bedragen (één per letter van artikel 18b lid 1) die per jaar verschillen en
+// die in een beleidsregel staan, niet in de wet. Dat is geen parameter -- een
+// parameter is één waarde -- en geen beslistabel -- die is een schrijfwijze voor
+// regels. Het is een tabel van buiten, met twee assen.
+//
+// Welke *inhoud* erachter hangt staat niet hier maar in de testset:
+// `tests/boetebedragen.test.rgs` bindt haar aan de levering in
+// `externe-tabellen/`, en `tests/boete.test.rgs` geeft een miniatuur mee. Een
+// opzoeking op een sleutel die de inhoud niet heeft is een modelfout, nooit
+// `leeg`.
+
+// Bron: [art. 18f lid 6](jci1.3:c:BWBR0002638&hoofdstuk=IV&artikel=18f&lid=6&g=2026-07-01&z=2026-07-01)
+Gegevensbron de boetebedragen
+	het soortnummer  Numeriek (positief geheel getal) (sleutel);
+	het boetejaar    Numeriek (positief geheel getal) (sleutel);
+	het boetebedrag  Bedrag;

@@ -1,0 +1,199 @@
+// Eén situatie, door de hele wet heen.
+//
+// De notebooks rekenen elk hun eigen artikel na, en dat is wat een
+// rekenvoorbeeld onder een bepaling hoort te doen. Wat daarmee *niet* wordt
+// getoetst is de samenhang: dat artikel 4 een werknemer maakt van wie artikel 7
+// een recht geeft, dat artikel 8 daar een bedrag bij zet, dat artikel 5a de uren
+// levert, dat artikel 18b het verschil ziet, en dat hoofdstuk III over datzelfde
+// loon een vakantiebijslag opbouwt waar artikel 16 lid 2 een ondergrens aan
+// stelt.
+//
+// Deze testset is één werknemer die te weinig krijgt, en één testgeval dat door
+// alle zes de hoofdstukken loopt. De verwachtingen zijn niet met de hand
+// berekend maar uitgevoerd en nagelopen; waar het model en de verwachting het
+// oneens waren is uitgezocht wie er fout zat.
+//
+// Testsets in `tests/` houden een naam naar hun onderwerp en niet naar een
+// artikelnummer, en dat is met opzet: een testgeval dat een situatie samenstelt
+// raakt routineus een half dozijn artikelen, en het naar één ervan noemen zou
+// een bewering zijn die niet klopt.
+
+Testset Een onderbetaalde werknemer, door de hele wet heen
+Rekendatum 01-06-2026
+Parameterset Minimumloonbedragen per 1 januari 2026
+
+// ---------------------------------------------------------------------------
+// De situatie: een negentienjarige werkt in maart 2026 152 uur bij een
+// binnenlandse bakkerij en krijgt € 1.200,00 op zijn rekening. Verschuldigd was
+// 152 maal € 8,83 — het minimumjeugdloon van negentien jaar — dus € 1.342,16.
+// Er is bovendien € 50,00 ingehouden, terwijl er geen ruimte boven het
+// minimumloon was om iets op in te houden.
+// ---------------------------------------------------------------------------
+
+Testgeval Een negentienjarige krijgt te weinig, en de wet ziet het op vijf plaatsen
+	Gegeven de boetebedragen met de rijen
+		1, 2026 : 2000,00 EUR
+
+	Gegeven een Werkgever (Bakkerij) met
+		handelsnaam  "Bakkerij De Korenaar"
+		heeft een vestiging binnen het Rijk
+	Gegeven een Arbeidsverhouding (Contract) met
+		aanvangsdatum  01-01-2026
+		is arbeidsovereenkomst naar burgerlijk recht
+		heeft een vervulling binnen het Rijk
+	Gegeven een Natuurlijke persoon (Ravi) met
+		geboortedatum  12-04-2007
+		heeft een woonplaats binnen het Rijk
+	Gegeven Bakkerij heeft Contract als aanstelling
+	Gegeven Ravi heeft Contract als betrekking
+
+	Gegeven een Uitbetalingstijdvak (Maart) met
+		begindatum             01-03-2026
+		einddatum              31-03-2026
+		verrichte arbeidstijd  152 uur
+		geldelijke inkomsten   1200,00 EUR
+		giraal voldane loon    1200,00 EUR
+		inhouding op het loon  50,00 EUR
+	Gegeven Ravi heeft Maart als tijdvak
+
+	Gegeven een Vakantiejaar (Bijslag 2026) met
+		einddatum van het bijslagtijdvak   31-05-2026
+		maandental van het bijslagtijdvak  1
+		voldane vakantiebijslag            0,00 EUR
+	Gegeven Ravi heeft Bijslag 2026 als bijslagjaar
+	Gegeven Bijslag 2026 heeft Maart als meetellende tijdvakken
+
+	Gegeven een Overtreding (Boete voor Bakkerij) met
+		constateringsdatum            15-07-2026
+		overtredingsnummer            1
+		recidivegetal                 0
+		ernstige overtreding          onwaar
+		eerdere ernstige overtreding  onwaar
+	Gegeven Bakkerij heeft Boete voor Bakkerij als constatering
+
+	// Hoofdstuk I: artikel 2 maakt de arbeidsverhouding een dienstbetrekking,
+	// artikel 4 maakt Ravi een werknemer.
+	Verwacht Contract met
+		is dienstbetrekking
+	Verwacht Ravi met
+		leeftijd  19 jaar
+		heeft een binnenlandse dienstbetrekking
+		is werknemer
+
+	// Hoofdstuk II: artikel 7 geeft het recht, het Besluit minimumjeugdloon en
+	// artikel 8 lid 3 zetten het bedrag op 60% van € 14,71.
+	Verwacht Ravi met
+		heeft een recht op minimumloon
+		reguliere minimumuurloon  8,83 EUR/uur
+		minimumuurloon            8,83 EUR/uur
+
+	// Artikel 5a levert de uren, artikel 6 het loon, en artikel 8 wat over dit
+	// tijdvak verschuldigd was.
+	Verwacht Maart met
+		arbeidsduur                152 uur
+		loon                       1200,00 EUR
+		verschuldigde minimumloon  1342,16 EUR
+
+	// Artikel 18b lid 1 onder a: het verschil, en het kenmerk erop.
+	Verwacht Maart met
+		onderbetaling  142,16 EUR
+		is onderbetaald
+
+	// Artikel 13: er was geen vrije loonruimte, dus mocht er niets worden
+	// ingehouden. Artikel 7a: het verschuldigde bedrag is niet giraal voldaan.
+	Verwacht Maart met
+		vrije loonruimte      0,00 EUR
+		toegestane inhouding  0,00 EUR
+	Verwacht regelversie Inhouding blijft binnen het toegestane is inconsistent
+	Verwacht regelversie Girale voldoening van het verschuldigde minimumloon is inconsistent
+
+	// Hoofdstuk III: artikel 15 geeft 8% van het betaalde loon — € 96,00 — en
+	// artikel 16 lid 2 tilt dat op tot 108% van het *verschuldigde* minimumloon.
+	// Dat is waar lid 2 voor bestaat: zonder hem zou de onderbetaling zich in de
+	// vakantiebijslag doorzetten.
+	Verwacht Bijslag 2026 met
+		opgebouwde loon                1200,00 EUR
+		verworven minimumloon          1342,16 EUR
+		minimumvakantiebijslag         96,00 EUR
+		honderdachtprocentnorm         1449,53 EUR
+		aanvullende vakantiebijslag    249,53 EUR
+		verschuldigde vakantiebijslag  249,53 EUR
+		heeft een ontoereikende vakantiebijslag
+
+	// Artikel 17 en artikel 20: wanneer het had moeten worden betaald, en
+	// wanneer de vordering verjaart.
+	Verwacht Bijslag 2026 met
+		uitbetalingsdatum  30-06-2026
+		verjaringsdatum    30-06-2031
+
+	// Hoofdstuk IV: artikel 18f zet een bedrag op de overtreding van artikel 18b.
+	Verwacht Boete voor Bakkerij met
+		basisboetebedrag    2000,00 EUR
+		verhogingsfactor    1
+		bestuurlijke boete  2000,00 EUR
+
+// ---------------------------------------------------------------------------
+// Dezelfde situatie, correct uitgevoerd. Alles wat hierboven een bevinding was
+// is hier stil — en dát is wat een controlegeval moet aantonen: dat de vijf
+// meldingen van het geval erboven uit de *situatie* komen en niet uit het model.
+// ---------------------------------------------------------------------------
+
+Testgeval Dezelfde werknemer, correct betaald, levert geen enkele bevinding op
+	Gegeven de boetebedragen met de rijen
+		1, 2026 : 2000,00 EUR
+
+	Gegeven een Werkgever (Bakkerij) met
+		handelsnaam  "Bakkerij De Korenaar"
+		heeft een vestiging binnen het Rijk
+	Gegeven een Arbeidsverhouding (Contract) met
+		aanvangsdatum  01-01-2026
+		is arbeidsovereenkomst naar burgerlijk recht
+		heeft een vervulling binnen het Rijk
+	Gegeven een Natuurlijke persoon (Ravi) met
+		geboortedatum  12-04-2007
+		heeft een woonplaats binnen het Rijk
+	Gegeven Bakkerij heeft Contract als aanstelling
+	Gegeven Ravi heeft Contract als betrekking
+
+	Gegeven een Uitbetalingstijdvak (Maart) met
+		begindatum             01-03-2026
+		einddatum              31-03-2026
+		verrichte arbeidstijd  152 uur
+		geldelijke inkomsten   1342,16 EUR
+		giraal voldane loon    1342,16 EUR
+	Gegeven Ravi heeft Maart als tijdvak
+
+	Gegeven een Vakantiejaar (Bijslag 2026) met
+		einddatum van het bijslagtijdvak   31-05-2026
+		maandental van het bijslagtijdvak  1
+		voldane vakantiebijslag            107,37 EUR
+	Gegeven Ravi heeft Bijslag 2026 als bijslagjaar
+	Gegeven Bijslag 2026 heeft Maart als meetellende tijdvakken
+
+	Verwacht Maart met
+		verschuldigde minimumloon  1342,16 EUR
+		onderbetaling              0,00 EUR
+		is geen onderbetaald
+	Verwacht regelversie Inhouding blijft binnen het toegestane is gevuurd
+	Verwacht regelversie Girale voldoening van het verschuldigde minimumloon is gevuurd
+
+	// 8% van € 1.342,16 is € 107,3728, afgerond € 107,37 — en dat is precies wat
+	// er is voldaan.
+	//
+	// De aanvulling van artikel 16 lid 2 is hier **0,00** en niet € 107,37, en
+	// dat is het leerzaamste getal van deze testset. De eerste versie van dit
+	// testgeval verwachtte € 107,37, op de gedachte dat de aanvulling bij een
+	// loon gelijk aan het minimumloon altijd gelijk is aan de 8%. Dat klopt
+	// alleen als er nog niets is betaald: lid 2 meet het tekort tegen de som van
+	// het loon **en de al voldane vakantiebijslag**, en die som is hier
+	// € 1.342,16 + € 107,37 = € 1.449,53 — exact de 108%-norm. Er is dus niets
+	// aan te vullen.
+	//
+	// Dat is het verschil tussen een verwachting die is uitgevoerd en een
+	// verwachting die is beredeneerd, en het is de reden dat elke waarde hier is
+	// nagelopen in plaats van uitgerekend.
+	Verwacht Bijslag 2026 met
+		minimumvakantiebijslag         107,37 EUR
+		aanvullende vakantiebijslag    0,00 EUR
+		verschuldigde vakantiebijslag  107,37 EUR
+		heeft geen ontoereikende vakantiebijslag

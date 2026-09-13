@@ -1,0 +1,35 @@
+{
+	"naam": "boetebedragen",
+	"bestand": "boetebedragen.csv",
+	"dialect": {
+		"veldscheiding": ";",
+		"decimaalteken": ",",
+		"kopregel": true
+	},
+	"dimensies": [
+		{
+			"kolom": "Soortnummer",
+			"type": "geheel",
+			"van": 1,
+			"tot": 5
+		},
+		{
+			"kolom": "Boetejaar",
+			"type": "geheel",
+			"van": 2026,
+			"tot": 2027
+		}
+	],
+	"waarde": {
+		"kolom": "Boetebedrag",
+		"domein": "Bedrag",
+		"decimalen": 2
+	},
+	"volledig": true,
+	"sha256": "525b450c07c9b7aec10eed05e0bba3a578f9c2b420f5c0cadaf2fe8d3837d735",
+	"metadata": {
+		"levering": "2026-01",
+		"herkomst": "voorbeeldbedragen — geen echte beleidsregel",
+		"grondslag": "artikel 18f lid 6 Wml"
+	}
+}

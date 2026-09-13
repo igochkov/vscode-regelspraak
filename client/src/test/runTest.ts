@@ -49,6 +49,76 @@ function supportedFloor(root: string): string {
 	return version.length > 0 ? version : 'stable';
 }
 
+/**
+ * The two-folder workspace to open, written out with the development server's
+ * path in it.
+ *
+ * The committed fixture declares the two folders and nothing else, because
+ * `regelspraak.server.path` names a build this repository does not own — which
+ * is why `.gitignore` keeps `samples/workspace/single-folder/.vscode/` out and
+ * `setup:dev` writes it there. But that file is *folder*-scoped, and a resource-less
+ * `getConfiguration()` — which is what `resolveServerModule` asks, the server
+ * being one per window rather than one per folder — does not see a folder's
+ * settings in a `.code-workspace`. So the setting is lifted to the workspace
+ * level in a generated copy under `out/`, which is gitignored and regenerated
+ * on every run.
+ *
+ * Where there is no such setting the copy carries none, and the extension falls
+ * back to the server staged at its own `server/out/server.js` — exactly as the
+ * single-folder run does.
+ */
+function multiRootWorkspace(here: string): string {
+	const root = path.resolve(here, '../../..');
+	const declared = path.join(root, 'client/src/test/fixtures/twee-werkmappen.code-workspace');
+	const workspace = JSON.parse(fs.readFileSync(declared, 'utf8')) as {
+		folders: { path: string }[];
+		settings?: Record<string, unknown>;
+	};
+
+	// Folder paths in a `.code-workspace` are relative to the file, and the copy
+	// lives somewhere else — so they are made absolute rather than re-derived.
+	workspace.folders = workspace.folders.map(folder => ({
+		path: path.resolve(path.dirname(declared), folder.path)
+	}));
+
+	const serverPath = developmentServerPath(root);
+	if (serverPath) {
+		workspace.settings = { ...workspace.settings, 'regelspraak.server.path': serverPath };
+	}
+
+	const generated = path.join(here, 'twee-werkmappen.code-workspace');
+	fs.writeFileSync(generated, JSON.stringify(workspace, undefined, '\t'), 'utf8');
+	return generated;
+}
+
+/**
+ * `regelspraak.server.path` as `setup:dev` left it in
+ * `samples/workspace/single-folder/`, if it did.
+ */
+function developmentServerPath(root: string): string | undefined {
+	const settings = path.join(root, 'samples/workspace/single-folder/.vscode/settings.json');
+	if (!fs.existsSync(settings)) {
+		return undefined;
+	}
+	try {
+		const held = JSON.parse(fs.readFileSync(settings, 'utf8')) as Record<string, unknown>;
+		const configured = held['regelspraak.server.path'];
+		if (typeof configured !== 'string' || configured.trim().length === 0) {
+			return undefined;
+		}
+		// Made absolute against `samples/workspace/single-folder/`, which is what
+		// the setting is relative to there and is no longer the first folder of
+		// the generated copy.
+		return path.isAbsolute(configured)
+			? configured
+			: path.resolve(root, 'samples/workspace/single-folder', configured);
+	} catch {
+		// A settings file with a comment in it is JSON with comments, which this
+		// cannot read. Falling back to the staged server beats failing the run.
+		return undefined;
+	}
+}
+
 async function main() {
 	try {
 		dropInheritedHostEnvironment();
@@ -64,8 +134,28 @@ async function main() {
 		// Without a folder there is no workspace for `workspaceContains:**/*.rgs`
 		// to match, so the extension never activates and the server never
 		// indexes anything.
+		//
+		// `--twee-werkmappen` opens a `.code-workspace` of two folders instead
+		// ([N-10]): a scope is a workspace folder, so the multi-root shape is a
+		// thing only a second folder can show. The second folder is
+		// `samples/workspace/sample-notebook/`, the reglement in juridische
+		// modus, so one run checks both the scope arithmetic and the sample that
+		// is a model of its own. It is a second *run* rather than a flag inside
+		// the existing one because VS Code decides the workspace at launch, and
+		// every other suite here is written against
+		// `samples/workspace/single-folder/` alone.
+		const multiRoot = process.argv.includes('--twee-werkmappen');
 		const workspacePath = process.env.CODE_TESTS_WORKSPACE
-			?? path.resolve(__dirname, '../../../samples');
+			?? (multiRoot
+				? multiRootWorkspace(__dirname)
+				: path.resolve(__dirname, '../../../samples/workspace/single-folder'));
+		// Narrowed to the two suites that are about a workspace folder: the rest
+		// assume one, and a run that fails them would say nothing about this.
+		// `scopes` is the arithmetic, `reglement` the notebook sample that is the
+		// second folder — and glob reads the braces, so adding a third is a word.
+		if (multiRoot) {
+			process.env.TEST_FILE = process.env.TEST_FILE ?? '{scopes,reglement}';
+		}
 
 		const version = process.env.VSCODE_TEST_VERSION
 			?? supportedFloor(extensionDevelopmentPath);
@@ -78,7 +168,10 @@ async function main() {
 			launchArgs: [
 				workspacePath,
 				// Other extensions would only add noise and timing to the run;
-				// the one under development is unaffected by this flag.
+				// the one under development is unaffected by this flag. Nor are
+				// the **built-in** ones, which is why the notebook spike can ask
+				// about the Markdown extension here rather than in a run of its
+				// own (§4.1 #3 and #7, measured 11 September 2026).
 				'--disable-extensions',
 				// An untrusted folder puts extensions in restricted mode, where
 				// the language server would never start.

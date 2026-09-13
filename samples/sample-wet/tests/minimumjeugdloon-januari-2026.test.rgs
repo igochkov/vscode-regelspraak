@@ -1,0 +1,178 @@
+// De volledige gepubliceerde staffel van 1 januari 2026, nagerekend uit de
+// percentages van het Besluit minimumjeugdloon en het bedrag van artikel 8
+// lid 1 onder a.
+//
+// Waarom deze testset hier staat en niet in het notebook van artikel 8: een
+// notebook is één testset, een testset noemt één parameterset, en een testgeval
+// mag de rekendatum overschrijven maar de parameterset niet. De bedragen van
+// 1 januari 2026 horen bij een andere set dan die van 1 juli, dus horen ze bij
+// een andere testset.
+//
+// En dat is precies wat de `geldig`-regel van een parameterset beschermt: noem
+// `Minimumloonbedragen per 1 juli 2026` bij een rekendatum in maart en je krijgt
+// RS965 in plaats van een groene run met de bedragen van het verkeerde halfjaar.
+//
+// Elke verwachting hieronder staat zo in de tabel die de Rijksoverheid
+// publiceert. Het model komt eraan door 30%, 34,5%, 39,5%, 50%, 60% en 80% van
+// € 14,71 te nemen en af te ronden zoals artikel 2 lid 2 van het Besluit dat
+// voorschrijft — op een cent, met de halve cent naar boven. Dat het op elk van
+// de dertien bedragen exact uitkomt is het bewijs dat de staffel, de parameter
+// en de afronding samen kloppen.
+
+Testset De gepubliceerde minimumjeugdloonstaffel van 1 januari 2026
+Rekendatum 01-03-2026
+Parameterset Minimumloonbedragen per 1 januari 2026
+
+Testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Werkgever (Bakkerij) met
+		handelsnaam  "Bakkerij De Korenaar"
+		heeft een vestiging binnen het Rijk
+	Gegeven een Arbeidsverhouding (Contract) met
+		aanvangsdatum  01-01-2026
+		is arbeidsovereenkomst naar burgerlijk recht
+		heeft een vervulling binnen het Rijk
+	Gegeven Bakkerij heeft Contract als aanstelling
+
+// ---------------------------------------------------------------------------
+// De reguliere staffel — artikel 2 van het Besluit minimumjeugdloon
+// ---------------------------------------------------------------------------
+
+Testgeval Eenentwintig jaar en ouder krijgt het volle uurloon
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Noor) met
+		geboortedatum  14-09-1998
+		heeft een woonplaats binnen het Rijk
+	Gegeven Noor heeft Contract als betrekking
+	Verwacht Noor met
+		leeftijd        27 jaar
+		minimumuurloon  14,71 EUR/uur
+
+Testgeval Twintig jaar krijgt tachtig procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Twintig) met
+		geboortedatum  01-01-2006
+		heeft een woonplaats binnen het Rijk
+	Gegeven Twintig heeft Contract als betrekking
+	Verwacht Twintig met
+		leeftijd        20 jaar
+		minimumuurloon  11,77 EUR/uur
+
+Testgeval Negentien jaar krijgt zestig procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Negentien) met
+		geboortedatum  01-01-2007
+		heeft een woonplaats binnen het Rijk
+	Gegeven Negentien heeft Contract als betrekking
+	Verwacht Negentien met
+		leeftijd        19 jaar
+		minimumuurloon  8,83 EUR/uur
+
+Testgeval Achttien jaar krijgt de helft
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Achttien) met
+		geboortedatum  01-01-2008
+		heeft een woonplaats binnen het Rijk
+	Gegeven Achttien heeft Contract als betrekking
+	Verwacht Achttien met
+		leeftijd        18 jaar
+		minimumuurloon  7,36 EUR/uur
+
+Testgeval Zeventien jaar krijgt negenendertigeneenhalf procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Zeventien) met
+		geboortedatum  01-01-2009
+		heeft een woonplaats binnen het Rijk
+	Gegeven Zeventien heeft Contract als betrekking
+	Verwacht Zeventien met
+		leeftijd        17 jaar
+		minimumuurloon  5,81 EUR/uur
+
+Testgeval Zestien jaar krijgt vierendertigeneenhalf procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Zestien) met
+		geboortedatum  01-01-2010
+		heeft een woonplaats binnen het Rijk
+	Gegeven Zestien heeft Contract als betrekking
+	Verwacht Zestien met
+		leeftijd        16 jaar
+		minimumuurloon  5,07 EUR/uur
+
+Testgeval Vijftien jaar krijgt dertig procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Vijftien) met
+		geboortedatum  01-01-2011
+		heeft een woonplaats binnen het Rijk
+	Gegeven Vijftien heeft Contract als betrekking
+	Verwacht Vijftien met
+		leeftijd        15 jaar
+		minimumuurloon  4,41 EUR/uur
+
+Testgeval Veertien jaar heeft geen recht en dus geen uurloon
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Veertien) met
+		geboortedatum  01-01-2012
+		heeft een woonplaats binnen het Rijk
+	Gegeven Veertien heeft Contract als betrekking
+	Verwacht Veertien met
+		leeftijd        14 jaar
+		heeft geen recht op minimumloon
+		minimumuurloon  leeg
+
+// ---------------------------------------------------------------------------
+// De staffel voor de beroepsbegeleidende leerweg — artikel 3 van het Besluit.
+// Vanaf 18 lager dan de reguliere staffel, daaronder gelijk.
+// ---------------------------------------------------------------------------
+
+Testgeval Een bbl-leerling van twintig krijgt eenenzestigeneenhalf procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Bbl twintig) met
+		geboortedatum  01-01-2006
+		heeft een woonplaats binnen het Rijk
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven Bbl twintig heeft Contract als betrekking
+	Verwacht Bbl twintig met
+		reguliere minimumuurloon  11,77 EUR/uur
+		minimumuurloon            9,05 EUR/uur
+
+Testgeval Een bbl-leerling van negentien krijgt tweeënvijftigeneenhalf procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Bbl negentien) met
+		geboortedatum  01-01-2007
+		heeft een woonplaats binnen het Rijk
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven Bbl negentien heeft Contract als betrekking
+	Verwacht Bbl negentien met
+		minimumuurloon  7,72 EUR/uur
+
+Testgeval Een bbl-leerling van achttien krijgt vijfenveertigeneenhalf procent
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Bbl achttien) met
+		geboortedatum  01-01-2008
+		heeft een woonplaats binnen het Rijk
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven Bbl achttien heeft Contract als betrekking
+	Verwacht Bbl achttien met
+		reguliere minimumuurloon  7,36 EUR/uur
+		minimumuurloon            6,69 EUR/uur
+
+Testgeval Een bbl-leerling van zeventien krijgt hetzelfde als een reguliere werknemer
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Bbl zeventien) met
+		geboortedatum  01-01-2009
+		heeft een woonplaats binnen het Rijk
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven Bbl zeventien heeft Contract als betrekking
+	Verwacht Bbl zeventien met
+		reguliere minimumuurloon  5,81 EUR/uur
+		minimumuurloon            5,81 EUR/uur
+
+Testgeval Een bbl-leerling van eenentwintig krijgt het volle uurloon
+	Gegeven testinitialisatie een binnenlandse werkgever en een binnenlandse betrekking
+	Gegeven een Natuurlijke persoon (Bbl eenentwintig) met
+		geboortedatum  01-01-2005
+		heeft een woonplaats binnen het Rijk
+		is leerling in de beroepsbegeleidende leerweg
+	Gegeven Bbl eenentwintig heeft Contract als betrekking
+	Verwacht Bbl eenentwintig met
+		leeftijd        21 jaar
+		minimumuurloon  14,71 EUR/uur

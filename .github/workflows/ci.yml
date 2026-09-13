@@ -32,42 +32,24 @@ jobs:
       # The example model cites the document it renders (docs/AUTHORING.md).
       # This needs no language server, so unlike the rest of the model's gates
       # it can run here.
+      #
+      # `samples/sample-wet/` is deliberately not named here and cannot be: its
+      # provisions are Dutch law, so every `// Bron:` in it is a Juriconnect
+      # reference, and both of this script's questions — does the citation still
+      # resolve, is every provision rendered — are about a document beside the
+      # model. That folder is gated from the server repository instead, by
+      # `npm run model -- check` and `run`, which need no workbench.
       - name: Check the source citations
         run: npm run source:coverage
 
-      - name: Validate contributed JSON
-        run: |
-          node -e '
-            const fs = require("node:fs");
-            // The snippet file and language configuration allow comments in
-            // VS Code, so strip them before parsing.
-            const strip = (s) => s.replace(/^\s*\/\/.*$/gm, "");
-            for (const f of [
-              "package.json",
-              "language-configuration.json",
-              "snippets/regelspraak.code-snippets",
-              "syntaxes/regelspraak.tmLanguage.json",
-            ]) {
-              JSON.parse(strip(fs.readFileSync(f, "utf8")));
-              console.log("ok", f);
-            }
-          '
-
-      - name: Check the Marketplace icon
-        run: |
-          node -e '
-            const fs = require("node:fs");
-            const b = fs.readFileSync("images/icon.png");
-            if (b.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") {
-              throw new Error("images/icon.png is not a PNG");
-            }
-            // IHDR width/height are big-endian uint32 at offsets 16 and 20.
-            const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
-            console.log(`icon ${w}x${h}`);
-            if (w < 128 || h < 128) {
-              throw new Error("the Marketplace requires an icon of at least 128x128");
-            }
-          '
+      # The manifest, the snippets, the language configuration, the generated
+      # grammar and the icon: files VS Code reads at install time, which neither
+      # `tsc` nor `eslint` nor the suite ever loads. The script is called from
+      # the release rehearsal too — every CI gate is a release gate
+      # (`docs/RELEASING.md` in the server repository), so a gate that lives only
+      # here is one a rehearsal has to reproduce from memory.
+      - name: Validate the contributed files and the icon
+        run: npm run check:contributions
 
       # This repository holds the client half of the extension; a publishable
       # .vsix also needs the language server, which is built and released

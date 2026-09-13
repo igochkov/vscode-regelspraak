@@ -7,7 +7,119 @@ including the full list of diagnostic codes, is in the
 [CHANGELOG](../CHANGELOG.md).
 
 All of it resolves **across files**: rules in one file are coloured, checked,
-navigated and renamed against the GegevensSpraak declarations in another.
+navigated and renamed against the GegevensSpraak declarations in another. The
+boundary is the **workspace folder** — one folder is one model, so two
+reglementen opened together are two models and neither knows the other's names.
+
+## Two ways to write one model
+
+**The mode is the kind of document you open, not a setting.** Nothing below is
+in one mode and not the other; what differs is where the text of the document
+the model renders lives, and who writes it.
+
+- **Technische modus** is `.rgs` and `*.test.rgs` files in `gegevens/`,
+  `regels/` and `tests/`, with the source document under `bron/` and a
+  `// Bron:` line from every declaration and rule back to the provision it
+  renders. It is the mode of a model whose text somebody else wrote first: a
+  converted PTPO, a regeling, an ALEF project brought across. The explorer is
+  then the document's table of contents, and a gap in the numbering is visible.
+- **Juridische modus** is a **notebook**, an `.rgs.md` document in which the
+  reglement's text and the RegelSpraak that computes it alternate in the order
+  the text has. It is the mode of a text and a rule written together, by the
+  person who means both — which a folder of files cannot hold, because there the
+  rule is in one place and the sentence it renders in another.
+
+**They are one model**, and that is the point rather than a side effect: a
+notebook and a folder of `.rgs` files under one workspace folder share one
+namespace, so a team may split the work by role — declarations and delivery
+tables written by an engineer in technical mode, provisions and worked examples
+by the jurist in notebooks — and nothing in the model records that the split
+happened. Laying out either is [AUTHORING.md](AUTHORING.md).
+
+## A reglement as a notebook
+
+- **The file is Markdown and the notebook is a view of it.** A fenced block whose
+  language is `regelspraak` or `testspraak` is a code cell; everything between
+  two of them is one prose cell. Nothing else is stored — no outputs, no
+  execution counters, no cell metadata — so the document is readable and
+  diffable as what it is: a reglement in review is a pull request over prose.
+  *Openen met → Teksteditor* shows the same file as text, and **Reglement
+  bekijken** renders the whole of it — prose, headings, figures and the rules
+  between them — in VS Code's own Markdown preview, which is the read-through
+  before sending it to a colleague, and the print-and-PDF path.
+- **A notebook is one file to the model**, exactly as a `.rgs` file is: its
+  `regelspraak` cells in order are one rule group, its `testspraak` cells in
+  order are one testset. So a `Regelgroep` line in the first cell heads the
+  notebook, a second one anywhere is reported, and a group marked `(recursief)`
+  licenses a loop between cell one and cell five. Every check, every colour and
+  every navigation is the one the same text gets in a file, and a diagnostic
+  lands in the cell it is about.
+- **One notebook is one artikel**, and the folders above it are the levels the
+  document itself has — `deel`, `hoofdstuk`, `afdeling`, whichever it has. An
+  amendment amends an artikel, so a legal change is then the diff of one file;
+  review is per artikel; and the citation of a rule is the lid it sits under
+  rather than the chapter. Declarations do not go in an artikel notebook: an
+  object type is synthesised across the whole document and belongs to no one
+  provision, so it lives in `gegevens/` beside the notebooks.
+- **A rule's citation is its position.** Hovering a rule in a notebook names the
+  nearest heading above its cell and lists every source link in the prose
+  between that heading and the cell — including a Juriconnect reference to Dutch
+  law, read back in words. An explicit `// Bron:` line inside the cell wins,
+  for the rule that renders a provision other than the one it stands under.
+  Nothing is written into the code for this: a derived citation is something you
+  ask for, and drawing it in the text would be an annotation nobody typed.
+- **You run the worked example, not the rule.** What a `testspraak` cell's run
+  button does is run the testgevallen written in it: under the cell each
+  `Verwacht` line gets its verdict, with the expected and the actual value where
+  they differ and the faults the run recorded. The same testgevallen are in the
+  Testing view, under the notebook, and it is the same request either way.
+  There is no such thing as running one rule — a run evaluates the whole model
+  against a situation, and *running a rule* was always *running a testgeval and
+  looking at one rule* — so a **rule** cell's button says which cell to press
+  instead rather than running anything. (VS Code draws a run button on every
+  code cell of a notebook it has a kernel for, and there is no way to ask it for
+  one on some and not others; what an extension decides is what pressing it
+  does.) A cell holding only the testset header runs nothing and says so too.
+- **Outputs are ephemeral.** Editing any code cell clears every output in the
+  notebook: the run was against a model that no longer exists, and a stored
+  verdict in a file would be a stale panel committed to the repository.
+- **The derivation is one gesture away, not under the cell.** `leg uit` on a
+  failing `Verwacht` line opens the run panel focused on that value, exactly as
+  it does from a file; drawing the trace under the cell would print forty lines
+  under every expectation. Breakpoints, the Test Explorer and **Leg uit** all
+  reach into a cell, a cell being a document like any other.
+- **A `// Visualisatie:` comment draws the effect of a rule beside the rule.**
+  A testgeval that seats sixteen personen on eight geboortedata *is* the
+  staffel, and the run already computes every one of those values — so four comment
+  lines above a `Testgeval` say what to draw with them, and the cell answers with
+  a figure above its verdict:
+
+  ```
+  // Visualisatie: staffel
+  //   x:      leeftijd van de Natuurlijke persoon
+  //   y:      staffelminimumuurloon van de Natuurlijke persoon
+  //   reeks:  leerling in de beroepsbegeleidende leerweg
+  Testgeval De staffel per 1 juli 2026
+  ```
+
+  The axes name an **attribuut** and the reeks a **kenmerk** — things the model
+  declares, not colours or scales — and completion offers them: the kinds after
+  `Visualisatie:`, the keys on a fresh line, and each axis as the whole phrase
+  with the article the declaration was written with. Once one line names an
+  object type the others are offered its members alone. Five kinds: `staffel` (a step, which is what a
+  beslistabel on a leeftijd draws), `lijn`, `regime` (several rules competing
+  over one axis, with `uitkomst:` naming the one that applies), `balk` and
+  `tabel`. It is a *comment*, so the language has never heard of it: the file is
+  still the model, nothing is stored, and an unknown kind or a misspelled name is
+  a warning on the line with the ordinary verdict underneath. The testgeval keeps
+  its `Verwacht` lines, which is what makes a figure that has gone stale a red
+  test rather than a wrong picture.
+- **A figure goes beside the notebook.** Images in a prose cell are relative
+  paths resolved against the file, and pasting one into a cell writes it into a
+  `media/` folder named after the notebook rather than loose in the model root.
+- **The outline of a notebook is its headings.** VS Code draws those itself;
+  turn on `notebook.outline.showCodeCells` to have the declarations and rules in
+  the cells beside them.
 
 ## Reading a model
 
@@ -51,7 +163,7 @@ conformance corpus on every build, and none of them may report anything there.
 
 ## Seeing it whole
 
-- **A Model Explorer** in its own activity-bar container: every declaration in the workspace in one tree, grouped by kind, with members underneath — including the ones an `Extensie van objecttype` block in another file adds. Click a row and the declaration opens; the tree follows what you type.
+- **A Model Explorer** in its own activity-bar container: every declaration in the workspace in one tree, grouped by kind, with members underneath — including the ones an `Extensie van objecttype` block in another file adds. Click a row and the declaration opens; the tree follows what you type. Each heading counts its rows, and the one over the regelgroepen adds what they hold — `12 (98 regels, 7 beslistabellen)` — since a model that groups its rules has no flat list of them to count; each group says the same of itself, and a workspace folder's row counts every rule in it.
 - **A model view of a file** (read-only): the declarations the language server sees in it, in the order the file writes them, with their members and declared datatypes.
 - **A preview for decision tables**, opened from the CodeLens above a `Beslistabel`: the table as a grid of cases and columns, beside the text. It shows what the source cannot — which column concludes and which conditions, the errors on the cell each one is about, and what the case your cursor is in concludes, written out as one sentence. A table with more than one `geldig` period is drawn as one grid per version, each under its own validity. Read-only, and it navigates: click a cell to go to it in the text, and moving the cursor there highlights the case. A model is edited as text — that is the point of this extension — so the preview never writes.
 - **The language server's status** in the status bar beside a `.rgs` file and nowhere else, so a server that failed to start is not mistaken for one with nothing to report; clicking it opens the log.
@@ -62,6 +174,7 @@ conformance corpus on every build, and none of them may report anything there.
 - **Testsets run, in the Testing view.** Every `*.test.rgs` file is a testset with its testgevallen under it; running one evaluates the model against the situation it describes and checks what it expected. A failure is a diff — expected against actual in RegelSpraak's own notation, naming the rule that derived the value, placed on the line that expected it — and values compare by value, so `1,00 EUR` and `1 euro` are one amount. A testgeval that cannot be composed says so on the item before you run it; one that could not proceed is an error rather than a failure, because no answer is not a wrong answer. Evaluation runs in a worker thread with a timeout, so a rule set that loops does not take the editor with it.
 - **Run from the text, and see what the run computed.** A link above every testset and every testgeval runs it — the same run the Testing view makes, with the same result on the same item. **Uitkomst van dit testgeval tonen** (<kbd>Alt</kbd>+<kbd>R</kbd>) opens a read-only panel beside the testset: the expectations with what they actually got, the values you gave and the values the model derived, the characteristics, the faults, and the derivation trace — one line per write, in order, naming the rule that made it. Open a write and you get two things in one list: what the rule *did*, as one row per step of its arithmetic with the value each step came to, and then the operands it read. A `Daarbij geldt` variable appears under its own name rather than under the sentence that defines it. Passing and failing are coloured apart in your own theme's colours; every derived value and trace line names the rule that wrote it and clicks through to it, and a failing expectation goes to the `Verwacht` line that made it; a write's operands fold away until you want them. A consistency rule that was not satisfied lists its criteria with the failing one marked, and the values it read. All of it in RegelSpraak's own notation, because it is computed on the server, and **Als tekst openen** gives you the same thing as text to paste.
 - **Leg uit** — from a value to the derivation that produced it. After a run, a **leg uit** link sits on every `Verwacht` line that failed, beside the run links you already have; it is gone again the moment the expectation passes or you edit the line. It is also in the Test Results context menu and on a value in the editor — right-click, <kbd>Alt</kbd>+<kbd>E</kbd>, or **RegelSpraak: Leg uit** in the palette. The same panel opens with the derivation of *that* value at the top: what the rule wrote, the arithmetic it did and the operands it read, each of those naming the rule behind it in turn. Where a **beslistabel** wrote it, that is the rows it tried — `rij 1 = onwaar` over the condition that failed — so which case decided the value, and why the case above it did not, is on screen with the values it read; the write names the deciding row beside the table itself, `← Contributiestaffel (rij 2)`. Where several rules wrote the value — an initialisation and then the rule that supersedes it is ordinary — the one that still stands is marked **eindwaarde** and is the one opened, and the rest are marked *overschreven*, because which of them accounts for the number is the question you opened the panel to answer. In a testset the explanation is about the instance the block names; in a rule file it is about every instance the run has, since a rule is written about all of them. The whole run stays below it as context, because a rule reads whatever the rules before it derived. Where **nothing wrote the value**, the panel answers *Waarom is … leeg?* with a verdict list instead: one row per rule that could have filled it, saying what that rule did — skipped, with the criterion that decided and the values it read; no regelversie valid on the rekendatum, with the periods it does have; failed, with the fault; or not applied to this instance. Where no rule writes the attribute at all it says so, and notes that a `Gegeven` is then the only possible source. Every row is a recorded fact, never a guess. The editor's menu entry appears only where there is an answer.
+- **Which of your model the tests actually run.** The Testing view's **Dekking** profile runs the testgevallen you pick and then marks the model: every *regelversie* a run fired is green in the gutter, every one nothing reached is red, and the Test Coverage view lists them by name — `bepaal boete · geldig altijd`. The unit is the version and not the rule, which is the point of it: a rekendatum selects one version (§4.2), so a testset that reckons in 2027 can never reach a `geldig t/m 2026` beside it, and a count over rules would call that model fully tested. A beslistabel has versions the same way and is measured the same way. *Fired* is the strict reading — the language's own word, the one a `Verwacht Regelversie … gevuurd is` line already asserts — so a version whose condition never held in any testgeval is uncovered, because its derivation has never run. Files nothing touched are in the report too: a file with no coverage is exactly the file you are looking for. The same figure without opening the editor is `npm run model -- tested`.
 - **The trace loads as you open it.** A detailed run names every write and carries the inside of none: the arithmetic and the operands arrive on the click that opens a row, out of the run the panel is already drawing. You notice little — a row folds open as always and says *ophalen…* for a moment — but a click in the panel now answers about *that* run rather than about a fresh one, where before every gesture re-ran the model and so answered about whatever you had typed since. It is 33–52% less to transfer per run on the models here, and the difference between megabytes and not on a model with thousands of instances. **Als tekst openen** fetches everything first, since a text document cannot load as you read it, so the text form stays complete and stays the thing you paste into a ticket. Where a run is no longer available the row says so and offers to run the testgeval again.
 - **Open an aggregation.** A sum or a count over a collection reads as one number, and when it is wrong by a little the element that is wrong is the thing you want. Every aggregation in the trace carries an **uitklappen** button that opens the elements behind it: one row per element with the instance it belongs to and its value, **largest first**, because that is what you are hunting. The *instantie* header gives you the model's own order back and *waarde* the sorted one; a long list paints twenty with **toon alle …** under it. Where the values do not compare — text, or two units — the model's order stands rather than an invented one. Nothing extra is recorded during a run: the click recomputes that sentence against the same situation, so an ordinary run is no heavier for it. In the debugger the same fact has its own home — a Watch answer that is a collection gets the Variables pane's expansion arrow, and a collection writes itself there as *512 waarden* rather than as a line of five hundred numbers.
 - **Compare with the previous run.** **RegelSpraak: Vergelijk met vorige uitvoering** — in the palette, in the Test Results menu on a failed expectation, and as a button in the outcome panel — runs the testgeval and puts a **Veranderd (n)** section above it: one row per value that moved (`25 euro → 30 euro`), per characteristic that appeared or went, per rule that now fires, no longer fires or fired a different number of times, and per fault that appeared or disappeared. Click a moved value and you get its derivation, over the same run — no second execution. If nothing moved it says so. And in a comparison, **Als tekst openen** gives you both runs side by side in VS Code's own diff editor, complete, every difference marked. "The previous run" means the previous *detailed* run of that testgeval; a run from the Testing view does not count, since it fetches no detail.
@@ -70,6 +183,7 @@ conformance corpus on every build, and none of them may report anything there.
 - **Step into the arithmetic** (<kbd>F11</kbd>). At a stop, Step Into goes *inside* the rule instead of over it, stopping at each part of its expression as that part is worked out — innermost first, because a stop happens when a sub-expression is finished and what you are stepping to see is its value. Here the Call Stack does have something to show: what encloses the phrase you are standing on, up to the rule, with the editor highlighting the phrase itself rather than the line. <kbd>F10</kbd> finishes the next part without going inside it and <kbd>Shift</kbd>+<kbd>F11</kbd> runs back out of the one you are in. It lasts for the rule and instance you asked about and then hands back, so there is no mode to switch off — which matters, because a rule fires once per instance. Two places deliberately do not step: a decision table, whose cells are sentences composed from a header and a value and so cannot be pointed at precisely (<kbd>F11</kbd> there behaves as <kbd>F10</kbd>), and a Watch expression, which must not be able to stop the run it is asking about.
 - **Breakpoints, including on a `Verwacht` line.** In a rule file a breakpoint marks that rule. In a testset it marks *the rules that derive whatever the line names* — an expectation has no moment during a run, so the useful reading is not "stop at this assertion" but "stop where this value comes from". A value line marks every rule that writes it, a block header marks every rule behind any line beneath it, and `Verwacht regelversie <naam> is gevuurd` marks that rule. A mark from a `Verwacht <instantie> met` block stops only for that instance; on a rule, the condition field takes an instance name and does the same. A line nothing derives stays grey and says why — which for an expectation on an attribute *no rule writes* is often the answer you were looking for.
 - **Run one rule against a testgeval.** A link above every `Regel` and `Beslistabel` runs the *active testgeval* and shows what that rule did: what it wrote, for which instances, out of what — or that it did not fire. It runs the whole model, because firing order follows the dependencies between rules and a rule's inputs are whatever the rules before it derived, so a rule evaluated alone is not a defined thing. The active testgeval is `regelspraak.execution.defaultScenario` — a shared default meant to be committed — or a per-window choice made with **Actief testgeval kiezen**, which also clears one again. Which of the two is in force is in the status bar beside every `.rgs` file, along with whether the language server is up.
+- **It computes exactly, and says so when it cannot.** There is no floating point anywhere in a run: a number is a fraction of two whole numbers, a division *is* a fraction (`2,3 gedeeld door 1,1` is `2 1/11`), the decimals you wrote are part of the value, and rounding happens where the sentence says it does and nowhere else. So `0,1 plus 0,2` is `0,3`, and a factor carries every decimal the administration delivered it with. The one bound is that each half of the fraction holds at most **a thousand digits** — far past anything a model writes, where a fourteen-decimal factor contributes fourteen and a chain of divisions adds up — and a computation that outgrows it says how many significant digits it needed rather than rounding your answer quietly. Nothing is ever rounded to a declared precision behind your back: a value the model cannot state exactly is a fault you can see, never a number that looks right and is a cent out.
 - **A parameter on a timeline, and a testgeval that only runs.** `Parameter … voor elke maand;` (§3.8) takes several period lines in a testset — each with its own `vanaf`/`tot` — and evaluates as the timeline it declares, a rule reading the period the rekendatum falls in. `RS960` reports two lines that cover the same day while you type, where before only the run refused them; `RS705` reports a time-dependent value written to an attribute the model keeps once, which used to become time-dependent against its own declaration with no diagnostic and no fault. And a testgeval with no `Verwacht` lines is a *scenario*: its link says **scenario uitvoeren** and the Testing view reports it as skipped rather than passed, because a run that checked nothing is not a green test.
 
 ## Tables from outside the model

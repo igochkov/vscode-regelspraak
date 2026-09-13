@@ -20,6 +20,7 @@ const TESTS_REQUEST = 'regelspraak/tests';
 const RUN_TEST_REQUEST = 'regelspraak/runTest';
 const EXPAND_REQUEST = 'regelspraak/expandCollection';
 const RUN_DETAIL_REQUEST = 'regelspraak/runDetail';
+const COVERAGE_REQUEST = 'regelspraak/coverage';
 
 /**
  * What a failing expectation's message is tagged with, so UX-1's **Leg uit** can
@@ -67,6 +68,18 @@ interface TestProblem { code: string; message: string; range: WireRange }
 
 interface TestCaseInfo {
 	name: string;
+	/**
+	 * The document this case's own text is in, where it is not the testset's
+	 * ([N-3]).
+	 *
+	 * A notebook is one testset whose header may be in one cell and whose cases
+	 * are in others, so a case cannot inherit its testset's URI the way a case
+	 * in a `*.test.rgs` file does. The server sends it **only where it would
+	 * differ**, so absent means "the same document as the header" — and the
+	 * fallback is the ordinary path rather than a notebook special case, which
+	 * is what keeps a client that forgot it from looking correct on a file.
+	 */
+	uri?: string;
 	nameRange: WireRange;
 	range: WireRange;
 	testable: boolean;
@@ -87,6 +100,17 @@ interface TestAssertion {
 	label: string;
 	passed: boolean;
 	range: WireRange;
+	/**
+	 * The document that line is in, where it is not the one the run was asked
+	 * about ([N-3]).
+	 *
+	 * A testgeval written in a notebook cell has its `Verwacht` lines in that
+	 * cell while the run was requested for the notebook — so the range alone
+	 * would put the failure's location, and the `leg uit` lens with it, on a
+	 * line of a file the reader is looking at as cells. Absent for every
+	 * `*.test.rgs` file, and the fallback is the run's own document.
+	 */
+	uri?: string;
 	expected?: string;
 	actual?: string;
 	rule?: string;
@@ -352,6 +376,121 @@ export interface TestRun {
 	faults: TestFault[];
 	detail?: RunDetail;
 	sources?: BoundSource[];
+	/**
+	 * Which regelversies this run fired — opaque handles, echoed back and never
+	 * read (see the server's `protocol.ts`).
+	 *
+	 * Present only when the run was asked for coverage, and absent on a refusal
+	 * rather than empty: nothing ran, which is not the same as nothing firing.
+	 */
+	coverage?: string[];
+	/**
+	 * The figure a `// Visualisatie:` directive describes ([V-1]), when the run
+	 * was asked for one — see the server's `protocol.ts`.
+	 *
+	 * Only the notebook asks: a cell is where a figure is drawn, and the Testing
+	 * view running the same testgeval wants pass or fail.
+	 */
+	chart?: RunChart;
+	/** Why there is no figure, where a directive was written and could not be drawn. */
+	chartProblem?: string;
+}
+
+/**
+ * A figure over one run ([V-2], [V-10]) — see the server's `protocol.ts`.
+ *
+ * Declared here because it crosses this wire: a field the client's own types do
+ * not name is a field nothing on this side can read, which is how `RunDetail.
+ * skipped` shipped on every detailed run and was invisible to every reader of it
+ * until UX-2 went looking.
+ */
+export interface RunChart {
+	kind: 'staffel' | 'lijn' | 'regime' | 'balk' | 'tabel';
+	title: string;
+	subject: string;
+	x?: ChartAxis;
+	value: ChartAxis;
+	series: ChartSeries[];
+	/** Instances the run holds no place for, counted rather than quietly dropped. */
+	missing?: number;
+}
+
+export interface ChartAxis {
+	label: string;
+	unit?: string;
+	scale: 'getal' | 'datum' | 'tekst';
+	/** Zero on this axis, spelled by the server — the baseline; see its `protocol.ts`. */
+	zero?: string;
+}
+
+export interface ChartSeries {
+	label: string;
+	/** `regime`'s `uitkomst`: the series that says which of the others applies. */
+	outcome?: true;
+	/** The instances a `reeks` leaves over — see the server's `protocol.ts`. */
+	complement?: true;
+	points: ChartPoint[];
+}
+
+export interface ChartPoint {
+	instance: string;
+	/** Where it sits on the x scale; absent where the value is leeg or categorical. */
+	x?: number;
+	/** The same x as the language writes it. */
+	xLabel: string;
+	y?: number;
+	/** A RegelSpraak literal, `leeg` where there is no value — never parsed here. */
+	yLabel: string;
+}
+
+/** The server's answer about the model's regelversies — see its `protocol.ts`. */
+interface CoverageAnswer {
+	files: { uri: string; versions: CoverageVersion[] }[];
+}
+
+interface CoverageVersion {
+	label: string;
+	range: WireRange;
+	fired: boolean;
+}
+
+/**
+ * One document's coverage, as VS Code's own model of it.
+ *
+ * **Two readings of one fact, which is what every coverage reporter emits.** A
+ * regelversie is a named, rangeable unit, so it is a *declaration* — that is
+ * what puts `bepaal boete · geldig altijd` in the Test Coverage view by name —
+ * and its lines are what a reader wants coloured in the gutter, which is
+ * *statements*. lcov says the same thing about a function and its body, and the
+ * locations mirror that: the declaration sits on the `geldig` line that opens
+ * the version, the statement spans the whole of it.
+ *
+ * There is no branch coverage and there will not be. A rule's condition decides
+ * *whether* the version fires, so a version whose condition never held is
+ * already reported as uncovered; splitting that into branches would claim this
+ * side knows which bullet of a compound condition was reached, and the run
+ * records that only under `detail` ([§X7 stage 1]).
+ *
+ * Pure, and exported, for `rangeOfGesture`'s reason (W4): a coverage gutter
+ * cannot be driven from a test, so the half that decides anything lives where a
+ * test reaches it.
+ */
+export interface DrawnCoverage {
+	uri: vscode.Uri;
+	details: vscode.FileCoverageDetail[];
+}
+
+export function coverageOf(answer: CoverageAnswer): DrawnCoverage[] {
+	return answer.files.map(file => ({
+		uri: vscode.Uri.parse(file.uri),
+		details: file.versions.flatMap((version): vscode.FileCoverageDetail[] => {
+			const range = rangeOf(version.range);
+			return [
+				new vscode.DeclarationCoverage(version.label, version.fired, range.start),
+				new vscode.StatementCoverage(version.fired, range)
+			];
+		})
+	}));
 }
 
 function rangeOf(wire: WireRange): vscode.Range {
@@ -362,11 +501,33 @@ function rangeOf(wire: WireRange): vscode.Range {
 export class TestExplorer {
 	private readonly controller: vscode.TestController;
 	private readonly profile: vscode.TestRunProfile;
+	private readonly coverageProfile: vscode.TestRunProfile;
+	/**
+	 * What each run's coverage details were, so they can be handed over lazily.
+	 *
+	 * Keyed by the `TestRun` rather than kept as one map, because VS Code asks
+	 * for the details of a run it names and two runs may be alive at once — a
+	 * single map would answer the newer run's details for the older one's
+	 * question, which is a coverage report about the wrong set of tests. A
+	 * `WeakMap` because a run that VS Code has let go is one nothing will ask
+	 * about again.
+	 */
+	private readonly coverageDetails =
+		new WeakMap<vscode.TestRun, Map<string, vscode.FileCoverageDetail[]>>();
+	private drawn: readonly DrawnCoverage[] = [];
 	private client: LanguageClient | undefined;
 	/** Moved by every invalidation, so a reply in flight can be told from a fresh one. */
 	private generation = 0;
-	/** Each case's whole extent by item id — the item itself carries only its name. */
-	private readonly spans = new Map<string, [number, number]>();
+	/**
+	 * Each case's own document and whole extent, by item id.
+	 *
+	 * The document as well as the lines, because a notebook's cases are written
+	 * in several cells and a case's extent means nothing without saying which
+	 * one it counts against — the same reason W4's `Spot` carries a version
+	 * index. The item's own `uri` says the same thing, and this is the reading
+	 * `casesOfDocument` takes because it needs the extent beside it.
+	 */
+	private readonly spans = new Map<string, { uri: string; start: number; end: number }>();
 	/**
 	 * What failed in the last run, by item id (UX-1's lens).
 	 *
@@ -404,6 +565,16 @@ export class TestExplorer {
 		// there is no debug profile to leave unimplemented.
 		this.profile = this.controller.createRunProfile('Uitvoeren',
 			vscode.TestRunProfileKind.Run, (request, token) => this.run(request, token), true);
+		// **The same run, plus one question afterwards.** Coverage is not a
+		// different way of running a testgeval — it is the ordinary run with
+		// `RunTestParams.coverage` set and one join at the end — so the two profiles
+		// share `run` rather than each having a handler. A second implementation of
+		// "run these cases and report them" is how the coverage profile would come
+		// to report a failure differently from the plain one.
+		this.coverageProfile = this.controller.createRunProfile('Dekking',
+			vscode.TestRunProfileKind.Coverage, (request, token) => this.run(request, token), true);
+		this.coverageProfile.loadDetailedCoverage = (testRun, file) =>
+			Promise.resolve(this.coverageDetails.get(testRun)?.get(file.uri.toString()) ?? []);
 		this.controller.resolveHandler = async () => {
 			await this.refresh();
 		};
@@ -462,6 +633,26 @@ export class TestExplorer {
 		return this.profile;
 	}
 
+	/** The coverage profile, exposed for the reason `runProfile` is. */
+	get testCoverageProfile(): vscode.TestRunProfile {
+		return this.coverageProfile;
+	}
+
+	/**
+	 * What the last coverage run drew, for the reason `runProfile` is exposed.
+	 *
+	 * A `TestRun`'s coverage goes into the workbench and does not come back, and
+	 * the client's end-to-end suite is the only thing on either side that checks
+	 * the `regelspraak/coverage` contract — the server repository holds the other
+	 * half and nothing at build time compares the two. So the answer is kept where
+	 * a test reaches it, and it is **cleared when a coverage run begins**: a fetch
+	 * that failed would otherwise leave the previous run's picture standing, which
+	 * is the one way this could pass while the contract was broken.
+	 */
+	get coverageDrawn(): readonly DrawnCoverage[] {
+		return this.drawn;
+	}
+
 	/** Re-pointed on every (re)start, and cleared when the server stops. */
 	setClient(client: LanguageClient | undefined): void {
 		this.client = client;
@@ -508,10 +699,15 @@ export class TestExplorer {
 		const item = this.controller.createTestItem(testset.uri, testset.name, uri);
 		item.range = rangeOf(testset.nameRange);
 		item.children.replace(testset.cases.map(one => {
+			// Where its own text is, which for a notebook is not where its header
+			// is ([N-3]) — so the item reveals the cell the testgeval is written
+			// in and its range counts against that cell.
+			const where = one.uri ?? testset.uri;
 			const child = this.controller.createTestItem(
-				`${testset.uri}#${one.name}`, one.name, uri);
+				`${testset.uri}#${one.name}`, one.name, vscode.Uri.parse(where));
 			child.range = rangeOf(one.nameRange);
-			this.spans.set(child.id, [one.range.start.line, one.range.end.line]);
+			this.spans.set(child.id,
+				{ uri: where, start: one.range.start.line, end: one.range.end.line });
 			// What the server said about it, on the item rather than in a run: a
 			// case that cannot compose is worth seeing before anybody presses play,
 			// and a run-only case is worth telling apart from one that asserts.
@@ -662,21 +858,29 @@ export class TestExplorer {
 		return found;
 	}
 
-	/** Every testgeval of one document, with the lines it spans (X4's cursor lookup). */
+	/**
+	 * Every testgeval written in one document, with the lines it spans (X4's
+	 * cursor lookup).
+	 *
+	 * **By where each case is, not by which testset it belongs to** ([N-9]). A
+	 * notebook's testset is one testset whose header is in one cell and whose
+	 * cases are in others, so looking the testset up by the asked-about URI
+	 * answers nothing for every cell but the header's — which is exactly the
+	 * cell **Leg uit** is invoked from. A file is unchanged by the same code:
+	 * every case there carries its testset's own URI.
+	 */
 	casesOfDocument(uri: string): { name: string; startLine: number; endLine: number }[] {
-		const testset = this.controller.items.get(uri);
-		if (!testset) {
-			return [];
-		}
 		const found: { name: string; startLine: number; endLine: number }[] = [];
-		testset.children.forEach(one => {
-			// The item's range is its *name*; the case spans further, so the lookup
-			// needs the declaration's extent. Kept beside the item when the tree was
-			// built rather than re-derived here.
-			const span = this.spans.get(one.id);
-			if (span) {
-				found.push({ name: one.label, startLine: span[0], endLine: span[1] });
-			}
+		this.controller.items.forEach(testset => {
+			testset.children.forEach(one => {
+				// The item's range is its *name*; the case spans further, so the
+				// lookup needs the declaration's extent. Kept beside the item when
+				// the tree was built rather than re-derived here.
+				const span = this.spans.get(one.id);
+				if (span?.uri === uri) {
+					found.push({ name: one.label, startLine: span.start, endLine: span.end });
+				}
+			});
 		});
 		return found;
 	}
@@ -744,6 +948,17 @@ export class TestExplorer {
 	): Promise<void> {
 		const client = this.client;
 		const run = this.controller.createTestRun(request);
+		// **Read from the request, not from a parameter.** VS Code names the profile
+		// the user pressed, so the two handlers stay one function and there is no
+		// flag for a caller to get wrong. Any profile of the Coverage kind counts —
+		// the kind is the question being asked, and matching on the profile object
+		// would quietly stop working if a second coverage profile were ever added.
+		const wantCoverage = request.profile?.kind === vscode.TestRunProfileKind.Coverage;
+		const fired = new Set<string>();
+		let ran = false;
+		if (wantCoverage) {
+			this.drawn = [];
+		}
 		try {
 			for (const item of this.casesOf(request)) {
 				if (token.isCancellationRequested) {
@@ -762,17 +977,65 @@ export class TestExplorer {
 				try {
 					outcome = await client.sendRequest<TestRun>(RUN_TEST_REQUEST, {
 						textDocument: { uri },
-						case: name
+						case: name,
+						...(wantCoverage ? { coverage: true } : {})
 					}, token);
 				} catch (error) {
 					run.errored(item, new vscode.TestMessage(String(error)));
 					continue;
 				}
+				ran = true;
+				for (const one of outcome.coverage ?? []) {
+					fired.add(one);
+				}
 				this.report(run, item, outcome, Date.now() - started);
+			}
+			if (wantCoverage && ran && client) {
+				await this.addCoverage(run, client, fired, token);
 			}
 		} finally {
 			run.end();
 		}
+	}
+
+	/**
+	 * What the model declares, marked with what these runs fired.
+	 *
+	 * **Asked once, after every case**, because coverage is about the run as a
+	 * whole: §W7 runs one testgeval per request, so asking per case would answer
+	 * the same question about the model N times and leave this side to merge N
+	 * denominators. The handles go back exactly as they came ([T-22] — the join is
+	 * the server's, and a client marking versions off itself would be a second
+	 * answer to *which version was that*).
+	 *
+	 * A failure here is **not** a failed test run: the cases have already been
+	 * reported, and a coverage report that could not be fetched is a missing
+	 * picture rather than a wrong verdict. So it is swallowed to the output
+	 * channel's neighbour — the run's own output — where a reader looking for it
+	 * will find it, and the run still ends green or red on its own merits.
+	 */
+	private async addCoverage(
+		run: vscode.TestRun,
+		client: LanguageClient,
+		fired: ReadonlySet<string>,
+		token: vscode.CancellationToken
+	): Promise<void> {
+		let answer: CoverageAnswer;
+		try {
+			answer = await client.sendRequest<CoverageAnswer>(COVERAGE_REQUEST,
+				{ fired: [...fired] }, token);
+		} catch (error) {
+			run.appendOutput(`de dekking kon niet worden opgehaald: ${String(error)}\r\n`);
+			return;
+		}
+		const files = coverageOf(answer);
+		const details = new Map<string, vscode.FileCoverageDetail[]>();
+		for (const file of files) {
+			details.set(file.uri.toString(), file.details);
+			run.addCoverage(vscode.FileCoverage.fromDetails(file.uri, file.details));
+		}
+		this.coverageDetails.set(run, details);
+		this.drawn = files;
 	}
 
 	/**
@@ -864,9 +1127,15 @@ export class TestExplorer {
 		// error is most likely to be the *cause* of the expectation failing, so it is
 		// the last place to leave it out. Ahead of the diffs, because "the run could
 		// not do what the model asked" is the thing to read first.
+		// **Where the expectation is written, which is not always where the case
+		// is** ([N-3]): a notebook's `Verwacht` lines sit in the cell the testgeval
+		// is in, and the run was asked for the notebook. The item's own URI is the
+		// fallback and the answer for every file.
 		const source = item.uri ?? vscode.Uri.parse(splitId(item.id)[0]);
+		const where = (one: TestAssertion): vscode.Uri =>
+			one.uri === undefined ? source : vscode.Uri.parse(one.uri);
 		this.recordFailures(item, failed.map((one): FailedExpectation => ({
-			uri: source.toString(),
+			uri: where(one).toString(),
 			case: item.label,
 			line: one.range.start.line,
 			label: one.label
@@ -878,7 +1147,7 @@ export class TestExplorer {
 				one.rule ? `${one.label} (${one.rule})` : one.label,
 				one.expected ?? 'leeg',
 				one.actual ?? 'leeg');
-			message.location = new vscode.Location(source, rangeOf(one.range));
+			message.location = new vscode.Location(where(one), rangeOf(one.range));
 			// UX-1, and what it is *not*: this tag reaches the Test Results tree's
 			// context menu and nothing else, because the peek's button — the other
 			// contribution point that reads it — needs the peek opened first and was
