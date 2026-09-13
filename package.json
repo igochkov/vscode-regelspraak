@@ -1,7 +1,7 @@
 {
 	"name": "vscode-regelspraak",
 	"displayName": "RegelSpraak",
-	"description": "Semantic highlighting, live validation, completion and hover for RegelSpraak.",
+	"description": "Write, check and run RegelSpraak models, in files or in notebooks — with the editor support you expect from a programming language.",
 	"author": {
 		"name": "Ivaylo Gochkov",
 		"url": "https://github.com/igochkov"
@@ -26,6 +26,7 @@
 		"Programming Languages",
 		"Linters",
 		"Testing",
+		"Notebooks",
 		"Debuggers"
 	],
 	"keywords": [
@@ -33,6 +34,7 @@
 		"rules as code",
 		"belastingdienst",
 		"rules engine",
+		"notebook",
 		"dutch",
 		"debugger"
 	],
