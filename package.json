@@ -287,6 +287,20 @@
 				"path": "./syntaxes/regelspraak.tmLanguage.json"
 			}
 		],
+		"themes": [
+			{
+				"//": "A paper-like reading theme for the notebook/juridische modus — opt-in, not a colour forced onto whichever theme is active (that is what BRD A-5 withdrew).",
+				"label": "RegelSpraak Light",
+				"uiTheme": "vs",
+				"path": "./themes/regelspraak-light-color-theme.json"
+			},
+			{
+				"//": "A cool, low-glare theme for the technische modus.",
+				"label": "RegelSpraak Dark",
+				"uiTheme": "vs-dark",
+				"path": "./themes/regelspraak-dark-color-theme.json"
+			}
+		],
 		"notebooks": [
 			{
 				"//": "[N-1], [N-4]. `default` claims *.rgs.md and leaves every other .md to the Markdown editor; the text is one gesture away under Open With.",

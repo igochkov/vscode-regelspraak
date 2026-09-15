@@ -29,6 +29,8 @@ const JSON_FILES = [
 	'snippets/regelspraak.code-snippets',
 	'snippets/testspraak.code-snippets',
 	'syntaxes/regelspraak.tmLanguage.json',
+	'themes/regelspraak-light-color-theme.json',
+	'themes/regelspraak-dark-color-theme.json',
 ];
 
 // The Marketplace draws the icon at 128×128 and rejects a non-PNG outright.

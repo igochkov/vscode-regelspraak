@@ -7,6 +7,21 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased]
+
+**Two colour themes now ship with the extension** (`contributes.themes`),
+each designed for one of the two ways this extension is used. `RegelSpraak
+Light` is a warm, paper-like theme for the notebook/juridische modus: an
+objecttype's name reads as a rubricated heading, an attribuut is forest green,
+a kenmerk is a warm ochre, a rol or parameter is navy or teal, and every
+declaration's own keyword carries weight rather than colour. `RegelSpraak
+Dark` is a cool, low-glare theme for the technische modus, with a richer,
+fully-coloured palette across every RegelSpraak concept — domein, tijdlijn,
+feittype, dagsoort, eenheid, regel and variabele each carry their own accent,
+and a keyword's own slate colour keeps it readable next to a name, rather than
+relying on bold weight alone. Both are new themes to select, not a colour
+forced onto whichever theme is already active, so neither reopens BRD A-5.
+
 ## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
 
 **A model can now be written as the document it renders.** Until now the text

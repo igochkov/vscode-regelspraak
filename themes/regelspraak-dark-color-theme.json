@@ -1,0 +1,209 @@
+{
+	"//": "A cool, low-glare theme for developers working in the technische modus.",
+	"name": "RegelSpraak Dark",
+	"type": "dark",
+	"colors": {
+		"editor.background": "#1B1E24",
+		"editor.foreground": "#D3D8E0",
+		"editor.lineHighlightBackground": "#232733",
+		"editor.selectionBackground": "#3A5A7A66",
+		"editor.inactiveSelectionBackground": "#3A5A7A33",
+		"editor.findMatchBackground": "#E5B56766",
+		"editor.findMatchHighlightBackground": "#E5B56733",
+		"editorCursor.foreground": "#61AFEF",
+		"editorLineNumber.foreground": "#4B5263",
+		"editorLineNumber.activeForeground": "#ABB2BF",
+		"editorIndentGuide.background1": "#2A2F3A",
+		"editorIndentGuide.activeBackground1": "#3B4252",
+		"editorBracketHighlight.foreground1": "#D3D8E0",
+		"editorBracketHighlight.foreground2": "#D3D8E0",
+		"editorBracketHighlight.foreground3": "#D3D8E0",
+		"editorBracketHighlight.foreground4": "#D3D8E0",
+		"editorBracketHighlight.foreground5": "#D3D8E0",
+		"editorBracketHighlight.foreground6": "#D3D8E0",
+		"editorBracketHighlight.unexpectedBracket.foreground": "#E06C75",
+		"editorWhitespace.foreground": "#2A2F3A",
+		"editorRuler.foreground": "#252A34",
+		"titleBar.activeBackground": "#15171C",
+		"titleBar.activeForeground": "#D3D8E0",
+		"titleBar.inactiveBackground": "#15171C",
+		"titleBar.inactiveForeground": "#6B7280",
+		"titleBar.border": "#101216",
+		"menubar.selectionBackground": "#232733",
+		"activityBar.background": "#15171C",
+		"activityBar.foreground": "#D3D8E0",
+		"activityBar.inactiveForeground": "#565C69",
+		"activityBar.border": "#101216",
+		"activityBarBadge.background": "#61AFEF",
+		"activityBarBadge.foreground": "#101216",
+		"sideBar.background": "#191C22",
+		"sideBar.foreground": "#C7CCD6",
+		"sideBar.border": "#101216",
+		"sideBarSectionHeader.background": "#1F232B",
+		"sideBarTitle.foreground": "#D3D8E0",
+		"statusBar.background": "#15171C",
+		"statusBar.foreground": "#9AA1AE",
+		"statusBar.border": "#101216",
+		"statusBar.debuggingBackground": "#61AFEF",
+		"statusBar.debuggingForeground": "#101216",
+		"tab.activeBackground": "#1B1E24",
+		"tab.activeForeground": "#E3E7EE",
+		"tab.inactiveBackground": "#15171C",
+		"tab.inactiveForeground": "#6B7280",
+		"tab.border": "#101216",
+		"tab.activeBorderTop": "#61AFEF",
+		"panel.background": "#191C22",
+		"panel.border": "#101216",
+		"terminal.background": "#1B1E24",
+		"terminal.foreground": "#D3D8E0",
+		"textLink.foreground": "#61AFEF",
+		"textLink.activeForeground": "#89C6FF",
+		"notebook.editorBackground": "#1B1E24",
+		"notebook.cellEditorBackground": "#191C22",
+		"notebook.cellBorderColor": "#252A34",
+		"notebook.focusedCellBorder": "#61AFEF",
+		"notebook.selectedCellBackground": "#232733",
+		"notebook.cellStatusBarItemHoverBackground": "#232733"
+	},
+	"semanticHighlighting": true,
+	"semanticTokenColors": {
+		"objecttype:regelspraak": "#C77DFF",
+		"attribuut:regelspraak": "#7FD88F",
+		"enumwaarde:regelspraak": "#7FD88F",
+		"kenmerk:regelspraak": "#E5B567",
+		"dimensie:regelspraak": "#E5B567",
+		"rol:regelspraak": "#61AFEF",
+		"parameter:regelspraak": "#56C2C0",
+		"domein:regelspraak": "#9AA5E8",
+		"tijdlijn:regelspraak": "#9AA5E8",
+		"eenheid:regelspraak": "#56D9E0",
+		"dagsoort:regelspraak": "#E0935C",
+		"feittype:regelspraak": "#E2777B",
+		"regel:regelspraak": "#E08FC0",
+		"variabele:regelspraak": "#B8B8D9"
+	},
+	"tokenColors": [
+		{
+			"scope": ["comment", "punctuation.definition.comment"],
+			"settings": { "foreground": "#6B7280", "fontStyle": "italic" }
+		},
+		{
+			"scope": "string",
+			"settings": { "foreground": "#E2A478" }
+		},
+		{
+			"scope": ["keyword", "keyword.control", "storage.type", "storage.modifier", "constant.language"],
+			"settings": { "foreground": "#C792EA" }
+		},
+		{
+			"scope": "constant.numeric",
+			"settings": { "foreground": "#F78C6C" }
+		},
+		{
+			"scope": "entity.name.function",
+			"settings": { "foreground": "#C77DFF" }
+		},
+		{
+			"scope": ["entity.name.type", "entity.name.class", "support.type", "support.class"],
+			"settings": { "foreground": "#4FC1E9" }
+		},
+		{
+			"scope": "variable.parameter",
+			"settings": { "foreground": "#E2A478" }
+		},
+		{
+			"scope": "markup.heading",
+			"settings": { "foreground": "#61AFEF", "fontStyle": "bold" }
+		},
+		{
+			"scope": "markup.bold",
+			"settings": { "fontStyle": "bold" }
+		},
+		{
+			"scope": "markup.italic",
+			"settings": { "fontStyle": "italic" }
+		},
+		{
+			"scope": "markup.quote",
+			"settings": { "foreground": "#8A93A6", "fontStyle": "italic" }
+		},
+		{
+			"scope": ["markup.underline.link", "string.other.link"],
+			"settings": { "foreground": "#61AFEF" }
+		},
+
+		{
+			"//": "A slate keyword colour, distinct from both the accent hues and plain text — bold alone did not read against a name in the same foreground colour.",
+			"scope": "keyword.declaration.regelspraak",
+			"settings": { "foreground": "#9AA0B8", "fontStyle": "bold" }
+		},
+		{
+			"scope": [
+				"keyword.control.regelspraak",
+				"keyword.operator.wordlike.regelspraak",
+				"keyword.operator.assignment.regelspraak",
+				"keyword.other.regelspraak",
+				"storage.type.regelspraak"
+			],
+			"settings": { "foreground": "#9AA0B8" }
+		},
+		{
+			"scope": "constant.language.regelspraak",
+			"settings": { "foreground": "#9AA0B8", "fontStyle": "italic" }
+		},
+		{
+			"scope": "keyword.other.unit.regelspraak",
+			"settings": { "foreground": "#56D9E0" }
+		},
+		{
+			"scope": "entity.name.type.regelspraak",
+			"settings": { "foreground": "#9AA5E8" }
+		},
+		{
+			"scope": "entity.name.type.interface.regelspraak",
+			"settings": { "foreground": "#E2777B" }
+		},
+		{
+			"scope": "entity.name.function.regelspraak",
+			"settings": { "foreground": "#E08FC0" }
+		},
+		{
+			"scope": "variable.other.readwrite.regelspraak",
+			"settings": { "foreground": "#B8B8D9" }
+		},
+
+		{
+			"//": "A rekendatum year has no lexical scope of its own apart from a full date, so both share this accent.",
+			"scope": ["constant.numeric.date.regelspraak"],
+			"settings": { "foreground": "#61AFEF" }
+		},
+		{
+			"scope": "entity.name.type.class.regelspraak",
+			"settings": { "foreground": "#C77DFF" }
+		},
+		{
+			"scope": [
+				"variable.other.member.regelspraak",
+				"variable.other.enummember.regelspraak",
+				"string.quoted.single.enumeratiewaarde.regelspraak"
+			],
+			"settings": { "foreground": "#7FD88F" }
+		},
+		{
+			"//": "Also rol's and dagsoort's coarse fallback until the language server's semantic tokens attach; semanticTokenColors above then recolours a rol sky blue and a dagsoort terracotta.",
+			"scope": [
+				"variable.other.constant.regelspraak",
+				"entity.name.type.enum.regelspraak"
+			],
+			"settings": { "foreground": "#E5B567" }
+		},
+		{
+			"scope": "variable.parameter.regelspraak",
+			"settings": { "foreground": "#56C2C0" }
+		},
+		{
+			"scope": "comment.line.section.koptekst.regelspraak",
+			"settings": { "foreground": "#6B7280", "fontStyle": "bold italic" }
+		}
+	]
+}
