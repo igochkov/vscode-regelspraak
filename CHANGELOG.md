@@ -7,6 +7,23 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+## [Unreleased]
+
+### Fixed
+
+- A rule inside a `(recursief)` rule group could silently never fire, with no
+  diagnostic and no modelfout ([#27](https://github.com/igochkov/vscode-regelspraak/issues/27)).
+  A §9.10 pass is supposed to evaluate the instances that existed when the pass
+  began, whichever rule of the group is asking — but the engine asked the live
+  store instead, so a rule ordered *after* the loop's objectcreatie in the
+  pass's own order saw an instance the moment it was created, one pass earlier
+  than a rule ordered before the creation. Since a rule × instance runs at most
+  once, that early read of a value another rule of the same pass had not yet
+  written stuck as `leeg` forever. Each pass now snapshots the loop's own
+  instances before any of its rules run, and every rule of the pass — including
+  a decision table — is restricted to that snapshot regardless of its position
+  in the order.
+
 ## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
 
 **A model can now be written as the document it renders.** Until now the text
