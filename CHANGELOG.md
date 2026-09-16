@@ -36,6 +36,14 @@ ahead of execution, and each version since is named for what it delivers.
   role check now follows that separate chain, and the exemption also covers a
   rule that depends on the loop's own created type without being a member of
   its cycle.
+- A leading UTF-8 BOM in a Gegevensbron delivery was not stripped before the
+  CSV header was parsed, so with a quoted dialect the header's opening quote
+  no longer opened the first field and the column name kept its own quotation
+  marks — two byte-identical deliveries differing only by a producer's BOM
+  then needed two different manifests
+  ([#31](https://github.com/igochkov/vscode-regelspraak/issues/31)). A leading
+  BOM is now stripped before the delivery is split into lines; the manifest's
+  `sha256` still authenticates the exact bytes read.
 
 ## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
 
