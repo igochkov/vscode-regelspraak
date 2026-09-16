@@ -23,6 +23,19 @@ ahead of execution, and each version since is named for what it delivers.
   instances before any of its rules run, and every rule of the pass — including
   a decision table — is restricted to that snapshot regardless of its position
   in the order.
+- RS606 wrongly reported a kenmerk carried one link at a time inside a
+  `(recursief)` rule group (`Een X is <kenmerk> indien zijn <vorige> <kenmerk>
+  is`), even though the identical pattern on an attribute was accepted
+  ([#30](https://github.com/igochkov/vscode-regelspraak/issues/30)). A kenmerk
+  check records the kenmerk's name as a reference of its own, with the chain
+  that says *whose* kenmerk it is — where the role navigation that reaches
+  another instance actually lives — recorded separately; RS606 asked only the
+  first and never saw the role the second took. It also required the reading
+  rule to close the recursive group's cycle itself, which a kenmerk carried
+  one link at a time never does — nothing reads it back. Both are fixed: the
+  role check now follows that separate chain, and the exemption also covers a
+  rule that depends on the loop's own created type without being a member of
+  its cycle.
 
 ## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
 
