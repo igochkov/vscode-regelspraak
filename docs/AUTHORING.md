@@ -545,6 +545,28 @@ Values layer in three, innermost last: **the parameterset, then the testset's ow
 it states and leaves the rest of the set standing, so overriding one tariff for
 one case is one line and costs nothing else.
 
+**A `Verwacht` block can be about an instance a rule made.** An id is the
+testset's own name for something a `Gegeven` line declared, so an instance a rule
+creates — an objectcreatie, and every link of a `(recursief)` chain — has no id to
+be named by. Navigate to it instead, from an instance that does:
+
+```
+Verwacht het opvolgende leesjaar van J1 met
+	jaarnummer  2
+	saldo       10
+```
+
+`het opvolgende leesjaar` is the **role** the feittype puts at the far end, and
+the navigation composes — `het opvolgende leesjaar van het opvolgende leesjaar
+van J1` reaches the third link. Two things worth knowing. A declared id always
+wins the whole phrase, so an instance you named `het jaar van Noor` is still that
+instance and nothing about your existing testsets changes. And a hop has to reach
+**exactly one** instance: reaching none is reported as a failed expectation
+rather than passed over, which is usually the answer you wanted — the rule that
+would have made the link did not fire — and reaching several says so, because the
+sentence does not say which one it means. Where the model cannot follow the role
+at all, that is **RS967** while you type.
+
 **Every `Verwacht` value is a value somebody ran.** Write the expectation, run
 it, and correct whichever of the two is wrong — usually the expectation, but not
 always, and the difference is the point of writing it down. Values that were

@@ -16,6 +16,33 @@ everything else in that release, which only ever affects code written afresh.
 
 ### Added
 
+- **A `Verwacht` block can be about an instance the model created**
+  ([#33](https://github.com/igochkov/vscode-regelspraak/issues/33)). A testgeval
+  names an instance by the id its own `Gegeven` line gave it, so instances a rule
+  *makes* — an objectcreatie, and every link of the chain a `(recursief)` group
+  builds — could not be asserted about at all: the only checkable thing was what a
+  declared holder rolled back up, a total or the last link through a hand-built
+  closing role. The links in between ran and nothing tested them. Navigate to one
+  instead, from an instance that is declared:
+
+  ```
+  Verwacht het opvolgende leesjaar van J1 met
+  	jaarnummer  2
+  	saldo       10
+  ```
+
+  `het opvolgende leesjaar` is the **role** the feittype puts at the far end, and
+  the navigation composes, so `… van het opvolgende leesjaar van J1` reaches the
+  third link. The role name colours, hovers, goes to its declaration and renames
+  like any other, and the value lines below are checked against the type the
+  navigation reaches. **Nothing about an existing testset changes**: a declared id
+  wins the whole phrase outright, so an instance you named `het jaar van Noor` is
+  still that instance. A hop has to reach **exactly one** instance — reaching none
+  is a failed expectation rather than a pass, which is usually the answer you
+  wanted, since it means the rule that would have made the link did not fire, and
+  reaching several says so rather than picking one. **RS967** reports, while you
+  type, a phrase that names an instance and then a role the model cannot follow
+  from it; a plain mistyped id is still RS952.
 - **RS966** — a `Parameters` line, in a testset, a testgeval or a Parameterset
   library file, that names no declared `Parameter`
   ([#32](https://github.com/igochkov/vscode-regelspraak/issues/32)). A run
@@ -54,6 +81,13 @@ everything else in that release, which only ever affects code written afresh.
   role check now follows that separate chain, and the exemption also covers a
   rule that depends on the loop's own created type without being a member of
   its cycle.
+- `Gegeven <id> heeft <ids> als <rol>` left the subject out of its own fact for a
+  **wederkerig feittype**. Such a feittype has one role holding both parties, so
+  the short form states both ends under that one name — and the run kept only the
+  end the line writes after `heeft`. `de leespartner van Noor` then found nothing
+  at run time, with nothing said in the editor, while the long form
+  (`Gegeven het feit leesduo met Noor, Sam als leespartner`) worked. Found while
+  building the feature above, which asks the same question of a finished run.
 - A leading UTF-8 BOM in a Gegevensbron delivery was not stripped before the
   CSV header was parsed, so with a quoted dialect the header's opening quote
   no longer opened the first field and the column name kept its own quotation
