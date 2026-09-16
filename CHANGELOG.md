@@ -14,6 +14,19 @@ everything else in that release, which only ever affects code written afresh.
 
 ## [Unreleased]
 
+### Added
+
+- **RS966** — a `Parameters` line, in a testset, a testgeval or a Parameterset
+  library file, that names no declared `Parameter`
+  ([#32](https://github.com/igochkov/vscode-regelspraak/issues/32)). A run
+  already refused clearly on such a line — `GEWEIGERD: Het scenario past niet
+  op het model` with *Onbekende parameter '…'* underneath — but the editor
+  said nothing, so a typo in a Parameters block looked exactly like a good
+  line until the test case was run. Unlike a bare name in a rule body, a
+  Parameters line's position names exactly one kind of thing, so there is
+  nothing ambiguous to stay quiet about; it is reported the moment the name
+  fails to resolve, with the article correctly not counted as part of it.
+
 ### Fixed
 
 - A rule inside a `(recursief)` rule group could silently never fire, with no
