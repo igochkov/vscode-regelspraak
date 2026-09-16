@@ -7,6 +7,11 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+A **Breaking for existing models** section under a version lists exactly what
+can turn a model that used to run clean into one with a new diagnostic or a
+refused run — the RS code, what changed, and the fix — separated from
+everything else in that release, which only ever affects code written afresh.
+
 ## [Unreleased]
 
 ### Fixed
@@ -62,6 +67,28 @@ rather than a setting:
 - **Juridische modus** — a **notebook**: an `.rgs.md` document in which the
   regulation's text and its RegelSpraak alternate, in the order the text has,
   with the worked example under the provision it checks.
+
+### Breaking for existing models
+
+**`RS126`** (Error) — a definite article before a kenmerk name is now
+rejected: `Een Kluis heeft de tijdige aanvraag` must be written `Een Kluis
+heeft een tijdige aanvraag`. The article belongs to the kenmerk's own
+declaration (`kenmerk (bezittelijk)`), not to its name, and the engine already
+read it that way — such a model ran, silently wrong, before this release. The
+quick fix removes exactly the article.
+
+**Two sentences whose answer can change, with no diagnostic at all.** A `die
+…` subselection in the *middle* of a chain (`de som van de bedragen van alle
+bijdragen van de Pot die een grote storting zijn`) is now applied where it is
+written; until this release such a filter was silently ignored unless it
+wrapped the *whole* chain, so a sum, a distribution, a `Daarbij geldt:`
+variable or a consistency check written this way computed over the
+unfiltered set. And a bullet nested under another bullet no longer lets a
+*sibling* of the outer bullet fall inside the nested group — `alle(geen(A,
+B))` is now read as the `alle(geen(A), B)` the sentence actually writes. Both
+sentences were always valid RegelSpraak, so neither has an RS code; if a test
+result changes after upgrading and nothing in the model looks wrong, these
+two are the first thing to check.
 
 **The file is Markdown.** A fenced block whose language is `regelspraak` or
 `testspraak` is a code cell and everything between two of them is prose; no
@@ -631,6 +658,18 @@ or for the whole test set from a delivery on disk (`Gegevensbronnen` /
 manifest saying how the file is written. A run says which delivery it read. A
 lookup on a key the content does not carry is a `modelfout`, never `leeg`.
 
+### Breaking for existing models
+
+**`RS616`** (Error) — a rule that derives its value from a rule that derives
+*its* value from the first is now reported, and a run refuses to start on
+it. Until this release only a rule reading its own target (`RS606`) was
+caught; a loop running through two or more rules — a `korting` computed from
+a `grondslag` that is itself computed from that `korting` — parsed clean and
+was refused only by the engine, at run time, with nothing said in the editor.
+RegelSpraak permits such a loop only inside a `Regelgroep` marked
+`(recursief)` (§9.10), which this release cannot yet write (that arrives in
+`0.9.5`) — so if your model has one, break the cycle to keep it running.
+
 **This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
 The specification declares how instances get their values from the input to be
 outside its scope (§9.3) and leaves it to the execution environment; this
@@ -853,6 +892,25 @@ may contain words the editor used to keep to itself, so `de afstand tot
 bestemming` parses. A declaration need not spell out its **plural** — the
 editor works the form out, and says which one it worked out. And a test case
 may state a fact from one of its ends, without naming the fact type at all.
+
+### Breaking for existing models
+
+**A run refuses to start on a model with any Error** — in the file you are
+looking at or any other in the workspace —
+(`regelspraak.execution.blockOnErrors`, on by default). Before this release an
+Error diagnostic was informational only: the model ran regardless, right or
+wrong. From here on, any Error — an existing code as much as `RS119` below —
+stops **Testgeval uitvoeren**, **Regel uitvoeren** and the Test Explorer
+outright, so a suite that had been green despite a standing Error in a file
+nobody had open now fails all at once. Turn the setting off to run anyway
+while you fix it.
+
+**`RS119`** (Error) — a bare name that matches both an object type and an
+attribute now resolves to the attribute, and the editor reports the collision
+instead of silently favouring the object type. Such a model used to run,
+producing *geen instantie van dit objecttype in bereik* and an empty value at
+run time with nothing said in the editor; the fix is `zijn <naam>` or `<naam>
+van <onderwerp>`, offered as a quick fix where the subject is animate.
 
 ### Importing from ALEF
 
@@ -1147,6 +1205,28 @@ The two are deliberately different tools. A failing test hands you a *value*,
 which is a backward question, and the derivation chain answers it without a
 session at all. Stepping is for the forward one: understanding an unfamiliar
 model, teaching one, asking what happens if.
+
+### Breaking for existing models
+
+`regelspraak.execution.blockOnErrors` does not exist yet, so none of these
+stop a run — they only add a diagnostic to a file that previously had none,
+for a mistake the engine was already tripping over or would have:
+
+- **`RS114`** — the possessive `haar`, which RegelSpraak does not have.
+- **`RS116`** — `<onderwerp> een X is` where X names no characteristic, role
+  or day kind of the subject.
+- **`RS117`** — `voor elke <naam>` naming a timeline nothing declares.
+- **`RS615`** — a `Feittype` cardinality line naming a role that does not
+  exist.
+- **`RS101`/`RS102`** now also reach a decision table's columns — the same
+  typo that was already reported in a rule was silent in a table.
+- **`RS609`** — `hij` used where the subject's object type is not
+  `(bezield)` — is reported again, having been narrowed away for a time.
+
+**`RS115`** (Warning) is the one exception worth naming separately: one name
+declared as two things a rule can name — typically a role named after the
+object type that fills it — which had been failing at run time as
+*dubbelzinnig* with nothing said in the editor.
 
 ### Added
 
@@ -1687,6 +1767,20 @@ division leaves open — none of these produce a report. A false warning on a
 correct sentence costs more than a missed one, so the checks are measured
 against the sample models and the conformance corpus on every build, and none of
 them may report anything there.
+
+### Breaking for existing models
+
+**Every check in this release is new.** Before `0.3.0` the editor checked
+names and structure only — it read no expression at all — so a model with an
+arithmetic, unit, precision, empty-value, timeline, distribution or
+decision-table mistake parsed clean. This is the release that can turn such a
+model's Problems panel from empty to not, in one pass: `RS201`–`RS210` (type
+mismatches), `RS301`–`RS307` (unit mismatches), `RS401`–`RS403` (precision and
+rounding), `RS501`–`RS505` (empty-value warnings), `RS701`–`RS703`
+(timelines), `RS801`–`RS808` (distributions), `RS901`–`RS903` (decision
+tables), and `RS108`, `RS110`, `RS111`, `RS112`, `RS602`, `RS603`, `RS606`,
+`RS609`, `RS610` and `RS612`. None of it changes what the model computes — it
+only reports what was already true.
 
 ### Added
 
