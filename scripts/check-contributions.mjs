@@ -65,5 +65,26 @@ try {
 	fail(`images/icon.png: ${error.message}`);
 }
 
+// A semantic token type only colours where a theme has a scope to key on, and
+// that fallback is declared per language ([N-5]): `regelspraak` and
+// `testspraak` are two ids for the one legend, so a scope map given for one and
+// not the other leaves every symbol in a document of the other language at the
+// editor foreground — the exact shape of the `keyword.operator.word` finding,
+// one contribution point over.
+try {
+	const manifest = JSON.parse(strip(readFileSync('package.json', 'utf8')));
+	const languages = new Set(
+		(manifest.contributes?.semanticTokenScopes ?? []).map((entry) => entry.language));
+	for (const language of ['regelspraak', 'testspraak']) {
+		if (languages.has(language)) {
+			console.log(`✓ semanticTokenScopes covers '${language}'`);
+		} else {
+			fail(`semanticTokenScopes has no entry for '${language}'`);
+		}
+	}
+} catch (error) {
+	fail(`semanticTokenScopes: ${error.message}`);
+}
+
 if (failed) { exit(1); }
 console.log('\ncheck-contributions: every contributed file parses, and the icon is one the Marketplace takes.');

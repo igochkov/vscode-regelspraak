@@ -7,6 +7,107 @@ to any one milestone. They no longer map *phase N to 0.N.0*: the workbench half
 of phase 6 needed nothing from the execution engine, so it shipped as `0.5.0`
 ahead of execution, and each version since is named for what it delivers.
 
+A **Breaking for existing models** section under a version lists exactly what
+can turn a model that used to run clean into one with a new diagnostic or a
+refused run — the RS code, what changed, and the fix — separated from
+everything else in that release, which only ever affects code written afresh.
+
+## [1.1.0] — A `Verwacht` line that follows an instance the model created, and what real models exposed
+
+### Breaking for existing models
+
+**`RS966`** (Error) — a `Parameters` line that names no declared `Parameter`
+is now reported while you type. A run already refused such a line clearly at
+run time (`GEWEIGERD: Het scenario past niet op het model`, with the unknown
+parameter underneath); the editor said nothing, so the mistake looked exactly
+like a good line until the case was run. Because the new diagnostic is an
+Error, `regelspraak.execution.blockOnErrors` (on by default) can now refuse
+every other run in the workspace until it is fixed, where before only the one
+testgeval failed. The fix is the parameter's own declared name.
+
+### Added
+
+- **A `Verwacht` block can be about an instance the model created**
+  ([#33](https://github.com/igochkov/vscode-regelspraak/issues/33)). A testgeval
+  names an instance by the id its own `Gegeven` line gave it, so instances a rule
+  *makes* — an objectcreatie, and every link of the chain a `(recursief)` group
+  builds — could not be asserted about at all: the only checkable thing was what a
+  declared holder rolled back up, a total or the last link through a hand-built
+  closing role. The links in between ran and nothing tested them. Navigate to one
+  instead, from an instance that is declared:
+
+  ```
+  Verwacht het opvolgende leesjaar van J1 met
+  	jaarnummer  2
+  	saldo       10
+  ```
+
+  `het opvolgende leesjaar` is the **role** the feittype puts at the far end, and
+  the navigation composes, so `… van het opvolgende leesjaar van J1` reaches the
+  third link. The role name colours, hovers, goes to its declaration and renames
+  like any other, and the value lines below are checked against the type the
+  navigation reaches. **Nothing about an existing testset changes**: a declared id
+  wins the whole phrase outright, so an instance you named `het jaar van Noor` is
+  still that instance. A hop has to reach **exactly one** instance — reaching none
+  is a failed expectation rather than a pass, which is usually the answer you
+  wanted, since it means the rule that would have made the link did not fire, and
+  reaching several says so rather than picking one. **RS967** reports, while you
+  type, a phrase that names an instance and then a role the model cannot follow
+  from it; a plain mistyped id is still RS952.
+- **RS966** — a `Parameters` line, in a testset, a testgeval or a Parameterset
+  library file, that names no declared `Parameter`
+  ([#32](https://github.com/igochkov/vscode-regelspraak/issues/32)). A run
+  already refused clearly on such a line — `GEWEIGERD: Het scenario past niet
+  op het model` with *Onbekende parameter '…'* underneath — but the editor
+  said nothing, so a typo in a Parameters block looked exactly like a good
+  line until the test case was run. Unlike a bare name in a rule body, a
+  Parameters line's position names exactly one kind of thing, so there is
+  nothing ambiguous to stay quiet about; it is reported the moment the name
+  fails to resolve, with the article correctly not counted as part of it.
+
+### Fixed
+
+- A rule inside a `(recursief)` rule group could silently never fire, with no
+  diagnostic and no modelfout ([#27](https://github.com/igochkov/vscode-regelspraak/issues/27)).
+  A §9.10 pass is supposed to evaluate the instances that existed when the pass
+  began, whichever rule of the group is asking — but the engine asked the live
+  store instead, so a rule ordered *after* the loop's objectcreatie in the
+  pass's own order saw an instance the moment it was created, one pass earlier
+  than a rule ordered before the creation. Since a rule × instance runs at most
+  once, that early read of a value another rule of the same pass had not yet
+  written stuck as `leeg` forever. Each pass now snapshots the loop's own
+  instances before any of its rules run, and every rule of the pass — including
+  a decision table — is restricted to that snapshot regardless of its position
+  in the order.
+- RS606 wrongly reported a kenmerk carried one link at a time inside a
+  `(recursief)` rule group (`Een X is <kenmerk> indien zijn <vorige> <kenmerk>
+  is`), even though the identical pattern on an attribute was accepted
+  ([#30](https://github.com/igochkov/vscode-regelspraak/issues/30)). A kenmerk
+  check records the kenmerk's name as a reference of its own, with the chain
+  that says *whose* kenmerk it is — where the role navigation that reaches
+  another instance actually lives — recorded separately; RS606 asked only the
+  first and never saw the role the second took. It also required the reading
+  rule to close the recursive group's cycle itself, which a kenmerk carried
+  one link at a time never does — nothing reads it back. Both are fixed: the
+  role check now follows that separate chain, and the exemption also covers a
+  rule that depends on the loop's own created type without being a member of
+  its cycle.
+- `Gegeven <id> heeft <ids> als <rol>` left the subject out of its own fact for a
+  **wederkerig feittype**. Such a feittype has one role holding both parties, so
+  the short form states both ends under that one name — and the run kept only the
+  end the line writes after `heeft`. `de leespartner van Noor` then found nothing
+  at run time, with nothing said in the editor, while the long form
+  (`Gegeven het feit leesduo met Noor, Sam als leespartner`) worked. Found while
+  building the feature above, which asks the same question of a finished run.
+- A leading UTF-8 BOM in a Gegevensbron delivery was not stripped before the
+  CSV header was parsed, so with a quoted dialect the header's opening quote
+  no longer opened the first field and the column name kept its own quotation
+  marks — two byte-identical deliveries differing only by a producer's BOM
+  then needed two different manifests
+  ([#31](https://github.com/igochkov/vscode-regelspraak/issues/31)). A leading
+  BOM is now stripped before the delivery is split into lines; the manifest's
+  `sha256` still authenticates the exact bytes read.
+
 ## [1.0.0] — A regulation as a notebook, one model per workspace folder, and test coverage over the model
 
 **A model can now be written as the document it renders.** Until now the text
@@ -24,6 +125,28 @@ rather than a setting:
 - **Juridische modus** — a **notebook**: an `.rgs.md` document in which the
   regulation's text and its RegelSpraak alternate, in the order the text has,
   with the worked example under the provision it checks.
+
+### Breaking for existing models
+
+**`RS126`** (Error) — a definite article before a kenmerk name is now
+rejected: `Een Kluis heeft de tijdige aanvraag` must be written `Een Kluis
+heeft een tijdige aanvraag`. The article belongs to the kenmerk's own
+declaration (`kenmerk (bezittelijk)`), not to its name, and the engine already
+read it that way — such a model ran, silently wrong, before this release. The
+quick fix removes exactly the article.
+
+**Two sentences whose answer can change, with no diagnostic at all.** A `die
+…` subselection in the *middle* of a chain (`de som van de bedragen van alle
+bijdragen van de Pot die een grote storting zijn`) is now applied where it is
+written; until this release such a filter was silently ignored unless it
+wrapped the *whole* chain, so a sum, a distribution, a `Daarbij geldt:`
+variable or a consistency check written this way computed over the
+unfiltered set. And a bullet nested under another bullet no longer lets a
+*sibling* of the outer bullet fall inside the nested group — `alle(geen(A,
+B))` is now read as the `alle(geen(A), B)` the sentence actually writes. Both
+sentences were always valid RegelSpraak, so neither has an RS code; if a test
+result changes after upgrading and nothing in the model looks wrong, these
+two are the first thing to check.
 
 **The file is Markdown.** A fenced block whose language is `regelspraak` or
 `testspraak` is a code cell and everything between two of them is prose; no
@@ -593,6 +716,18 @@ or for the whole test set from a delivery on disk (`Gegevensbronnen` /
 manifest saying how the file is written. A run says which delivery it read. A
 lookup on a key the content does not carry is a `modelfout`, never `leeg`.
 
+### Breaking for existing models
+
+**`RS616`** (Error) — a rule that derives its value from a rule that derives
+*its* value from the first is now reported, and a run refuses to start on
+it. Until this release only a rule reading its own target (`RS606`) was
+caught; a loop running through two or more rules — a `korting` computed from
+a `grondslag` that is itself computed from that `korting` — parsed clean and
+was refused only by the engine, at run time, with nothing said in the editor.
+RegelSpraak permits such a loop only inside a `Regelgroep` marked
+`(recursief)` (§9.10), which this release cannot yet write (that arrives in
+`0.9.5`) — so if your model has one, break the cycle to keep it running.
+
 **This is an extension beyond RegelSpraak v2.3.0**, and it is documented as one.
 The specification declares how instances get their values from the input to be
 outside its scope (§9.3) and leaves it to the execution environment; this
@@ -815,6 +950,25 @@ may contain words the editor used to keep to itself, so `de afstand tot
 bestemming` parses. A declaration need not spell out its **plural** — the
 editor works the form out, and says which one it worked out. And a test case
 may state a fact from one of its ends, without naming the fact type at all.
+
+### Breaking for existing models
+
+**A run refuses to start on a model with any Error** — in the file you are
+looking at or any other in the workspace —
+(`regelspraak.execution.blockOnErrors`, on by default). Before this release an
+Error diagnostic was informational only: the model ran regardless, right or
+wrong. From here on, any Error — an existing code as much as `RS119` below —
+stops **Testgeval uitvoeren**, **Regel uitvoeren** and the Test Explorer
+outright, so a suite that had been green despite a standing Error in a file
+nobody had open now fails all at once. Turn the setting off to run anyway
+while you fix it.
+
+**`RS119`** (Error) — a bare name that matches both an object type and an
+attribute now resolves to the attribute, and the editor reports the collision
+instead of silently favouring the object type. Such a model used to run,
+producing *geen instantie van dit objecttype in bereik* and an empty value at
+run time with nothing said in the editor; the fix is `zijn <naam>` or `<naam>
+van <onderwerp>`, offered as a quick fix where the subject is animate.
 
 ### Importing from ALEF
 
@@ -1109,6 +1263,28 @@ The two are deliberately different tools. A failing test hands you a *value*,
 which is a backward question, and the derivation chain answers it without a
 session at all. Stepping is for the forward one: understanding an unfamiliar
 model, teaching one, asking what happens if.
+
+### Breaking for existing models
+
+`regelspraak.execution.blockOnErrors` does not exist yet, so none of these
+stop a run — they only add a diagnostic to a file that previously had none,
+for a mistake the engine was already tripping over or would have:
+
+- **`RS114`** — the possessive `haar`, which RegelSpraak does not have.
+- **`RS116`** — `<onderwerp> een X is` where X names no characteristic, role
+  or day kind of the subject.
+- **`RS117`** — `voor elke <naam>` naming a timeline nothing declares.
+- **`RS615`** — a `Feittype` cardinality line naming a role that does not
+  exist.
+- **`RS101`/`RS102`** now also reach a decision table's columns — the same
+  typo that was already reported in a rule was silent in a table.
+- **`RS609`** — `hij` used where the subject's object type is not
+  `(bezield)` — is reported again, having been narrowed away for a time.
+
+**`RS115`** (Warning) is the one exception worth naming separately: one name
+declared as two things a rule can name — typically a role named after the
+object type that fills it — which had been failing at run time as
+*dubbelzinnig* with nothing said in the editor.
 
 ### Added
 
@@ -1649,6 +1825,20 @@ division leaves open — none of these produce a report. A false warning on a
 correct sentence costs more than a missed one, so the checks are measured
 against the sample models and the conformance corpus on every build, and none of
 them may report anything there.
+
+### Breaking for existing models
+
+**Every check in this release is new.** Before `0.3.0` the editor checked
+names and structure only — it read no expression at all — so a model with an
+arithmetic, unit, precision, empty-value, timeline, distribution or
+decision-table mistake parsed clean. This is the release that can turn such a
+model's Problems panel from empty to not, in one pass: `RS201`–`RS210` (type
+mismatches), `RS301`–`RS307` (unit mismatches), `RS401`–`RS403` (precision and
+rounding), `RS501`–`RS505` (empty-value warnings), `RS701`–`RS703`
+(timelines), `RS801`–`RS808` (distributions), `RS901`–`RS903` (decision
+tables), and `RS108`, `RS110`, `RS111`, `RS112`, `RS602`, `RS603`, `RS606`,
+`RS609`, `RS610` and `RS612`. None of it changes what the model computes — it
+only reports what was already true.
 
 ### Added
 

@@ -7,7 +7,7 @@
 		"url": "https://github.com/igochkov"
 	},
 	"license": "Apache-2.0",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"publisher": "igochkov",
 	"icon": "images/icon.png",
 	"galleryBanner": {
@@ -371,7 +371,55 @@
 		],
 		"semanticTokenScopes": [
 			{
+				"//": "[N-5] gave a testset its own language id; a scope fallback declared for 'regelspraak' alone left every symbol in a .test.rgs file with no scope a theme can key on, which is why the two entries repeat one map rather than one entry naming both.",
 				"language": "regelspraak",
+				"scopes": {
+					"objecttype": [
+						"entity.name.type.class.regelspraak"
+					],
+					"attribuut": [
+						"variable.other.member.regelspraak"
+					],
+					"kenmerk": [
+						"variable.other.constant.regelspraak"
+					],
+					"domein": [
+						"entity.name.type.regelspraak"
+					],
+					"enumwaarde": [
+						"variable.other.enummember.regelspraak"
+					],
+					"eenheid": [
+						"keyword.other.unit.regelspraak"
+					],
+					"dimensie": [
+						"entity.name.type.enum.regelspraak"
+					],
+					"dagsoort": [
+						"variable.other.constant.regelspraak"
+					],
+					"tijdlijn": [
+						"entity.name.type.regelspraak"
+					],
+					"parameter": [
+						"variable.parameter.regelspraak"
+					],
+					"feittype": [
+						"entity.name.type.interface.regelspraak"
+					],
+					"rol": [
+						"variable.other.constant.regelspraak"
+					],
+					"regel": [
+						"entity.name.function.regelspraak"
+					],
+					"variabele": [
+						"variable.other.readwrite.regelspraak"
+					]
+				}
+			},
+			{
+				"language": "testspraak",
 				"scopes": {
 					"objecttype": [
 						"entity.name.type.class.regelspraak"
