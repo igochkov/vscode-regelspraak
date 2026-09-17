@@ -12,7 +12,18 @@ can turn a model that used to run clean into one with a new diagnostic or a
 refused run — the RS code, what changed, and the fix — separated from
 everything else in that release, which only ever affects code written afresh.
 
-## [Unreleased]
+## [1.1.0] — A `Verwacht` line that follows an instance the model created, and what real models exposed
+
+### Breaking for existing models
+
+**`RS966`** (Error) — a `Parameters` line that names no declared `Parameter`
+is now reported while you type. A run already refused such a line clearly at
+run time (`GEWEIGERD: Het scenario past niet op het model`, with the unknown
+parameter underneath); the editor said nothing, so the mistake looked exactly
+like a good line until the case was run. Because the new diagnostic is an
+Error, `regelspraak.execution.blockOnErrors` (on by default) can now refuse
+every other run in the workspace until it is fixed, where before only the one
+testgeval failed. The fix is the parameter's own declared name.
 
 ### Added
 
