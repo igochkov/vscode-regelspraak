@@ -670,6 +670,6 @@
 		"esbuild": "0.28.2",
 		"eslint": "^9.13.0",
 		"typescript": "^5.9.2",
-		"typescript-eslint": "^8.39.0"
+		"typescript-eslint": "^8.74.0"
 	}
 }
